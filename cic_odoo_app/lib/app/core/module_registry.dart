@@ -1,0 +1,30 @@
+import 'package:flutter/material.dart';
+
+import '../models/app_module.dart';
+
+class ModuleRegistry {
+  static const List<AppModule> all = [
+    AppModule(key: 'dashboard', title: 'Tablero', icon: Icons.space_dashboard_rounded, color: Color(0xFF5B7CFA), requiredPermission: 'dashboard.view', description: 'KPIs y actividad en tiempo real', implemented: true),
+    AppModule(key: 'quality', title: 'Calidad', icon: Icons.verified_user_rounded, color: Color(0xFF6D5EF9), requiredPermission: 'quality.view', implemented: true),
+    AppModule(key: 'incidents', title: 'Incidencias', icon: Icons.warning_amber_rounded, color: Color(0xFFFF6B57), requiredPermission: 'incidents.view', implemented: true),
+    AppModule(key: 'training', title: 'Formación', icon: Icons.school_rounded, color: Color(0xFF22B07D), requiredPermission: 'training.view', implemented: true),
+    AppModule(key: 'elearning', title: 'Formación online', icon: Icons.cast_for_education_rounded, color: Color(0xFF16A085), requiredPermission: 'elearning.view', implemented: true),
+    AppModule(key: 'documents', title: 'Documentos', icon: Icons.description_rounded, color: Color(0xFF4D84FF), requiredPermission: 'documents.view', implemented: true),
+    AppModule(key: 'recruitment', title: 'Reclutamiento', icon: Icons.person_search_rounded, color: Color(0xFF8E66FF), requiredPermission: 'recruitment.view', implemented: false),
+    AppModule(key: 'planning', title: 'Planificación', icon: Icons.event_note_rounded, color: Color(0xFFFF8C42), requiredPermission: 'planning.view', implemented: true),
+    AppModule(key: 'health', title: 'Vigilancia Salud', icon: Icons.monitor_heart_rounded, color: Color(0xFF7D5BFF), requiredPermission: 'health.view', implemented: true),
+    AppModule(key: 'normative', title: 'Normativa', icon: Icons.gavel_rounded, color: Color(0xFF0EA5E9), requiredPermission: 'normative.view', implemented: true),
+    AppModule(key: 'equipment', title: 'Equipos', icon: Icons.precision_manufacturing_rounded, color: Color(0xFFF59E0B), requiredPermission: 'equipment.view', implemented: true),
+    AppModule(key: 'chemicals', title: 'Químicos', icon: Icons.science_rounded, color: Color(0xFF14B8A6), requiredPermission: 'chemicals.view', implemented: true),
+    AppModule(key: 'suggestions', title: 'Sugerencias', icon: Icons.lightbulb_outline_rounded, color: Color(0xFFEC4899), requiredPermission: 'suggestions.view', implemented: true),
+    AppModule(key: 'permissions', title: 'Permisos', icon: Icons.fact_check_rounded, color: Color(0xFF38A169), requiredPermission: 'permissions.view', implemented: true),
+    AppModule(key: 'communications', title: 'Comunicaciones', icon: Icons.chat_bubble_outline_rounded, color: Color(0xFF3B82F6), requiredPermission: 'communications.view', implemented: true),
+    AppModule(key: 'suppliers', title: 'Proveedores', icon: Icons.local_shipping_rounded, color: Color(0xFFB45309), requiredPermission: 'suppliers.view', implemented: true),
+    AppModule(key: 'portal', title: 'Portal', icon: Icons.open_in_browser_rounded, color: Color(0xFFEC4899), requiredPermission: 'portal.view', implemented: false),
+    AppModule(key: 'organization', title: 'Organización', icon: Icons.account_tree_rounded, color: Color(0xFF14B8A6), requiredPermission: 'organization.view', implemented: false),
+    AppModule(key: 'purchases', title: 'Compras', icon: Icons.shopping_cart_checkout_rounded, color: Color(0xFF0EA5E9), requiredPermission: 'purchases.view', implemented: false),
+    AppModule(key: 'users', title: 'Usuarios', icon: Icons.group_rounded, color: Color(0xFFEF4444), requiredPermission: 'users.view', implemented: true),
+    AppModule(key: 'roles', title: 'Roles', icon: Icons.admin_panel_settings_rounded, color: Color(0xFF6366F1), requiredPermission: 'roles.view', implemented: true),
+    AppModule(key: 'maintenance', title: 'Mantenimiento', icon: Icons.build_circle_rounded, color: Color(0xFFF59E0B), requiredPermission: 'maintenance.view', implemented: false),
+  ];
+}
