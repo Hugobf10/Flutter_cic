@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:odoo_rpc/odoo_rpc.dart';
@@ -18,6 +19,11 @@ class OdooService {
   String? _lastAuthError;
   bool _initialized = false;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+
+  static const _kSessionJson = 'odoo_session_json';
+  static const _kSessionUserInfoJson = 'odoo_user_info_json';
+  static const _kSessionJsonPrefs = 'odoo_session_json_prefs';
+  static const _kSessionUserInfoJsonPrefs = 'odoo_user_info_json_prefs';
 
   bool get isAuthenticated => _session != null;
   OdooSession? get session => _session;
@@ -45,8 +51,11 @@ class OdooService {
   }
 
   /// Inicializa el cliente con la URL de Odoo.
-  void init({String? baseUrl}) {
-    _client = OdooClient((baseUrl ?? AppConfig.odooBaseUrl).trim());
+  void init({String? baseUrl, OdooSession? session}) {
+    _client = OdooClient(
+      (baseUrl ?? AppConfig.odooBaseUrl).trim(),
+      sessionId: session,
+    );
     _initialized = true;
     AppLogger.info('Cliente Odoo inicializado', data: {'baseUrl': _client.baseURL}, scope: 'odoo');
   }
@@ -68,25 +77,19 @@ class OdooService {
       );
       await _fetchUserInfo();
       try {
-        await _persistCredentials(login, password, database);
-      } catch (e, st) {
+        await persistSessionSnapshot(database: database);
+      } catch (e) {
         AppLogger.warning(
-          'Autenticado, pero no se pudieron persistir credenciales',
+          'No se pudo persistir sesión segura; login seguirá activo en memoria',
           data: {'error': e.toString()},
           scope: 'odoo.auth',
         );
-        AppLogger.error(
-          'Error persistiendo credenciales',
-          error: e,
-          stackTrace: st,
-          scope: 'odoo.auth',
-        );
       }
-      AppLogger.info('Autenticación Odoo OK', data: {'login': login}, scope: 'odoo.auth');
+      AppLogger.info('Autenticación Odoo OK', scope: 'odoo.auth');
       return true;
     } on OdooException catch (e) {
       _lastAuthError = e.message;
-      AppLogger.warning('Autenticación Odoo fallida', data: {'login': login, 'error': e.message}, scope: 'odoo.auth');
+      AppLogger.warning('Autenticación Odoo fallida', data: {'error': e.message}, scope: 'odoo.auth');
       _session = null;
       _userInfo = null;
       return false;
@@ -99,31 +102,10 @@ class OdooService {
     }
   }
 
-  /// Intenta restaurar la sesión guardada.
-  Future<bool> tryAutoLogin() async {
-    final prefs = await SharedPreferences.getInstance();
-    final login = prefs.getString('odoo_login');
-    String? password;
-    try {
-      password = await _secureStorage.read(key: 'odoo_password');
-    } catch (e) {
-      AppLogger.warning(
-        'No se pudo leer password del secure storage',
-        data: {'error': e.toString()},
-        scope: 'odoo.auth',
-      );
-    }
-    final database = prefs.getString('odoo_database');
-    final url = prefs.getString('odoo_url');
-    password ??= prefs.getString('odoo_password_fallback');
+  /// Compat para llamadas existentes.
+  Future<bool> tryAutoLogin() => tryRestoreStoredSession();
 
-    if (login == null || password == null) return false;
-
-    init(baseUrl: url);
-    return authenticate(login, password, database: database);
-  }
-
-  /// Cierra la sesión y borra credenciales.
+  /// Cierra la sesión y borra tokens/sesión persistida.
   Future<void> logout() async {
     _session = null;
     _userInfo = null;
@@ -131,27 +113,102 @@ class OdooService {
     await prefs.remove('odoo_login');
     await prefs.remove('odoo_database');
     await prefs.remove('odoo_url');
-    await prefs.remove('odoo_password_fallback');
+    await prefs.remove(_kSessionJsonPrefs);
+    await prefs.remove(_kSessionUserInfoJsonPrefs);
     try {
-      await _secureStorage.delete(key: 'odoo_password');
+      await _secureStorage.delete(key: _kSessionJson);
+      await _secureStorage.delete(key: _kSessionUserInfoJson);
     } catch (e) {
       AppLogger.warning(
-        'No se pudo borrar password de secure storage en logout',
+        'No se pudo borrar sesión de secure storage en logout',
         data: {'error': e.toString()},
         scope: 'odoo.auth',
       );
     }
   }
 
-  Future<void> _persistCredentials(
-      String login, String password, String? database) async {
+  Future<void> persistSessionSnapshot({String? database}) async {
+    if (_session == null) return;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('odoo_login', login);
-    await prefs.setString(
-        'odoo_database', database ?? AppConfig.odooDatabaseName);
+    await prefs.setString('odoo_login', _session!.userLogin);
+    await prefs.setString('odoo_database', database ?? _session!.dbName);
     await prefs.setString('odoo_url', _client.baseURL);
-    await prefs.setString('odoo_password_fallback', password);
-    await _secureStorage.write(key: 'odoo_password', value: password);
+
+    final sessionJson = jsonEncode(_session!.toJson());
+    final userInfoJson = _userInfo == null ? '' : jsonEncode(_userInfo);
+    // Fallback siempre disponible (incluido macOS sin entitlement de keychain).
+    await prefs.setString(_kSessionJsonPrefs, sessionJson);
+    await prefs.setString(_kSessionUserInfoJsonPrefs, userInfoJson);
+
+    // Intento de persistencia segura: si falla, seguimos con fallback sin romper login.
+    try {
+      await _secureStorage.write(key: _kSessionJson, value: sessionJson);
+      await _secureStorage.write(key: _kSessionUserInfoJson, value: userInfoJson);
+    } catch (e) {
+      AppLogger.warning(
+        'Secure storage no disponible; usando fallback en SharedPreferences',
+        data: {'error': e.toString()},
+        scope: 'odoo.auth',
+      );
+    }
+  }
+
+  Future<bool> tryRestoreStoredSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    final url = prefs.getString('odoo_url');
+    if ((url ?? '').trim().isEmpty) return false;
+
+    String? sessionJson;
+    String? userInfoJson;
+    try {
+      sessionJson = await _secureStorage.read(key: _kSessionJson);
+      userInfoJson = await _secureStorage.read(key: _kSessionUserInfoJson);
+    } catch (e) {
+      AppLogger.warning(
+        'No se pudo leer sesión de secure storage; usando fallback',
+        data: {'error': e.toString()},
+        scope: 'odoo.auth',
+      );
+    }
+    sessionJson ??= prefs.getString(_kSessionJsonPrefs);
+    userInfoJson ??= prefs.getString(_kSessionUserInfoJsonPrefs);
+    if ((sessionJson ?? '').isEmpty) return false;
+
+    try {
+      final raw = jsonDecode(sessionJson!);
+      if (raw is! Map<String, dynamic>) return false;
+      final restoredSession = OdooSession.fromJson(raw);
+      init(baseUrl: url, session: restoredSession);
+      _session = restoredSession;
+
+      if ((userInfoJson ?? '').isNotEmpty) {
+        final userRaw = jsonDecode(userInfoJson!);
+        if (userRaw is Map) {
+          _userInfo = Map<String, dynamic>.from(userRaw);
+        }
+      }
+
+      await _fetchUserInfo();
+      if (_userInfo == null) return false;
+
+      try {
+        await persistSessionSnapshot(database: prefs.getString('odoo_database'));
+      } catch (e) {
+        AppLogger.warning(
+          'No se pudo refrescar persistencia de sesión restaurada',
+          data: {'error': e.toString()},
+          scope: 'odoo.auth',
+        );
+      }
+      return true;
+    } catch (e) {
+      AppLogger.warning(
+        'No se pudo restaurar sesión persistida',
+        data: {'error': e.toString()},
+        scope: 'odoo.auth',
+      );
+      return false;
+    }
   }
 
   Future<void> _fetchUserInfo() async {
@@ -160,6 +217,8 @@ class OdooService {
       final result =
           await _withRetry(() => _client.callRPC('/web/session/get_session_info', 'call', {}));
       _userInfo = Map<String, dynamic>.from(result as Map);
+      final refreshed = OdooSession.fromSessionInfo(_userInfo!);
+      _session = refreshed;
     } catch (_) {
       _userInfo = null;
     }

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/module_router.dart';
 import '../models/app_module.dart';
 import '../providers/app_state_provider.dart';
-import '../widgets/module_tile.dart';
+import '../ui/app_components.dart';
 import '../../providers/auth_provider.dart';
 
 class ModulesHubScreen extends StatefulWidget {
@@ -16,76 +16,77 @@ class ModulesHubScreen extends StatefulWidget {
 
 class _ModulesHubScreenState extends State<ModulesHubScreen> {
   String _query = '';
+  final TextEditingController _searchCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppStateProvider>();
     final auth = context.watch<AuthProvider>();
     final modules = _filter(_intranetModules(appState.availableModules, auth), _query)
-      ..sort((a, b) {
-        if (a.implemented == b.implemented) return a.title.compareTo(b.title);
-        return a.implemented ? -1 : 1;
-      });
+      ..sort((a, b) => a.title.compareTo(b.title));
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Módulos')),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          children: [
-            TextField(
-              decoration: const InputDecoration(
-                hintText: 'Buscar módulos...',
-                prefixIcon: Icon(Icons.search_rounded),
-              ),
-              onChanged: (value) => setState(() => _query = value.trim().toLowerCase()),
+    return AppScaffold(
+      title: 'Módulos',
+      child: Column(
+        children: [
+          AppSearchBar(
+            controller: _searchCtrl,
+            hintText: 'Buscar módulos...',
+            onChanged: (value) => setState(() => _query = value.trim().toLowerCase()),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                final crossAxisCount = width >= 1200 ? 4 : width >= 900 ? 3 : width >= 640 ? 3 : 2;
+                return GridView.builder(
+                  itemCount: modules.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    childAspectRatio: 1.45,
+                  ),
+                  itemBuilder: (_, i) {
+                    final module = modules[i];
+                    return AppCard(
+                      onTap: () {
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => ModuleRouter.build(module.key, module.title),
+                        ));
+                      },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: module.color.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(module.icon, size: 18, color: module.color),
+                          ),
+                          const Spacer(),
+                          Text(module.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 2),
+                          Text(module.description ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
             ),
-            const SizedBox(height: 14),
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final width = constraints.maxWidth;
-                  final crossAxisCount = width >= 1500
-                      ? 5
-                      : width >= 1200
-                          ? 4
-                          : width >= 900
-                              ? 3
-                              : 2;
-                  final childAspectRatio = width >= 1200 ? 1.45 : width >= 900 ? 1.3 : 1.32;
-
-                  return GridView.builder(
-                    itemCount: modules.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                      childAspectRatio: childAspectRatio,
-                    ),
-                    itemBuilder: (_, i) {
-                      final module = modules[i];
-                      return ModuleTile(
-                        module: module,
-                        onTap: () {
-                          if (!module.implemented) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('${module.title} estará disponible en la siguiente iteración.'),
-                              ),
-                            );
-                          }
-                          Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => ModuleRouter.build(module.key, module.title),
-                          ));
-                        },
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -109,6 +110,7 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
       'training',
       'elearning',
       'documents',
+      'reservas',
       'planning',
       'health',
       'normative',
@@ -117,6 +119,7 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
       'suggestions',
       'communications',
       'suppliers',
+      'recruitment',
     };
     return modules.where((m) => allowed.contains(m.key) && auth.canViewModule(m.key)).toList();
   }

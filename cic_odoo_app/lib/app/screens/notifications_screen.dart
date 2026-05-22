@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../models/app_notification.dart';
 import '../providers/app_state_provider.dart';
+import '../ui/app_components.dart';
+import '../../theme/app_theme.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -19,13 +21,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final appState = context.watch<AppStateProvider>();
     final list = _applyFilter(appState.notifications);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Notificaciones')),
-      body: Column(
+    return AppScaffold(
+      title: 'Actividad',
+      child: Column(
         children: [
-          const SizedBox(height: 8),
           SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
@@ -37,19 +37,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Expanded(
             child: appState.loadingNotifications
-                ? const Center(child: CircularProgressIndicator())
-                : ListView.separated(
-                    itemCount: list.length,
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                    separatorBuilder: (_, index) => const SizedBox(height: 8),
-                    itemBuilder: (_, i) {
-                      final n = list[i];
-                      return _NotificationCard(item: n);
-                    },
-                  ),
+                ? const AppLoadingView(label: 'Cargando actividad...')
+                : list.isEmpty
+                    ? const AppEmptyState(
+                        title: 'Sin actividad',
+                        subtitle: 'No hay notificaciones para este filtro.',
+                        icon: Icons.notifications_none_rounded,
+                      )
+                    : ListView.separated(
+                        itemCount: list.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (_, i) => _NotificationCard(item: list[i]),
+                      ),
           ),
         ],
       ),
@@ -84,48 +86,24 @@ class _NotificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = switch (item.level) {
-      'high' => const Color(0xFFEF4444),
-      'medium' => const Color(0xFFF59E0B),
-      _ => const Color(0xFF3B82F6),
+      'high' => AppTheme.error,
+      'medium' => AppTheme.warning,
+      _ => AppTheme.primary,
     };
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
+    return AppListTile(
+      leading: Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(Icons.notifications_rounded, size: 16, color: color),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 10,
-            height: 10,
-            margin: const EdgeInsets.only(top: 6),
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item.title, style: const TextStyle(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 2),
-                Text(item.subtitle, style: Theme.of(context).textTheme.bodySmall),
-                const SizedBox(height: 6),
-                Text(item.createdAtLabel, style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
-          ),
-          if (item.unread)
-            Container(
-              width: 8,
-              height: 8,
-              margin: const EdgeInsets.only(top: 6),
-              decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
-            ),
-        ],
-      ),
+      title: item.title,
+      subtitle: '${item.subtitle} · ${item.createdAtLabel}',
+      trailing: item.unread ? const Icon(Icons.circle, size: 10, color: AppTheme.primary) : null,
     );
   }
 }

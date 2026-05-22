@@ -1,147 +1,249 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
-import '../providers/app_state_provider.dart';
+import '../../services/attachment_service.dart';
+import '../../services/odoo_service.dart';
 import '../../theme/app_theme.dart';
+import '../providers/app_state_provider.dart';
+import '../screens/document_viewer_screen.dart';
+import '../ui/app_components.dart';
+import 'edit_profile_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final OdooService _odoo = OdooService();
+  final AttachmentService _attachments = AttachmentService();
+
+  bool _loading = true;
+  String? _error;
+  Map<String, dynamic> _partner = const {};
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final auth = context.read<AuthProvider>();
+    if (auth.partnerId <= 0) {
+      setState(() {
+        _loading = false;
+        _error = 'No se encontró el perfil del usuario.';
+      });
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      _partner = await _odoo.read(
+        'res.partner',
+        auth.partnerId,
+        fields: const [
+          'name',
+          'email',
+          'phone',
+          'mobile',
+          'function',
+          'comment',
+          'unidad_id',
+          'cv_attachment_id',
+          'cv_attachment_name',
+          'image_1920',
+        ],
+      );
+    } catch (e) {
+      _error = OdooService.prettyError(e);
+    }
+    if (mounted) setState(() => _loading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final appState = context.watch<AppStateProvider>();
+    final name = (_partner['name'] ?? auth.userName).toString().trim().isEmpty
+        ? 'Usuario'
+        : (_partner['name'] ?? auth.userName).toString();
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Perfil')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceCard,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
-            ),
-            child: Row(
-              children: [
-                CircleAvatar(child: Text(_initials(auth.userName))),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(auth.userName.isEmpty ? 'Usuario' : auth.userName, style: const TextStyle(fontWeight: FontWeight.w700)),
-                      Text(auth.userLogin, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-                      if (auth.unidadNombre.isNotEmpty)
-                        Text('Unidad: ${auth.unidadNombre}', style: const TextStyle(color: AppTheme.textMuted, fontSize: 12)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          _sectionTitle('Acceso intranet'),
-          _statusTile('Acceso intranet', auth.accesoIntranet),
-          _statusTile('Acceso calidad', auth.accesoCalidad),
-          _statusTile('Portal habilitado', auth.portalCalidadHabilitado),
-          const SizedBox(height: 10),
-          _sectionTitle('Permisos efectivos'),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceCard,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${auth.enabledPortalPermissions}/${auth.portalPermissions.length} módulos habilitados',
-                  style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: auth.portalPermissions.entries.map((e) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: (e.value ? AppTheme.success : AppTheme.textMuted).withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(999),
+    return AppScaffold(
+      title: 'Mi perfil',
+      actions: [
+        IconButton(
+          onPressed: _loading
+              ? null
+              : () async {
+                  final saved = await Navigator.of(context).push<bool>(
+                    MaterialPageRoute(
+                      builder: (_) => EditProfileScreen(partnerData: _partner),
+                    ),
+                  );
+                  if (saved == true) _load();
+                },
+          icon: const Icon(Icons.edit_outlined),
+        ),
+      ],
+      child: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? AppEmptyState(
+                  title: 'No se pudo cargar el perfil',
+                  subtitle: _error!,
+                  icon: Icons.error_outline_rounded,
+                  action: AppButton.primary(label: 'Reintentar', onPressed: _load),
+                )
+              : ListView(
+                  children: [
+                    AppCard(
+                      child: Row(
+                        children: [
+                          _buildAvatar(name),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(name,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+                                Text(
+                                  (_partner['email'] ?? auth.userLogin).toString(),
+                                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                                ),
+                                if (auth.unidadNombre.isNotEmpty)
+                                  Text(
+                                    'Unidad: ${auth.unidadNombre}',
+                                    style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        e.key,
-                        style: TextStyle(
-                          color: e.value ? AppTheme.success : AppTheme.textSecondary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
+                    ),
+                    const SizedBox(height: 14),
+                    const AppSectionHeader(title: 'Información personal'),
+                    _InfoTile(label: 'Teléfono', value: (_partner['phone'] ?? '-').toString()),
+                    _InfoTile(label: 'Móvil', value: (_partner['mobile'] ?? '-').toString()),
+                    _InfoTile(label: 'Puesto', value: (_partner['function'] ?? '-').toString()),
+                    const SizedBox(height: 14),
+                    const AppSectionHeader(title: 'Currículum'),
+                    _buildCvCard(),
+                    const SizedBox(height: 14),
+                    AppCard(
+                      child: SwitchListTile.adaptive(
+                        contentPadding: EdgeInsets.zero,
+                        value: appState.themeMode == ThemeMode.dark,
+                        onChanged: (_) => appState.toggleThemeMode(),
+                        title: const Text('Modo oscuro'),
+                        subtitle: const Text('Alternar tema claro / oscuro'),
                       ),
-                    );
-                  }).toList(),
+                    ),
+                    const SizedBox(height: 14),
+                    AppButton.primary(
+                      label: 'Cerrar sesión',
+                      icon: Icons.logout_rounded,
+                      onPressed: () => context.read<AuthProvider>().logout(),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          SwitchListTile.adaptive(
-            value: appState.themeMode == ThemeMode.dark,
-            onChanged: (_) => appState.toggleThemeMode(),
-            title: const Text('Modo oscuro'),
-            subtitle: const Text('Alternar tema claro/oscuro'),
-          ),
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
-            onPressed: () => context.read<AuthProvider>().logout(),
-            icon: const Icon(Icons.logout_rounded),
-            label: const Text('Cerrar sesión'),
-          ),
-        ],
-      ),
     );
   }
 
-  String _initials(String name) {
-    final clean = name.trim();
-    if (clean.isEmpty) return 'U';
-    final parts = clean.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
-    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return (parts[0][0] + parts[1][0]).toUpperCase();
+  Widget _buildAvatar(String name) {
+    final raw = (_partner['image_1920'] ?? '').toString();
+    if (raw.isEmpty) return AppAvatar(name: name, size: 54);
+    try {
+      final bytes = base64Decode(raw);
+      return CircleAvatar(
+        radius: 27,
+        backgroundImage: MemoryImage(Uint8List.fromList(bytes)),
+      );
+    } catch (_) {
+      return AppAvatar(name: name, size: 54);
+    }
   }
 
-  Widget _sectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
-    );
-  }
-
-  Widget _statusTile(String label, bool value) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceCard,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.divider.withValues(alpha: 0.5)),
-      ),
+  Widget _buildCvCard() {
+    final cvRef = _partner['cv_attachment_id'];
+    final cvId = (cvRef is List && cvRef.isNotEmpty) ? (cvRef.first as num).toInt() : null;
+    final cvName = (_partner['cv_attachment_name'] ?? 'CV').toString();
+    return AppCard(
       child: Row(
         children: [
-          Icon(
-            value ? Icons.check_circle_rounded : Icons.cancel_rounded,
-            size: 18,
-            color: value ? AppTheme.success : AppTheme.danger,
-          ),
+          const Icon(Icons.description_rounded),
           const SizedBox(width: 8),
-          Expanded(child: Text(label)),
+          Expanded(
+            child: Text(
+              cvId == null ? 'No hay CV cargado' : cvName,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          if (cvId != null)
+            TextButton(
+              onPressed: () async {
+                try {
+                  final local = await _attachments.fetchAttachmentToCache(
+                    attachmentId: cvId,
+                    defaultName: cvName,
+                  );
+                  if (!mounted) return;
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => DocumentViewerScreen(
+                        file: local.file,
+                        title: local.name,
+                        mimeType: local.mimeType,
+                      ),
+                    ),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text('No se pudo abrir el CV: $e')));
+                }
+              },
+              child: const Text('Ver'),
+            ),
         ],
       ),
     );
   }
 }
+
+class _InfoTile extends StatelessWidget {
+  const _InfoTile({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: AppCard(
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(label, style: const TextStyle(color: AppTheme.textSecondary)),
+            ),
+            Text(value, style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

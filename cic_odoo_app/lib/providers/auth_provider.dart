@@ -1,12 +1,17 @@
 import 'package:flutter/foundation.dart';
+
+import '../auth/core/auth_models.dart';
+import '../auth/services/auth_service.dart';
 import '../config/app_config.dart';
 import '../services/odoo_service.dart';
 
 enum AuthState { initial, loading, authenticated, unauthenticated, error }
 
-/// Provider de autenticación. Gestiona login, logout y auto-login.
+/// Provider de autenticación de UI. Mantiene compatibilidad con la app existente
+/// delegando en AuthService + proveedores desacoplados.
 class AuthProvider extends ChangeNotifier {
   final OdooService _odoo = OdooService();
+  final OdooAuthService _authService = OdooAuthService();
 
   AuthState _state = AuthState.initial;
   String? _errorMessage;
@@ -33,24 +38,27 @@ class AuthProvider extends ChangeNotifier {
     if (unidad is List && unidad.length >= 2) return unidad[1].toString();
     return '';
   }
+
   bool get isAdmin {
     final login = userLogin.toLowerCase();
     final name = userName.toLowerCase();
     return login == 'admin' || name.contains('admin');
   }
+
   bool get hasIntranetAccess =>
       isAdmin || (accesoIntranet && accesoCalidad && portalCalidadHabilitado);
+
   Map<String, bool> get portalPermissions => {
         'Incidencias': _partnerProfile['permiso_incidencias_ver'] == true,
         'Formación': _partnerProfile['permiso_formacion_ver'] == true,
         'Documentos': _partnerProfile['permiso_documentos_ver'] == true,
         'Salud': _partnerProfile['permiso_salud_ver'] == true,
-      'Comunicaciones': _partnerProfile['permiso_comunicaciones_ver'] == true,
-      'Proveedores': _partnerProfile['permiso_proveedores_ver'] == true,
-      'Normativa': _partnerProfile['permiso_normativa_ver'] == true,
-      'Equipos': _partnerProfile['permiso_equipos_ver'] == true,
-      'Químicos': _partnerProfile['permiso_quimicos_ver'] == true,
-    };
+        'Comunicaciones': _partnerProfile['permiso_comunicaciones_ver'] == true,
+        'Proveedores': _partnerProfile['permiso_proveedores_ver'] == true,
+        'Normativa': _partnerProfile['permiso_normativa_ver'] == true,
+        'Equipos': _partnerProfile['permiso_equipos_ver'] == true,
+        'Químicos': _partnerProfile['permiso_quimicos_ver'] == true,
+      };
   int get enabledPortalPermissions => portalPermissions.values.where((e) => e).length;
 
   bool canViewModule(String moduleKey) {
@@ -62,6 +70,7 @@ class AuthProvider extends ChangeNotifier {
       'training': 'permiso_formacion_ver',
       'elearning': 'permiso_formacion_ver',
       'documents': 'permiso_documentos_ver',
+      'reservas': null,
       'planning': null,
       'health': 'permiso_salud_ver',
       'communications': 'permiso_comunicaciones_ver',
@@ -90,7 +99,7 @@ class AuthProvider extends ChangeNotifier {
     _state = AuthState.loading;
     notifyListeners();
 
-    final success = await _odoo.tryAutoLogin();
+    final success = await _authService.restoreSession();
     if (_serverUrl.isEmpty) _serverUrl = AppConfig.odooBaseUrl;
     if (_database.isEmpty) _database = AppConfig.odooDatabaseName;
     if (success) {
@@ -102,7 +111,10 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Login manual.
+  /// Alias semántico para restaurar sesión al abrir app.
+  Future<void> restoreSession() => tryAutoLogin();
+
+  /// Login manual clásico (usuario + contraseña).
   Future<bool> login({
     required String login,
     required String password,
@@ -115,48 +127,58 @@ class AuthProvider extends ChangeNotifier {
 
     _serverUrl = serverUrl.trim();
     _database = database.trim();
+
     if (_serverUrl.isEmpty || _database.isEmpty) {
       _state = AuthState.error;
       _errorMessage = 'Servidor y base de datos son obligatorios.';
       notifyListeners();
       return false;
     }
-    _odoo.init(baseUrl: _serverUrl);
 
-    final success =
-        await _odoo.authenticate(login, password, database: _database);
+    final request = AuthLoginRequest(
+      login: login,
+      password: password,
+      serverUrl: _serverUrl,
+      database: _database,
+    );
 
-    if (success) {
+    final result = await _authService.authenticate(request);
+
+    if (result.success) {
       await _loadPartnerProfile();
       _state = AuthState.authenticated;
+      _errorMessage = null;
     } else {
       _partnerProfile = const {};
       _state = AuthState.error;
-      final rawError = (_odoo.lastAuthError ?? '').toLowerCase();
+      final rawError = (result.errorMessage ?? '').toLowerCase();
       final isLikelyCors = kIsWeb &&
           (rawError.contains('xmlhttprequest') ||
               rawError.contains('failed to fetch') ||
               rawError.contains('networkerror'));
       _errorMessage = isLikelyCors
           ? 'Bloqueo CORS del navegador: el servidor Odoo no permite peticiones desde localhost.'
-          : (_odoo.lastAuthError?.isNotEmpty == true
-              ? 'Error autenticando: ${_odoo.lastAuthError}'
+          : (result.errorMessage?.isNotEmpty == true
+              ? result.errorMessage
               : 'Credenciales incorrectas o servidor no disponible.');
     }
     notifyListeners();
-    return success;
+    return result.success;
   }
 
   /// Cierra sesión.
   Future<void> logout() async {
     try {
-      await _odoo.logout();
+      await _authService.destroySession();
     } catch (_) {}
     _partnerProfile = const {};
     _state = AuthState.unauthenticated;
     _errorMessage = null;
     notifyListeners();
   }
+
+  /// Carga usuario actual desde la sesión activa.
+  Future<AuthUser?> loadCurrentUser() => _authService.loadCurrentUser();
 
   Future<void> _loadPartnerProfile() async {
     if (partnerId <= 0) {

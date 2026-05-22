@@ -12,6 +12,11 @@ Use dart defines per environment:
 - `SENTRY_DSN` (optional, recomendado prod)
 - `SENTRY_ENV` (optional, e.g. production/staging)
 - `SENTRY_TRACES_SAMPLE_RATE` (optional, e.g. 0.1)
+- `USE_OAUTH` (`true|false`)
+- `OAUTH_CLIENT_ID` (required if `USE_OAUTH=true`)
+- `OAUTH_DISCOVERY_URL` (required if `USE_OAUTH=true`)
+- `OAUTH_REDIRECT_URL` (default `app://auth/callback`)
+- `OAUTH_SCOPES` (default `openid profile email offline_access`)
 
 Example:
 
@@ -29,8 +34,10 @@ Important:
 - Always provide `ODOO_BASE_URL` and `ODOO_DATABASE` via `--dart-define`.
 
 ## Security
-- Password is stored in secure storage (`flutter_secure_storage`).
-- Login/database/url are stored in preferences for convenience.
+- Password persistence has been removed.
+- Odoo session snapshot is stored in secure storage (`flutter_secure_storage`).
+- Login/database/url metadata are stored in preferences for convenience.
+- OAuth tokens are stored in secure storage only.
 
 ## Runtime resilience
 - RPC calls include timeout + retry strategy.

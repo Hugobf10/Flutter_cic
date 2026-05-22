@@ -6,15 +6,19 @@ import '../../features/communications/communications_screen.dart';
 import '../../features/equipment/equipment_screen.dart';
 import '../../features/health/health_screen.dart';
 import '../../features/normativa/normativa_screen.dart';
-import '../../features/planning/planning_screen.dart';
+import '../../features/payroll/payroll_screen.dart';
 import '../../features/permissions/permissions_center_screen.dart';
 import '../../features/suggestions/suggestions_screen.dart';
 import '../../features/suppliers/suppliers_screen.dart';
 import '../../features/training/training_screen.dart';
 import '../../features/quality/quality_center_screen.dart';
+import '../../features/recruitment/recruitment_screen.dart';
+import '../../features/goals/goals_screen.dart';
+import '../../features/action_plans/action_plans_screen.dart';
 import '../../screens/documentos/documentos_screen.dart';
 import '../../screens/home/home_screen.dart';
 import '../../screens/incidencias/incidencias_screen.dart';
+import '../../screens/reservas/reservas_screen.dart';
 
 class ModuleRouter {
   static Widget build(String moduleKey, String title) {
@@ -31,7 +35,13 @@ class ModuleRouter {
       case 'elearning':
         return const TrainingScreen();
       case 'planning':
-        return const PlanningScreen();
+        return const ActionPlansScreen();
+      case 'reservas':
+        return const ReservasScreen();
+      case 'goals':
+        return const GoalsScreen();
+      case 'payroll':
+        return const PayrollScreen();
       case 'health':
         return const HealthScreen();
       case 'normative':
@@ -54,8 +64,9 @@ class ModuleRouter {
       case 'portal':
       case 'organization':
       case 'purchases':
-      case 'recruitment':
         return ModulePlaceholderScreen(title: title);
+      case 'recruitment':
+        return const RecruitmentScreen();
       default:
         return ModulePlaceholderScreen(title: title);
     }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:open_filex/open_filex.dart';
 
+import '../../app/screens/document_viewer_screen.dart';
 import '../../features/forms/dynamic_form.dart';
+import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
 import '../../theme/app_theme.dart';
 
@@ -13,6 +16,7 @@ class ChemicalsScreen extends StatefulWidget {
 
 class _ChemicalsScreenState extends State<ChemicalsScreen> {
   final OdooService _odoo = OdooService();
+  final AttachmentService _attachments = AttachmentService();
   bool _loading = true;
   String? _error;
   List<Map<String, dynamic>> _rows = [];
@@ -31,7 +35,15 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
     try {
       final rows = await _odoo.searchRead(
         'calidad.quimico',
-        fields: const ['name', 'tipo', 'codigo', 'fecha_caducidad', 'es_peligroso', 'unidad_id'],
+        fields: const [
+          'name',
+          'tipo',
+          'codigo',
+          'fecha_caducidad',
+          'es_peligroso',
+          'unidad_id',
+          'ficha_seguridad_attachment_id',
+        ],
         order: 'fecha_caducidad asc, id desc',
         limit: 160,
       );
@@ -114,10 +126,78 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
                               Text('Caducidad: ${it['fecha_caducidad']}', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
                             if (unidad.isNotEmpty)
                               Text('Unidad: $unidad', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                OutlinedButton.icon(
+                                  onPressed: () => _openDetails(it),
+                                  icon: const Icon(Icons.info_outline_rounded, size: 16),
+                                  label: const Text('Detalle'),
+                                ),
+                                const SizedBox(width: 8),
+                                OutlinedButton.icon(
+                                  onPressed: () => _openSafetySheet(it),
+                                  icon: const Icon(Icons.description_outlined, size: 16),
+                                  label: const Text('Ficha'),
+                                ),
+                              ],
+                            ),
                           ]),
                         );
                       },
                     ),
     );
+  }
+
+  Future<void> _openDetails(Map<String, dynamic> it) async {
+    if (!mounted) return;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text((it['name'] ?? '').toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            Text('Código: ${(it['codigo'] ?? '-')}'),
+            Text('Tipo: ${(it['tipo'] ?? '-')}'),
+            Text('Peligroso: ${it['es_peligroso'] == true ? 'Sí' : 'No'}'),
+            Text('Caducidad: ${(it['fecha_caducidad'] ?? '-')}'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openSafetySheet(Map<String, dynamic> it) async {
+    try {
+      final ficha = it['ficha_seguridad_attachment_id'];
+      final int? attachmentId = ficha is List && ficha.isNotEmpty
+          ? ficha.first as int
+          : (ficha is int ? ficha : null);
+      if (attachmentId == null) {
+        throw Exception('No hay fichas de seguridad adjuntas.');
+      }
+      final file = await _attachments.fetchAttachmentToCache(
+        attachmentId: attachmentId,
+        defaultName: 'ficha_seguridad_${it['id']}',
+      );
+      if (!mounted) return;
+      if (file.mimeType.contains('pdf') || file.mimeType.startsWith('image/')) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => DocumentViewerScreen(file: file.file, title: file.name, mimeType: file.mimeType),
+          ),
+        );
+      } else {
+        await OpenFilex.open(file.file.path);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo abrir la ficha: $e')));
+    }
   }
 }

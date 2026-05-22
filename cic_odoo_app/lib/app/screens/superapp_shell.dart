@@ -9,7 +9,9 @@ import '../../screens/documentos/documentos_screen.dart';
 import '../../screens/home/home_screen.dart';
 import '../../screens/incidencias/incidencias_screen.dart';
 import '../../screens/reservas/reservas_screen.dart';
+import '../../theme/app_theme.dart';
 import '../providers/app_state_provider.dart';
+import '../ui/app_components.dart';
 import 'approvals_inbox_screen.dart';
 import 'modules_hub_screen.dart';
 import 'notifications_screen.dart';
@@ -25,11 +27,10 @@ class SuperAppShell extends StatefulWidget {
 class _SuperAppShellState extends State<SuperAppShell> {
   int _index = 0;
 
-  static const _labels = ['Inicio', 'Módulos', 'Reservas', 'Avisos', 'Perfil'];
+  static const _labels = ['Inicio', 'Módulos', 'Actividad', 'Perfil'];
   static const _icons = [
     Icons.home_rounded,
     Icons.grid_view_rounded,
-    Icons.calendar_month_rounded,
     Icons.notifications_none_rounded,
     Icons.account_circle_rounded,
   ];
@@ -37,7 +38,6 @@ class _SuperAppShellState extends State<SuperAppShell> {
   final _pages = const [
     HomeScreen(),
     ModulesHubScreen(),
-    ReservasScreen(),
     NotificationsScreen(),
     ProfileScreen(),
   ];
@@ -63,17 +63,21 @@ class _SuperAppShellState extends State<SuperAppShell> {
             body: IndexedStack(index: _index, children: _pages),
             floatingActionButton: FloatingActionButton(
               onPressed: _openQuickActions,
+              backgroundColor: AppTheme.primary,
+              foregroundColor: Colors.white,
               child: const Icon(Icons.add_rounded),
             ),
-            bottomNavigationBar: NavigationBar(
-              selectedIndex: _index,
-              onDestinationSelected: (v) => setState(() => _index = v),
-              destinations: List.generate(_labels.length, (i) {
-                final baseIcon = Icon(_icons[i]);
-                final icon = i == 3 && unread > 0
-                    ? Badge.count(count: unread > 99 ? 99 : unread, child: baseIcon)
-                    : baseIcon;
-                return NavigationDestination(icon: icon, label: _labels[i]);
+            bottomNavigationBar: AppBottomNavigation(
+              currentIndex: _index,
+              onTap: (v) => setState(() => _index = v),
+              items: List.generate(_labels.length, (i) {
+                final badge = i == 2 && unread > 0
+                    ? Badge.count(
+                        count: unread > 99 ? 99 : unread,
+                        child: Icon(_icons[i], size: 20, color: i == _index ? AppTheme.primary : AppTheme.textSecondary),
+                      )
+                    : null;
+                return (label: _labels[i], icon: _icons[i], badge: badge);
               }),
             ),
           );
@@ -88,28 +92,37 @@ class _SuperAppShellState extends State<SuperAppShell> {
           body: Row(
             children: [
               Container(
-                width: 240,
+                width: 248,
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
-                  border: Border(right: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.5))),
+                  border: Border(right: BorderSide(color: Theme.of(context).dividerColor)),
                 ),
                 child: Column(
                   children: [
                     const SizedBox(height: 24),
                     _buildBrand(context),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 14),
                     ...List.generate(_labels.length, (i) {
                       final selected = _index == i;
                       return ListTile(
-                        leading: i == 3 && unread > 0
+                        leading: i == 2 && unread > 0
                             ? Badge.count(count: unread > 99 ? 99 : unread, child: Icon(_icons[i]))
                             : Icon(_icons[i]),
                         title: Text(_labels[i]),
                         selected: selected,
                         onTap: () => setState(() => _index = i),
+                        selectedColor: AppTheme.primary,
+                        iconColor: selected ? AppTheme.primary : AppTheme.textSecondary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       );
                     }),
+                    ListTile(
+                      leading: const Icon(Icons.calendar_month_rounded),
+                      title: const Text('Reservas'),
+                      onTap: () {
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReservasScreen()));
+                      },
+                    ),
                     const Spacer(),
                     Padding(
                       padding: const EdgeInsets.all(16),
@@ -180,7 +193,7 @@ class _SuperAppShellState extends State<SuperAppShell> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
+              border: Border.all(color: Theme.of(context).dividerColor),
             ),
             child: Row(
               children: [
@@ -201,11 +214,11 @@ class _SuperAppShellState extends State<SuperAppShell> {
       child: Row(
         children: [
           Container(
-            width: 28,
-            height: 28,
+            width: 30,
+            height: 30,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(Icons.hexagon_rounded, color: Theme.of(context).colorScheme.primary, size: 18),
           ),
@@ -222,7 +235,7 @@ class _SuperAppShellState extends State<SuperAppShell> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.4)),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         children: [

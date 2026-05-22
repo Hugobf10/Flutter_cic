@@ -244,7 +244,7 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Accede con tu cuenta de Odoo',
+                  'Accede con tu cuenta corporativa',
                   style: TextStyle(
                     fontSize: 13,
                     color: AppTheme.textMuted,
@@ -252,7 +252,6 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
                 const SizedBox(height: 28),
 
-                // Email
                 TextFormField(
                   controller: _loginController,
                   keyboardType: TextInputType.emailAddress,
@@ -267,8 +266,6 @@ class _LoginScreenState extends State<LoginScreen>
                       (v == null || v.isEmpty) ? 'Introduce tu email' : null,
                 ),
                 const SizedBox(height: 16),
-
-                // Password
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
@@ -395,7 +392,7 @@ class _LoginScreenState extends State<LoginScreen>
                   const SizedBox(height: 16),
                 ],
 
-                // Botón Login
+                // Botones Login
                 SizedBox(
                   height: 54,
                   child: ElevatedButton(
@@ -418,7 +415,7 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           )
                         : const Text(
-                            'Acceder',
+                            'Entrar',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
