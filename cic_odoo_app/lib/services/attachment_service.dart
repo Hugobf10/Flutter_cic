@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'app_permission_service.dart';
 import 'odoo_service.dart';
 
 class LocalDocument {
@@ -24,11 +25,13 @@ class PickedUploadFile {
     required this.name,
     required this.mimeType,
     required this.base64Data,
+    required this.bytes,
   });
 
   final String name;
   final String mimeType;
   final String base64Data;
+  final Uint8List bytes;
 }
 
 class AttachmentService {
@@ -46,6 +49,7 @@ class AttachmentService {
       name: file.name,
       mimeType: _inferMimeType(file.name),
       base64Data: base64Encode(bytes),
+      bytes: bytes,
     );
   }
 
@@ -63,6 +67,7 @@ class AttachmentService {
       name: file.name,
       mimeType: 'application/pdf',
       base64Data: base64Encode(bytes),
+      bytes: bytes,
     );
   }
 
@@ -70,6 +75,7 @@ class AttachmentService {
     required int attachmentId,
     required String defaultName,
   }) async {
+    await AppPermissionService.requestDownloads();
     final data = await _odoo.read(
       'ir.attachment',
       attachmentId,
@@ -91,16 +97,13 @@ class AttachmentService {
     required String resModel,
     required int resId,
   }) async {
-    return _odoo.create(
-      'ir.attachment',
-      {
-        'name': name,
-        'mimetype': mimeType,
-        'datas': base64Data,
-        'res_model': resModel,
-        'res_id': resId,
-      },
-    );
+    return _odoo.create('ir.attachment', {
+      'name': name,
+      'mimetype': mimeType,
+      'datas': base64Data,
+      'res_model': resModel,
+      'res_id': resId,
+    });
   }
 
   Future<File> _writeCacheFile({

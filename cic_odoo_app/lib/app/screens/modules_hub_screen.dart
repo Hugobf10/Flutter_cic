@@ -119,6 +119,7 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
       'suggestions',
       'communications',
       'suppliers',
+      'purchases',
       'recruitment',
     };
     return modules.where((m) => allowed.contains(m.key) && auth.canViewModule(m.key)).toList();

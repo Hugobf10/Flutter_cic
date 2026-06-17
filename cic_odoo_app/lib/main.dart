@@ -17,31 +17,51 @@ import 'theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await MonitoringService.init();
-  runZonedGuarded(() {
-    FlutterError.onError = (details) {
-      FlutterError.presentError(details);
-      AppLogger.error(
-        'FlutterError capturado',
-        error: details.exception,
-        stackTrace: details.stack,
+  runZonedGuarded(
+    () {
+      FlutterError.onError = (details) {
+        FlutterError.presentError(details);
+        AppLogger.error(
+          'FlutterError capturado',
+          error: details.exception,
+          stackTrace: details.stack,
+          scope: 'bootstrap',
+        );
+      };
+      PlatformDispatcher.instance.onError = (error, stack) {
+        AppLogger.error(
+          'Error no controlado de plataforma',
+          error: error,
+          stackTrace: stack,
+          scope: 'bootstrap',
+        );
+        return true;
+      };
+      ErrorWidget.builder = (FlutterErrorDetails details) =>
+          const _FatalWidget();
+      SystemChrome.setSystemUIOverlayStyle(
+        const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          systemNavigationBarIconBrightness: Brightness.dark,
+        ),
+      );
+      AppLogger.info(
+        'App iniciada',
+        data: {'app': AppConfig.appName, 'env': AppConfig.odooBaseUrl},
         scope: 'bootstrap',
       );
-    };
-    PlatformDispatcher.instance.onError = (error, stack) {
-      AppLogger.error('Error no controlado de plataforma', error: error, stackTrace: stack, scope: 'bootstrap');
-      return true;
-    };
-    ErrorWidget.builder = (FlutterErrorDetails details) => const _FatalWidget();
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    ));
-    AppLogger.info('App iniciada', data: {'app': AppConfig.appName, 'env': AppConfig.odooBaseUrl}, scope: 'bootstrap');
-    runApp(const CicSuperApp());
-  }, (error, stack) {
-    AppLogger.error('Error de zona no capturado', error: error, stackTrace: stack, scope: 'bootstrap');
-  });
+      runApp(const CicSuperApp());
+    },
+    (error, stack) {
+      AppLogger.error(
+        'Error de zona no capturado',
+        error: error,
+        stackTrace: stack,
+        scope: 'bootstrap',
+      );
+    },
+  );
 }
 
 class CicSuperApp extends StatelessWidget {
@@ -119,14 +139,25 @@ class _SplashScreen extends StatelessWidget {
             Container(
               width: 72,
               height: 72,
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                gradient: AppTheme.primaryGradient,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.divider),
               ),
-              child: const Icon(Icons.hexagon_rounded, color: Colors.white, size: 34),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  'assets/branding/cic_logo.png',
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
             const SizedBox(height: 16),
-            Text('CIC SuperApp', style: Theme.of(context).textTheme.headlineMedium),
+            Text(
+              'CIC SuperApp',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
             const SizedBox(height: 14),
             const SizedBox(
               width: 26,
@@ -153,7 +184,11 @@ class _FatalWidget extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: const [
-              Icon(Icons.error_outline_rounded, color: AppTheme.danger, size: 42),
+              Icon(
+                Icons.error_outline_rounded,
+                color: AppTheme.danger,
+                size: 42,
+              ),
               SizedBox(height: 10),
               Text(
                 'Ha ocurrido un error inesperado.',
@@ -184,9 +219,16 @@ class _NoIntranetAccessScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.lock_person_rounded, size: 44, color: AppTheme.warning),
+              const Icon(
+                Icons.lock_person_rounded,
+                size: 44,
+                color: AppTheme.warning,
+              ),
               const SizedBox(height: 10),
-              const Text('Sin acceso a intranet', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
+              const Text(
+                'Sin acceso a intranet',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+              ),
               const SizedBox(height: 6),
               const Text(
                 'Tu usuario no tiene habilitado el portal de calidad. Contacta con administración.',

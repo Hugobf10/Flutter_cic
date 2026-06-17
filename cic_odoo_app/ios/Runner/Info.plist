@@ -22,8 +22,6 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
-	<key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -37,8 +35,22 @@
 			</array>
 		</dict>
 	</array>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_dartVmService._tcp</string>
+	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Esta app necesita acceso a la red local para depuración Flutter en desarrollo.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Usamos la cámara para escanear códigos de barras de productos y pedidos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Usamos tus fotos para actualizar la imagen de perfil y adjuntar documentos.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Permitimos guardar documentos descargados desde la intranet.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

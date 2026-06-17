@@ -8,6 +8,7 @@ import '../../features/health/health_screen.dart';
 import '../../features/normativa/normativa_screen.dart';
 import '../../features/payroll/payroll_screen.dart';
 import '../../features/permissions/permissions_center_screen.dart';
+import '../../features/purchases/purchases_screen.dart';
 import '../../features/suggestions/suggestions_screen.dart';
 import '../../features/suppliers/suppliers_screen.dart';
 import '../../features/training/training_screen.dart';
@@ -63,8 +64,9 @@ class ModuleRouter {
       case 'maintenance':
       case 'portal':
       case 'organization':
-      case 'purchases':
         return ModulePlaceholderScreen(title: title);
+      case 'purchases':
+        return const PurchasesScreen();
       case 'recruitment':
         return const RecruitmentScreen();
       default:

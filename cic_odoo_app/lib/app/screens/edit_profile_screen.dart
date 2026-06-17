@@ -1,14 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../services/attachment_service.dart';
+import '../../services/app_permission_service.dart';
 import '../../services/odoo_service.dart';
 import '../ui/app_components.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({
-    super.key,
-    required this.partnerData,
-  });
+  const EditProfileScreen({super.key, required this.partnerData});
 
   final Map<String, dynamic> partnerData;
 
@@ -19,6 +20,7 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final OdooService _odoo = OdooService();
   final AttachmentService _attachments = AttachmentService();
+  final ImagePicker _imagePicker = ImagePicker();
 
   late final TextEditingController _nameCtrl;
   late final TextEditingController _emailCtrl;
@@ -30,7 +32,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _saving = false;
   String? _cvName;
   String? _cvData;
-  String? _cvMimeType;
   String? _avatarData;
 
   int get _partnerId => (widget.partnerData['id'] as num).toInt();
@@ -38,12 +39,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _nameCtrl = TextEditingController(text: (widget.partnerData['name'] ?? '').toString());
-    _emailCtrl = TextEditingController(text: (widget.partnerData['email'] ?? '').toString());
-    _phoneCtrl = TextEditingController(text: (widget.partnerData['phone'] ?? '').toString());
-    _mobileCtrl = TextEditingController(text: (widget.partnerData['mobile'] ?? '').toString());
-    _positionCtrl = TextEditingController(text: (widget.partnerData['function'] ?? '').toString());
-    _notesCtrl = TextEditingController(text: (widget.partnerData['comment'] ?? '').toString());
+    _nameCtrl = TextEditingController(
+      text: (widget.partnerData['name'] ?? '').toString(),
+    );
+    _emailCtrl = TextEditingController(
+      text: (widget.partnerData['email'] ?? '').toString(),
+    );
+    _phoneCtrl = TextEditingController(
+      text: (widget.partnerData['phone'] ?? '').toString(),
+    );
+    _mobileCtrl = TextEditingController(
+      text: (widget.partnerData['mobile'] ?? '').toString(),
+    );
+    _positionCtrl = TextEditingController(
+      text: (widget.partnerData['function'] ?? '').toString(),
+    );
+    _notesCtrl = TextEditingController(
+      text: (widget.partnerData['comment'] ?? '').toString(),
+    );
   }
 
   @override
@@ -63,40 +76,46 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() {
       _cvName = file.name;
       _cvData = file.base64Data;
-      _cvMimeType = file.mimeType;
     });
   }
 
   Future<void> _pickAvatar() async {
-    final file = await _attachments.pickAnyFile();
-    if (file == null || !file.mimeType.startsWith('image/')) {
+    final granted = await AppPermissionService.requestPhotos();
+    if (!granted) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecciona una imagen válida.')),
+        const SnackBar(
+          content: Text('Necesitamos permiso de Fotos para cambiar la imagen.'),
+        ),
       );
       return;
     }
-    setState(() => _avatarData = file.base64Data);
+    final image = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 86,
+      maxWidth: 1400,
+      maxHeight: 1400,
+    );
+    if (image == null) return;
+    final bytes = await image.readAsBytes();
+    if (bytes.isEmpty) return;
+    setState(() => _avatarData = base64Encode(bytes));
   }
 
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
-      await _odoo.write(
-        'res.partner',
-        _partnerId,
-        {
-          'name': _nameCtrl.text.trim(),
-          'email': _emailCtrl.text.trim(),
-          'phone': _phoneCtrl.text.trim(),
-          'mobile': _mobileCtrl.text.trim(),
-          'function': _positionCtrl.text.trim(),
-          'comment': _notesCtrl.text.trim(),
-          if (_avatarData != null) 'image_1920': _avatarData,
-          if (_cvData != null) 'cv_attachment_name': _cvName ?? 'CV.pdf',
-          if (_cvData != null) 'cv_attachment_data': _cvData,
-        },
-      );
+      await _odoo.write('res.partner', _partnerId, {
+        'name': _nameCtrl.text.trim(),
+        'email': _emailCtrl.text.trim(),
+        'phone': _phoneCtrl.text.trim(),
+        'mobile': _mobileCtrl.text.trim(),
+        'function': _positionCtrl.text.trim(),
+        'comment': _notesCtrl.text.trim(),
+        if (_avatarData != null) 'image_1920': _avatarData,
+        if (_cvData != null) 'cv_attachment_name': _cvName ?? 'CV.pdf',
+        if (_cvData != null) 'cv_attachment_data': _cvData,
+      });
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -105,9 +124,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo guardar: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo guardar: $e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -115,7 +134,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentCv = (widget.partnerData['cv_attachment_name'] ?? '').toString();
+    final currentCv = (widget.partnerData['cv_attachment_name'] ?? '')
+        .toString();
     return AppScaffold(
       title: 'Editar perfil',
       child: ListView(
@@ -128,17 +148,41 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               onPressed: _saving ? null : _pickAvatar,
             ),
           ),
-          AppInput(controller: _nameCtrl, labelText: 'Nombre completo', prefixIcon: Icons.person_outline_rounded),
+          AppInput(
+            controller: _nameCtrl,
+            labelText: 'Nombre completo',
+            prefixIcon: Icons.person_outline_rounded,
+          ),
           const SizedBox(height: 10),
-          AppInput(controller: _emailCtrl, labelText: 'Correo electrónico', prefixIcon: Icons.mail_outline_rounded),
+          AppInput(
+            controller: _emailCtrl,
+            labelText: 'Correo electrónico',
+            prefixIcon: Icons.mail_outline_rounded,
+          ),
           const SizedBox(height: 10),
-          AppInput(controller: _phoneCtrl, labelText: 'Teléfono', prefixIcon: Icons.phone_outlined),
+          AppInput(
+            controller: _phoneCtrl,
+            labelText: 'Teléfono',
+            prefixIcon: Icons.phone_outlined,
+          ),
           const SizedBox(height: 10),
-          AppInput(controller: _mobileCtrl, labelText: 'Móvil', prefixIcon: Icons.smartphone_rounded),
+          AppInput(
+            controller: _mobileCtrl,
+            labelText: 'Móvil',
+            prefixIcon: Icons.smartphone_rounded,
+          ),
           const SizedBox(height: 10),
-          AppInput(controller: _positionCtrl, labelText: 'Puesto', prefixIcon: Icons.badge_outlined),
+          AppInput(
+            controller: _positionCtrl,
+            labelText: 'Puesto',
+            prefixIcon: Icons.badge_outlined,
+          ),
           const SizedBox(height: 10),
-          AppInput(controller: _notesCtrl, labelText: 'Notas', prefixIcon: Icons.notes_rounded),
+          AppInput(
+            controller: _notesCtrl,
+            labelText: 'Notas',
+            prefixIcon: Icons.notes_rounded,
+          ),
           const SizedBox(height: 16),
           const AppSectionHeader(title: 'Currículum'),
           AppCard(
@@ -148,7 +192,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    _cvName ?? (currentCv.isEmpty ? 'Sin CV cargado' : currentCv),
+                    _cvName ??
+                        (currentCv.isEmpty ? 'Sin CV cargado' : currentCv),
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),

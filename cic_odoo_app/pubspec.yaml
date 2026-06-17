@@ -45,6 +45,11 @@ dependencies:
   path_provider: ^2.1.5
   open_filex: ^4.6.0
   syncfusion_flutter_pdfviewer: ^28.2.12
+  flutter_svg: ^2.3.0
+  image_picker: ^1.2.2
+  permission_handler: ^12.0.1
+  mobile_scanner: ^7.2.0
+  syncfusion_flutter_pdf: ^28.2.12
 
 dev_dependencies:
   flutter_test:
@@ -67,6 +72,10 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/branding/logo_cic.svg
+    - assets/branding/cic_logo.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
