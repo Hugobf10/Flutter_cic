@@ -37,7 +37,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
         domain: [
           '|',
           ['responsable_id', '=', auth.partnerId],
-          ['partner_id', '=', auth.partnerId]
+          ['partner_id', '=', auth.partnerId],
         ],
         fields: const [
           'name',
@@ -72,16 +72,29 @@ class _GoalsScreenState extends State<GoalsScreen> {
       showDragHandle: true,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModal) => Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + MediaQuery.of(ctx).viewInsets.bottom),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            16 + MediaQuery.of(ctx).viewInsets.bottom,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              AppInput(controller: nameCtrl, labelText: 'Nombre del objetivo', prefixIcon: Icons.flag_outlined),
+              AppInput(
+                controller: nameCtrl,
+                labelText: 'Nombre del objetivo',
+                prefixIcon: Icons.flag_outlined,
+              ),
               const SizedBox(height: 8),
-              AppInput(controller: descCtrl, labelText: 'Descripción', prefixIcon: Icons.notes_rounded),
+              AppInput(
+                controller: descCtrl,
+                labelText: 'Descripción',
+                prefixIcon: Icons.notes_rounded,
+              ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: tipo,
+                initialValue: tipo,
                 items: const [
                   DropdownMenuItem(value: 'calidad', child: Text('Calidad')),
                   DropdownMenuItem(value: 'prl', child: Text('PRL')),
@@ -91,11 +104,20 @@ class _GoalsScreenState extends State<GoalsScreen> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: estado,
+                initialValue: estado,
                 items: const [
-                  DropdownMenuItem(value: 'pendiente', child: Text('Pendiente')),
-                  DropdownMenuItem(value: 'en_proceso', child: Text('En proceso')),
-                  DropdownMenuItem(value: 'realizado', child: Text('Realizado')),
+                  DropdownMenuItem(
+                    value: 'pendiente',
+                    child: Text('Pendiente'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'en_proceso',
+                    child: Text('En proceso'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'realizado',
+                    child: Text('Realizado'),
+                  ),
                 ],
                 onChanged: (v) => setModal(() => estado = v ?? 'pendiente'),
                 decoration: const InputDecoration(labelText: 'Estado'),
@@ -131,101 +153,131 @@ class _GoalsScreenState extends State<GoalsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final completed = _rows.where((e) => (e['estado'] ?? '').toString() == 'realizado').length;
+    final auth = context.watch<AuthProvider>();
+    final completed = _rows
+        .where((e) => (e['estado'] ?? '').toString() == 'realizado')
+        .length;
     final progress = _rows.isEmpty ? 0.0 : completed / _rows.length;
     return AppScaffold(
       title: 'Objetivos',
       actions: [
-        IconButton(onPressed: _createGoal, icon: const Icon(Icons.add_rounded)),
+        if (auth.canEditModule('goals'))
+          IconButton(
+            onPressed: _createGoal,
+            icon: const Icon(Icons.add_rounded),
+          ),
         IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
       ],
       child: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? AppEmptyState(title: 'Error', subtitle: _error!, icon: Icons.error_outline_rounded)
-              : ListView(
-                  children: [
-                    AppCard(
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 72,
-                            height: 72,
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                CircularProgressIndicator(
-                                  value: progress,
-                                  strokeWidth: 8,
-                                  backgroundColor: AppTheme.surfaceElevated,
+          ? AppEmptyState(
+              title: 'Error',
+              subtitle: _error!,
+              icon: Icons.error_outline_rounded,
+            )
+          : ListView(
+              children: [
+                AppCard(
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 72,
+                        height: 72,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            CircularProgressIndicator(
+                              value: progress,
+                              strokeWidth: 8,
+                              backgroundColor: AppTheme.surfaceElevated,
+                            ),
+                            Center(
+                              child: Text(
+                                '${(progress * 100).toStringAsFixed(0)}%',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.textPrimary,
                                 ),
-                                Center(
-                                  child: Text(
-                                    '${(progress * 100).toStringAsFixed(0)}%',
-                                    style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Progreso global',
+                              style: TextStyle(color: AppTheme.textSecondary),
+                            ),
+                            Text(
+                              '$completed de ${_rows.length} objetivos',
+                              style: const TextStyle(
+                                color: AppTheme.textPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (_rows.isEmpty)
+                  const AppEmptyState(
+                    title: 'Sin objetivos',
+                    subtitle: 'Crea tu primer objetivo desde el botón +.',
+                    icon: Icons.flag_outlined,
+                  ),
+                ..._rows.map((goal) {
+                  final pct =
+                      ((goal['avance'] as num?)?.toDouble() ?? 0).clamp(
+                        0,
+                        100,
+                      ) /
+                      100;
+                  final estado = (goal['estado'] ?? 'pendiente').toString();
+                  final color = estado == 'realizado'
+                      ? AppTheme.success
+                      : estado == 'en_proceso'
+                      ? AppTheme.info
+                      : AppTheme.warning;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: AppCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  (goal['name'] ?? '').toString(),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.textPrimary,
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                              AppStatusChip(
+                                label: estado.replaceAll('_', ' '),
+                                color: color,
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Progreso global', style: TextStyle(color: AppTheme.textSecondary)),
-                                Text(
-                                  '$completed de ${_rows.length} objetivos',
-                                  style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w700),
-                                ),
-                              ],
-                            ),
-                          ),
+                          const SizedBox(height: 8),
+                          LinearProgressIndicator(value: pct, minHeight: 6),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    if (_rows.isEmpty)
-                      const AppEmptyState(
-                        title: 'Sin objetivos',
-                        subtitle: 'Crea tu primer objetivo desde el botón +.',
-                        icon: Icons.flag_outlined,
-                      ),
-                    ..._rows.map((goal) {
-                      final pct = ((goal['avance'] as num?)?.toDouble() ?? 0).clamp(0, 100) / 100;
-                      final estado = (goal['estado'] ?? 'pendiente').toString();
-                      final color = estado == 'realizado'
-                          ? AppTheme.success
-                          : estado == 'en_proceso'
-                              ? AppTheme.info
-                              : AppTheme.warning;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: AppCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      (goal['name'] ?? '').toString(),
-                                      style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
-                                    ),
-                                  ),
-                                  AppStatusChip(label: estado.replaceAll('_', ' '), color: color),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              LinearProgressIndicator(value: pct, minHeight: 6),
-                            ],
-                          ),
-                        ),
-                      );
-                    }),
-                  ],
-                ),
+                  );
+                }),
+              ],
+            ),
     );
   }
 }
-

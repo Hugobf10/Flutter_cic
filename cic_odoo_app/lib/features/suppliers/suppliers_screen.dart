@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../features/forms/dynamic_form.dart';
 import '../../features/suppliers/supplier_detail_screen.dart';
 import '../../features/workflow/workflow_stage.dart';
 import '../../features/workflow/workflow_widgets.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
 import '../../theme/app_theme.dart';
 
@@ -67,7 +69,10 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo ejecutar acción: $e'), backgroundColor: AppTheme.danger),
+        SnackBar(
+          content: Text('No se pudo ejecutar acción: $e'),
+          backgroundColor: AppTheme.danger,
+        ),
       );
     }
   }
@@ -86,14 +91,23 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
       );
       partnerOptions = rows
           .map((e) => Map<String, dynamic>.from(e as Map))
-          .map((m) => DynamicFieldOption(value: m['id'], label: m['name']?.toString() ?? 'Proveedor'))
+          .map(
+            (m) => DynamicFieldOption(
+              value: m['id'],
+              label: m['name']?.toString() ?? 'Proveedor',
+            ),
+          )
           .toList();
     } catch (_) {}
 
     if (!mounted) return;
     if (partnerOptions.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudieron cargar proveedores para crear un registro.')),
+        const SnackBar(
+          content: Text(
+            'No se pudieron cargar proveedores para crear un registro.',
+          ),
+        ),
       );
       return;
     }
@@ -104,7 +118,12 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
       showDragHandle: true,
       builder: (ctx) {
         return Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + MediaQuery.of(ctx).viewInsets.bottom),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            16 + MediaQuery.of(ctx).viewInsets.bottom,
+          ),
           child: DynamicForm(
             submitLabel: 'Crear homologación',
             fields: [
@@ -159,18 +178,30 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    final auth = context.watch<AuthProvider>();
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Proveedores'),
         actions: [
-          IconButton(onPressed: _openCreateDialog, icon: const Icon(Icons.add_rounded)),
+          if (auth.canEditModule('suppliers'))
+            IconButton(
+              onPressed: _openCreateDialog,
+              icon: const Icon(Icons.add_rounded),
+            ),
           IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
         ],
       ),
       body: _error != null
-          ? Center(child: Padding(padding: const EdgeInsets.all(16), child: Text(_error!)))
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(_error!),
+              ),
+            )
           : ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 100),
               itemCount: _rows.length,
@@ -182,11 +213,14 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                   row: row,
                   stages: _stages,
                   onAction: _runAction,
+                  canEdit: auth.canEditModule('suppliers'),
                   onTap: id == null
                       ? null
                       : () {
                           Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => SupplierDetailScreen(id: id)),
+                            MaterialPageRoute(
+                              builder: (_) => SupplierDetailScreen(id: id),
+                            ),
                           );
                         },
                 );
@@ -201,19 +235,23 @@ class _SupplierCard extends StatelessWidget {
     required this.row,
     required this.stages,
     required this.onAction,
+    required this.canEdit,
     this.onTap,
   });
 
   final Map<String, dynamic> row;
   final List<WorkflowStage> stages;
   final Future<void> Function(int id, String method) onAction;
+  final bool canEdit;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final id = (row['id'] as num).toInt();
     final estado = (row['estado'] ?? 'homologado').toString();
-    final proveedor = row['partner_id'] is List ? row['partner_id'][1].toString() : 'Proveedor';
+    final proveedor = row['partner_id'] is List
+        ? row['partner_id'][1].toString()
+        : 'Proveedor';
     final motivo = estado == 'desestimado'
         ? (row['motivo_desestimacion']?.toString() ?? '')
         : (row['motivo_homologacion']?.toString() ?? '');
@@ -231,36 +269,50 @@ class _SupplierCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: AppTheme.radiusMd,
-          border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
+          border: Border.all(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          Row(
-            children: [
-              Expanded(child: Text(proveedor, style: const TextStyle(fontWeight: FontWeight.w700))),
-              WorkflowStateChip(label: estado, color: color),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text('Fecha: $fecha', style: Theme.of(context).textTheme.bodySmall),
-          if (motivo.isNotEmpty) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    proveedor,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                WorkflowStateChip(label: estado, color: color),
+              ],
+            ),
             const SizedBox(height: 6),
-            Text(motivo, maxLines: 2, overflow: TextOverflow.ellipsis),
-          ],
-          const SizedBox(height: 10),
-          WorkflowStepperBar(stages: stages, currentKey: estado),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              if (estado == 'homologado')
-                OutlinedButton(onPressed: () => onAction(id, 'action_desestimar'), child: const Text('Desestimar')),
-              if (estado == 'desestimado')
-                OutlinedButton(onPressed: () => onAction(id, 'action_reactivar'), child: const Text('Reactivar')),
+            Text('Fecha: $fecha', style: Theme.of(context).textTheme.bodySmall),
+            if (motivo.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(motivo, maxLines: 2, overflow: TextOverflow.ellipsis),
             ],
-          ),
+            const SizedBox(height: 10),
+            WorkflowStepperBar(stages: stages, currentKey: estado),
+            const SizedBox(height: 10),
+            if (canEdit)
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (estado == 'homologado')
+                    OutlinedButton(
+                      onPressed: () => onAction(id, 'action_desestimar'),
+                      child: const Text('Desestimar'),
+                    ),
+                  if (estado == 'desestimado')
+                    OutlinedButton(
+                      onPressed: () => onAction(id, 'action_reactivar'),
+                      child: const Text('Reactivar'),
+                    ),
+                ],
+              ),
           ],
         ),
       ),

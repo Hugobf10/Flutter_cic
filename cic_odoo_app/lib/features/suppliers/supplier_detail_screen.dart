@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../features/forms/dynamic_form.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
 import '../../theme/app_theme.dart';
 
@@ -58,7 +60,12 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
       showDragHandle: true,
       builder: (ctx) {
         return Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + MediaQuery.of(ctx).viewInsets.bottom),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            16 + MediaQuery.of(ctx).viewInsets.bottom,
+          ),
           child: DynamicForm(
             submitLabel: 'Guardar cambios',
             fields: [
@@ -70,7 +77,10 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
                 required: true,
                 options: const [
                   DynamicFieldOption(value: 'homologado', label: 'Homologado'),
-                  DynamicFieldOption(value: 'desestimado', label: 'Desestimado'),
+                  DynamicFieldOption(
+                    value: 'desestimado',
+                    label: 'Desestimado',
+                  ),
                 ],
               ),
               DynamicFieldConfig(
@@ -113,17 +123,30 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    if (_error != null) return Scaffold(appBar: AppBar(title: const Text('Proveedor')), body: Center(child: Text(_error!)));
+    final auth = context.watch<AuthProvider>();
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Proveedor')),
+        body: Center(child: Text(_error!)),
+      );
+    }
 
     final r = _record!;
     final estado = (r['estado'] ?? '').toString();
-    final proveedor = r['partner_id'] is List ? r['partner_id'][1].toString() : 'Proveedor';
+    final proveedor = r['partner_id'] is List
+        ? r['partner_id'][1].toString()
+        : 'Proveedor';
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detalle proveedor'),
-        actions: [IconButton(onPressed: _edit, icon: const Icon(Icons.edit_rounded))],
+        actions: [
+          if (auth.canEditModule('suppliers'))
+            IconButton(onPressed: _edit, icon: const Icon(Icons.edit_rounded)),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
@@ -133,24 +156,34 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: (estado == 'homologado' ? AppTheme.success : AppTheme.danger).withValues(alpha: 0.14),
+              color:
+                  (estado == 'homologado' ? AppTheme.success : AppTheme.danger)
+                      .withValues(alpha: 0.14),
               borderRadius: AppTheme.radiusXl,
             ),
             child: Text(
               estado,
               style: TextStyle(
-                color: estado == 'homologado' ? AppTheme.success : AppTheme.danger,
+                color: estado == 'homologado'
+                    ? AppTheme.success
+                    : AppTheme.danger,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
             ),
           ),
           const SizedBox(height: 12),
-          Text('Motivo homologación', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Motivo homologación',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 4),
           Text(r['motivo_homologacion']?.toString() ?? '-'),
           const SizedBox(height: 12),
-          Text('Motivo desestimación', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Motivo desestimación',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 4),
           Text(r['motivo_desestimacion']?.toString() ?? '-'),
           const SizedBox(height: 12),

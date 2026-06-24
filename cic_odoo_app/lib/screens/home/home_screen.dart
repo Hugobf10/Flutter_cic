@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../app/core/module_navigation.dart';
 import '../../app/models/app_notification.dart';
 import '../../app/providers/app_state_provider.dart';
 import '../../app/screens/notifications_screen.dart';
@@ -46,7 +47,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return AppScaffold(
       title: 'Inicio',
       actions: [
-        IconButton(onPressed: _onRefresh, icon: const Icon(Icons.refresh_rounded)),
+        IconButton(
+          onPressed: _onRefresh,
+          icon: const Icon(Icons.refresh_rounded),
+        ),
       ],
       child: RefreshIndicator(
         onRefresh: _onRefresh,
@@ -57,9 +61,14 @@ class _HomeScreenState extends State<HomeScreen> {
             const AppSectionHeader(title: 'Accesos rápidos'),
             const _QuickActions(),
             const SizedBox(height: 16),
-            if (dashboard.permissionDenied) _PortalBanner(onOpen: () => _openPortalIntranet(auth)),
-            if (dashboard.state == DashboardState.loading && dashboard.dashboardData == null)
-              const Padding(padding: EdgeInsets.symmetric(vertical: 40), child: AppLoadingView(label: 'Cargando inicio...'))
+            if (dashboard.permissionDenied)
+              _PortalBanner(onOpen: () => _openPortalIntranet(auth)),
+            if (dashboard.state == DashboardState.loading &&
+                dashboard.dashboardData == null)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: AppLoadingView(label: 'Cargando inicio...'),
+              )
             else if (dashboard.state == DashboardState.error)
               AppEmptyState(
                 title: 'No se pudo cargar el inicio',
@@ -75,18 +84,25 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               )
             else ...[
-              const AppSectionHeader(title: 'Pendientes', subtitle: 'Lo más importante hoy'),
-              _PendingList(kpis: dashboard.kpis),
+              const AppSectionHeader(
+                title: 'Pendientes',
+                subtitle: 'Lo más importante hoy',
+              ),
+              _PendingList(kpis: dashboard.kpis, auth: auth),
             ],
             const SizedBox(height: 14),
             AppSectionHeader(
               title: 'Actividad reciente',
               action: TextButton(
-                onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const NotificationsScreen(),
+                  ),
+                ),
                 child: const Text('Ver todo'),
               ),
             ),
-            _ActivityList(items: appState.notifications),
+            _ActivityList(items: appState.notifications, auth: auth),
             const SizedBox(height: 90),
           ],
         ),
@@ -95,7 +111,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _openPortalIntranet(AuthProvider auth) async {
-    final base = (auth.serverUrl.isNotEmpty ? auth.serverUrl : AppConfig.odooBaseUrl).trim();
+    final base =
+        (auth.serverUrl.isNotEmpty ? auth.serverUrl : AppConfig.odooBaseUrl)
+            .trim();
     final uri = Uri.parse('$base/my/calidad');
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
@@ -118,9 +136,15 @@ class _Greeting extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Hola, ${name.split(' ').first}', style: Theme.of(context).textTheme.titleLarge),
+                Text(
+                  'Hola, ${name.split(' ').first}',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
                 const SizedBox(height: 2),
-                Text(auth.userLogin, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  auth.userLogin,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
           ),
@@ -135,67 +159,95 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
     final actions = <({String title, IconData icon, VoidCallback onTap})>[
-      (
-        title: 'Documentos',
-        icon: Icons.description_rounded,
-        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DocumentosScreen())),
-      ),
-      (
-        title: 'Formación',
-        icon: Icons.school_rounded,
-        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TrainingScreen())),
-      ),
-      (
-        title: 'Objetivos',
-        icon: Icons.track_changes_rounded,
-        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GoalsScreen())),
-      ),
-      (
-        title: 'Nóminas',
-        icon: Icons.receipt_long_rounded,
-        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PayrollScreen())),
-      ),
+      if (auth.canViewModule('documents'))
+        (
+          title: 'Documentos',
+          icon: Icons.description_rounded,
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const DocumentosScreen())),
+        ),
+      if (auth.canViewModule('training'))
+        (
+          title: 'Formación',
+          icon: Icons.school_rounded,
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const TrainingScreen())),
+        ),
+      if (auth.canViewModule('goals'))
+        (
+          title: 'Objetivos',
+          icon: Icons.track_changes_rounded,
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const GoalsScreen())),
+        ),
+      if (auth.canViewModule('payroll'))
+        (
+          title: 'Nóminas',
+          icon: Icons.receipt_long_rounded,
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const PayrollScreen())),
+        ),
     ];
 
-    return LayoutBuilder(builder: (context, c) {
-      final cols = c.maxWidth < 560 ? 2 : 4;
-      return GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: actions.length,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: cols,
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8,
-          childAspectRatio: 2.2,
-        ),
-        itemBuilder: (_, i) {
-          final a = actions[i];
-          return AppListTile(
-            onTap: a.onTap,
-            leading: Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: AppTheme.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(a.icon, color: AppTheme.primary, size: 18),
-            ),
-            title: a.title,
-            trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: AppTheme.textMuted),
-          );
-        },
+    if (actions.isEmpty) {
+      return const AppEmptyState(
+        title: 'Sin accesos rápidos',
+        subtitle: 'No hay módulos destacados disponibles para este usuario.',
+        icon: Icons.apps_outlined,
       );
-    });
+    }
+
+    return LayoutBuilder(
+      builder: (context, c) {
+        final cols = c.maxWidth < 560 ? 2 : 4;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: actions.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: cols,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 2.2,
+          ),
+          itemBuilder: (_, i) {
+            final a = actions[i];
+            return AppListTile(
+              onTap: a.onTap,
+              leading: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(a.icon, color: AppTheme.primary, size: 18),
+              ),
+              title: a.title,
+              trailing: const Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: AppTheme.textMuted,
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 }
 
 class _PendingList extends StatelessWidget {
-  const _PendingList({required this.kpis});
+  const _PendingList({required this.kpis, required this.auth});
 
   final List<dynamic> kpis;
+  final AuthProvider auth;
 
   @override
   Widget build(BuildContext context) {
@@ -207,24 +259,49 @@ class _PendingList extends StatelessWidget {
       );
     }
 
-    final top = kpis.take(4).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    final top = kpis
+        .take(4)
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
     return Column(
       children: top.map((kpi) {
         final value = (kpi['value'] ?? 0).toString();
         final title = (kpi['title'] ?? 'Indicador').toString();
         final helper = (kpi['helper'] ?? '').toString();
+        final moduleKey = ModuleNavigation.inferModuleKeyFromKpi(kpi);
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: AppListTile(
+            onTap: moduleKey == null
+                ? null
+                : () => ModuleNavigation.openModule(
+                    context,
+                    auth: auth,
+                    moduleKey: moduleKey,
+                  ),
             title: title,
             subtitle: helper.isEmpty ? 'Pendiente' : helper,
             leading: Container(
               width: 34,
               height: 34,
-              decoration: BoxDecoration(color: AppTheme.primaryLight, borderRadius: AppTheme.radiusSm),
-              child: const Icon(Icons.analytics_rounded, size: 16, color: AppTheme.primary),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryLight,
+                borderRadius: AppTheme.radiusSm,
+              ),
+              child: const Icon(
+                Icons.analytics_rounded,
+                size: 16,
+                color: AppTheme.primary,
+              ),
             ),
-            trailing: Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+            trailing: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary,
+              ),
+            ),
           ),
         );
       }).toList(),
@@ -233,9 +310,10 @@ class _PendingList extends StatelessWidget {
 }
 
 class _ActivityList extends StatelessWidget {
-  const _ActivityList({required this.items});
+  const _ActivityList({required this.items, required this.auth});
 
   final List<AppNotification> items;
+  final AuthProvider auth;
 
   @override
   Widget build(BuildContext context) {
@@ -253,11 +331,16 @@ class _ActivityList extends StatelessWidget {
         final color = n.level == 'high'
             ? AppTheme.error
             : n.level == 'medium'
-                ? AppTheme.warning
-                : AppTheme.primary;
+            ? AppTheme.warning
+            : AppTheme.primary;
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: AppListTile(
+            onTap: () => ModuleNavigation.openModule(
+              context,
+              auth: auth,
+              moduleKey: n.moduleKey,
+            ),
             leading: Container(
               width: 10,
               height: 10,
@@ -284,7 +367,11 @@ class _PortalBanner extends StatelessWidget {
       child: AppCard(
         child: Row(
           children: [
-            const Icon(Icons.info_outline_rounded, size: 18, color: AppTheme.primary),
+            const Icon(
+              Icons.info_outline_rounded,
+              size: 18,
+              color: AppTheme.primary,
+            ),
             const SizedBox(width: 8),
             const Expanded(
               child: Text(

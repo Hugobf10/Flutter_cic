@@ -101,7 +101,14 @@ class AppButton extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (loading)
-          const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+          const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.white,
+            ),
+          )
         else if (icon != null)
           Icon(icon, size: 18),
         if (loading || icon != null) const SizedBox(width: 8),
@@ -109,7 +116,12 @@ class AppButton extends StatelessWidget {
       ],
     );
 
-    if (outlined) return OutlinedButton(onPressed: loading ? null : onPressed, child: content);
+    if (outlined) {
+      return OutlinedButton(
+        onPressed: loading ? null : onPressed,
+        child: content,
+      );
+    }
     return FilledButton(onPressed: loading ? null : onPressed, child: content);
   }
 }
@@ -214,15 +226,20 @@ class AppSectionHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: Theme.of(context).textTheme.titleLarge),
-                if (subtitle != null)
+                if (subtitle != null) ...[
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
-                    child: Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
+                    child: Text(
+                      subtitle!,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ),
+                ],
               ],
             ),
           ),
-          if (action != null) action!,
+          // ignore: use_null_aware_elements
+          if (action case final action?) action,
         ],
       ),
     );
@@ -238,13 +255,27 @@ class AppAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final clean = name.trim();
-    final parts = clean.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
-    final initials = parts.isEmpty ? 'U' : parts.length == 1 ? parts.first[0].toUpperCase() : '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    final parts = clean
+        .split(RegExp(r'\s+'))
+        .where((e) => e.isNotEmpty)
+        .toList();
+    final initials = parts.isEmpty
+        ? 'U'
+        : parts.length == 1
+        ? parts.first[0].toUpperCase()
+        : '${parts[0][0]}${parts[1][0]}'.toUpperCase();
 
     return CircleAvatar(
       radius: size / 2,
       backgroundColor: AppTheme.primary.withValues(alpha: 0.12),
-      child: Text(initials, style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w700, fontSize: size * 0.34)),
+      child: Text(
+        initials,
+        style: TextStyle(
+          color: AppTheme.primary,
+          fontWeight: FontWeight.w700,
+          fontSize: size * 0.34,
+        ),
+      ),
     );
   }
 }
@@ -277,16 +308,31 @@ class AppListTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
-                if (subtitle != null)
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                if (subtitle != null) ...[
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
-                    child: Text(subtitle!, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                    child: Text(
+                      subtitle!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
                   ),
+                ],
               ],
             ),
           ),
-          if (trailing != null) trailing!,
+          // ignore: use_null_aware_elements
+          if (trailing case final trailing?) trailing,
         ],
       ),
     );
@@ -325,9 +371,19 @@ class AppEmptyState extends StatelessWidget {
               child: Icon(icon, size: 26, color: AppTheme.textMuted),
             ),
             const SizedBox(height: 12),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+            Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary,
+              ),
+            ),
             const SizedBox(height: 6),
-            Text(subtitle, style: const TextStyle(color: AppTheme.textSecondary), textAlign: TextAlign.center),
+            Text(
+              subtitle,
+              style: const TextStyle(color: AppTheme.textSecondary),
+              textAlign: TextAlign.center,
+            ),
             if (action != null) ...[const SizedBox(height: 14), action!],
           ],
         ),
@@ -346,9 +402,16 @@ class AppLoadingView extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.2)),
+          const SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2.2),
+          ),
           const SizedBox(height: 10),
-          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          Text(
+            label,
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          ),
         ],
       ),
     );
@@ -368,7 +431,14 @@ class AppStatusChip extends StatelessWidget {
         color: color.withValues(alpha: 0.12),
         borderRadius: AppTheme.radiusXl,
       ),
-      child: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700)),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 }
@@ -401,7 +471,11 @@ class AppPdfCard extends StatelessWidget {
           color: AppTheme.error.withValues(alpha: 0.1),
           borderRadius: AppTheme.radiusSm,
         ),
-        child: const Icon(Icons.picture_as_pdf_rounded, color: AppTheme.error, size: 18),
+        child: const Icon(
+          Icons.picture_as_pdf_rounded,
+          color: AppTheme.error,
+          size: 18,
+        ),
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -409,11 +483,25 @@ class AppPdfCard extends StatelessWidget {
           if (amount != null)
             Padding(
               padding: const EdgeInsets.only(right: 6),
-              child: Text(amount!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+              child: Text(
+                amount!,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           if (onPreview != null)
-            IconButton(onPressed: onPreview, icon: const Icon(Icons.visibility_outlined, size: 18), tooltip: 'Previsualizar'),
-          IconButton(onPressed: onDownload, icon: const Icon(Icons.download_rounded, size: 18), tooltip: 'Descargar'),
+            IconButton(
+              onPressed: onPreview,
+              icon: const Icon(Icons.visibility_outlined, size: 18),
+              tooltip: 'Previsualizar',
+            ),
+          IconButton(
+            onPressed: onDownload,
+            icon: const Icon(Icons.download_rounded, size: 18),
+            tooltip: 'Descargar',
+          ),
         ],
       ),
     );
@@ -439,7 +527,10 @@ class AppBottomNavigation extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: AppTheme.surfaceCard,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20), bottom: Radius.circular(20)),
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(20),
+            bottom: Radius.circular(20),
+          ),
           border: Border.all(color: AppTheme.divider),
         ),
         child: Padding(
@@ -454,22 +545,38 @@ class AppBottomNavigation extends StatelessWidget {
                   onTap: () => onTap(i),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 220),
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: selected ? AppTheme.primary.withValues(alpha: 0.12) : Colors.transparent,
+                      color: selected
+                          ? AppTheme.primary.withValues(alpha: 0.12)
+                          : Colors.transparent,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        item.badge ?? Icon(item.icon, size: 20, color: selected ? AppTheme.primary : AppTheme.textSecondary),
+                        item.badge ??
+                            Icon(
+                              item.icon,
+                              size: 20,
+                              color: selected
+                                  ? AppTheme.primary
+                                  : AppTheme.textSecondary,
+                            ),
                         const SizedBox(height: 4),
                         Text(
                           item.label,
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                            color: selected ? AppTheme.primary : AppTheme.textSecondary,
+                            fontWeight: selected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: selected
+                                ? AppTheme.primary
+                                : AppTheme.textSecondary,
                           ),
                         ),
                       ],
@@ -484,4 +591,3 @@ class AppBottomNavigation extends StatelessWidget {
     );
   }
 }
-

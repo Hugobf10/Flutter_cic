@@ -44,7 +44,14 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
     try {
       final rows = await _odoo.searchRead(
         'calidad.comunicacion',
-        fields: ['name', 'tipo', 'fecha', 'estado', 'partner_id', 'descripcion'],
+        fields: [
+          'name',
+          'tipo',
+          'fecha',
+          'estado',
+          'partner_id',
+          'descripcion',
+        ],
         order: 'fecha desc, id desc',
         limit: 80,
       );
@@ -63,7 +70,10 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo ejecutar acción: $e'), backgroundColor: AppTheme.danger),
+        SnackBar(
+          content: Text('No se pudo ejecutar acción: $e'),
+          backgroundColor: AppTheme.danger,
+        ),
       );
     }
   }
@@ -76,7 +86,12 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
       showDragHandle: true,
       builder: (ctx) {
         return Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + MediaQuery.of(ctx).viewInsets.bottom),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            16 + MediaQuery.of(ctx).viewInsets.bottom,
+          ),
           child: DynamicForm(
             submitLabel: 'Crear comunicación',
             fields: const [
@@ -88,7 +103,10 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                 required: true,
                 initialValue: 'comunicacion',
                 options: [
-                  DynamicFieldOption(value: 'comunicacion', label: 'Comunicación'),
+                  DynamicFieldOption(
+                    value: 'comunicacion',
+                    label: 'Comunicación',
+                  ),
                   DynamicFieldOption(value: 'sugerencia', label: 'Sugerencia'),
                 ],
               ),
@@ -131,18 +149,30 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    final auth = context.watch<AuthProvider>();
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Comunicaciones'),
         actions: [
-          IconButton(onPressed: _openCreateDialog, icon: const Icon(Icons.add_rounded)),
+          if (auth.canEditModule('communications'))
+            IconButton(
+              onPressed: _openCreateDialog,
+              icon: const Icon(Icons.add_rounded),
+            ),
           IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
         ],
       ),
       body: _error != null
-          ? Center(child: Padding(padding: const EdgeInsets.all(16), child: Text(_error!)))
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(_error!),
+              ),
+            )
           : ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 100),
               itemCount: _rows.length,
@@ -153,6 +183,7 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                   row: row,
                   stages: _stages,
                   onAction: _runAction,
+                  canEdit: auth.canEditModule('communications'),
                 );
               },
             ),
@@ -165,11 +196,13 @@ class _CommunicationCard extends StatelessWidget {
     required this.row,
     required this.stages,
     required this.onAction,
+    required this.canEdit,
   });
 
   final Map<String, dynamic> row;
   final List<WorkflowStage> stages;
   final Future<void> Function(int id, String method) onAction;
+  final bool canEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +212,9 @@ class _CommunicationCard extends StatelessWidget {
     final desc = row['descripcion']?.toString() ?? '';
     final tipo = row['tipo']?.toString() ?? '';
     final fecha = row['fecha']?.toString() ?? '';
-    final partner = row['partner_id'] is List ? row['partner_id'][1].toString() : '';
+    final partner = row['partner_id'] is List
+        ? row['partner_id'][1].toString()
+        : '';
 
     final color = switch (estado) {
       'recibida' => AppTheme.warning,
@@ -195,19 +230,29 @@ class _CommunicationCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: AppTheme.radiusMd,
-        border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700))),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
               WorkflowStateChip(label: estado, color: color),
             ],
           ),
           const SizedBox(height: 6),
-          Text('$tipo · $partner · $fecha', style: Theme.of(context).textTheme.bodySmall),
+          Text(
+            '$tipo · $partner · $fecha',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
           if (desc.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(desc, maxLines: 2, overflow: TextOverflow.ellipsis),
@@ -215,18 +260,28 @@ class _CommunicationCard extends StatelessWidget {
           const SizedBox(height: 10),
           WorkflowStepperBar(stages: stages, currentKey: estado),
           const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              if (estado == 'recibida')
-                _ActionBtn(label: 'Analizar', onTap: () => onAction(id, 'action_marcar_en_analisis')),
-              if (estado == 'en_analisis')
-                _ActionBtn(label: 'Marcar tratada', onTap: () => onAction(id, 'action_marcar_tratada')),
-              if (estado == 'tratada' || estado == 'respondida')
-                _ActionBtn(label: 'Cerrar', onTap: () => onAction(id, 'action_cerrar')),
-            ],
-          ),
+          if (canEdit)
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (estado == 'recibida')
+                  _ActionBtn(
+                    label: 'Analizar',
+                    onTap: () => onAction(id, 'action_marcar_en_analisis'),
+                  ),
+                if (estado == 'en_analisis')
+                  _ActionBtn(
+                    label: 'Marcar tratada',
+                    onTap: () => onAction(id, 'action_marcar_tratada'),
+                  ),
+                if (estado == 'tratada' || estado == 'respondida')
+                  _ActionBtn(
+                    label: 'Cerrar',
+                    onTap: () => onAction(id, 'action_cerrar'),
+                  ),
+              ],
+            ),
         ],
       ),
     );

@@ -33,7 +33,14 @@ class _HealthScreenState extends State<HealthScreen> {
     try {
       final rows = await _odoo.searchRead(
         'calidad.salud.reconocimiento',
-        fields: const ['name', 'fecha_prevista', 'fecha_realizacion', 'estado', 'observaciones', 'recomendaciones'],
+        fields: const [
+          'name',
+          'fecha_prevista',
+          'fecha_realizacion',
+          'estado',
+          'observaciones',
+          'recomendaciones',
+        ],
         order: 'fecha_prevista desc, id desc',
         limit: 120,
       );
@@ -50,65 +57,89 @@ class _HealthScreenState extends State<HealthScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (_) => _HealthMultiStepForm(partnerId: auth.partnerId, odoo: _odoo),
+      builder: (_) =>
+          _HealthMultiStepForm(partnerId: auth.partnerId, odoo: _odoo),
     );
     if (saved == true) _load();
   }
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
     return AppScaffold(
       title: 'Vigilancia de la salud',
       actions: [
-        IconButton(onPressed: _newForm, icon: const Icon(Icons.add_rounded)),
+        if (auth.canEditModule('health'))
+          IconButton(onPressed: _newForm, icon: const Icon(Icons.add_rounded)),
         IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
       ],
       child: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? AppEmptyState(title: 'Error', subtitle: _error!, icon: Icons.error_outline_rounded)
-              : _rows.isEmpty
-                  ? const AppEmptyState(
-                      title: 'Sin formularios',
-                      subtitle: 'No hay reconocimientos registrados.',
-                      icon: Icons.monitor_heart_outlined,
-                    )
-                  : ListView.separated(
-                      itemCount: _rows.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
-                      itemBuilder: (_, i) {
-                        final it = _rows[i];
-                        final estado = (it['estado'] ?? '-').toString();
-                        final color = estado == 'apto'
-                            ? AppTheme.success
-                            : estado == 'apto_limitaciones'
-                                ? AppTheme.warning
-                                : estado == 'no_apto'
-                                    ? AppTheme.error
-                                    : AppTheme.textMuted;
-                        return AppCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text((it['name'] ?? 'Reconocimiento').toString(),
-                                        style: const TextStyle(fontWeight: FontWeight.w700)),
-                                  ),
-                                  AppStatusChip(label: estado.replaceAll('_', ' '), color: color),
-                                ],
+          ? AppEmptyState(
+              title: 'Error',
+              subtitle: _error!,
+              icon: Icons.error_outline_rounded,
+            )
+          : _rows.isEmpty
+          ? const AppEmptyState(
+              title: 'Sin formularios',
+              subtitle: 'No hay reconocimientos registrados.',
+              icon: Icons.monitor_heart_outlined,
+            )
+          : ListView.separated(
+              itemCount: _rows.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              itemBuilder: (_, i) {
+                final it = _rows[i];
+                final estado = (it['estado'] ?? '-').toString();
+                final color = estado == 'apto'
+                    ? AppTheme.success
+                    : estado == 'apto_limitaciones'
+                    ? AppTheme.warning
+                    : estado == 'no_apto'
+                    ? AppTheme.error
+                    : AppTheme.textMuted;
+                return AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              (it['name'] ?? 'Reconocimiento').toString(),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
                               ),
-                              const SizedBox(height: 6),
-                              Text('Prevista: ${it['fecha_prevista'] ?? '-'}',
-                                  style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
-                              Text('Realización: ${it['fecha_realizacion'] ?? '-'}',
-                                  style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
-                            ],
+                            ),
                           ),
-                        );
-                      },
-                    ),
+                          AppStatusChip(
+                            label: estado.replaceAll('_', ' '),
+                            color: color,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Prevista: ${it['fecha_prevista'] ?? '-'}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                      Text(
+                        'Realización: ${it['fecha_realizacion'] ?? '-'}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
     );
   }
 }
@@ -160,7 +191,9 @@ class _HealthMultiStepFormState extends State<_HealthMultiStepForm> {
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo enviar: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo enviar: $e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -169,7 +202,12 @@ class _HealthMultiStepFormState extends State<_HealthMultiStepForm> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(8, 0, 8, 8 + MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.fromLTRB(
+        8,
+        0,
+        8,
+        8 + MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Stepper(
         currentStep: _step,
         onStepContinue: () {
@@ -206,7 +244,11 @@ class _HealthMultiStepFormState extends State<_HealthMultiStepForm> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(_plannedDate == null ? 'Sin fecha' : _dateToString(_plannedDate!)),
+                    child: Text(
+                      _plannedDate == null
+                          ? 'Sin fecha'
+                          : _dateToString(_plannedDate!),
+                    ),
                   ),
                   TextButton(
                     onPressed: () async {
@@ -229,16 +271,24 @@ class _HealthMultiStepFormState extends State<_HealthMultiStepForm> {
             title: const Text('Estado'),
             isActive: _step >= 1,
             content: DropdownButtonFormField<String>(
-              value: _estado,
+              initialValue: _estado,
               items: const [
                 DropdownMenuItem(value: 'pendiente', child: Text('Pendiente')),
-                DropdownMenuItem(value: 'no_realizado', child: Text('No realizado')),
+                DropdownMenuItem(
+                  value: 'no_realizado',
+                  child: Text('No realizado'),
+                ),
                 DropdownMenuItem(value: 'apto', child: Text('Apto')),
-                DropdownMenuItem(value: 'apto_limitaciones', child: Text('Apto con limitaciones')),
+                DropdownMenuItem(
+                  value: 'apto_limitaciones',
+                  child: Text('Apto con limitaciones'),
+                ),
                 DropdownMenuItem(value: 'no_apto', child: Text('No apto')),
               ],
               onChanged: (v) => setState(() => _estado = v ?? 'pendiente'),
-              decoration: const InputDecoration(labelText: 'Estado del reconocimiento'),
+              decoration: const InputDecoration(
+                labelText: 'Estado del reconocimiento',
+              ),
             ),
           ),
           Step(
@@ -246,9 +296,17 @@ class _HealthMultiStepFormState extends State<_HealthMultiStepForm> {
             isActive: _step >= 2,
             content: Column(
               children: [
-                AppInput(controller: _obsCtrl, labelText: 'Observaciones', prefixIcon: Icons.notes_rounded),
+                AppInput(
+                  controller: _obsCtrl,
+                  labelText: 'Observaciones',
+                  prefixIcon: Icons.notes_rounded,
+                ),
                 const SizedBox(height: 8),
-                AppInput(controller: _recCtrl, labelText: 'Recomendaciones', prefixIcon: Icons.health_and_safety_rounded),
+                AppInput(
+                  controller: _recCtrl,
+                  labelText: 'Recomendaciones',
+                  prefixIcon: Icons.health_and_safety_rounded,
+                ),
               ],
             ),
           ),
@@ -257,4 +315,3 @@ class _HealthMultiStepFormState extends State<_HealthMultiStepForm> {
     );
   }
 }
-

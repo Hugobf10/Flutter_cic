@@ -74,7 +74,13 @@ class _SuperAppShellState extends State<SuperAppShell> {
                 final badge = i == 2 && unread > 0
                     ? Badge.count(
                         count: unread > 99 ? 99 : unread,
-                        child: Icon(_icons[i], size: 20, color: i == _index ? AppTheme.primary : AppTheme.textSecondary),
+                        child: Icon(
+                          _icons[i],
+                          size: 20,
+                          color: i == _index
+                              ? AppTheme.primary
+                              : AppTheme.textSecondary,
+                        ),
                       )
                     : null;
                 return (label: _labels[i], icon: _icons[i], badge: badge);
@@ -95,7 +101,9 @@ class _SuperAppShellState extends State<SuperAppShell> {
                 width: 248,
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
-                  border: Border(right: BorderSide(color: Theme.of(context).dividerColor)),
+                  border: Border(
+                    right: BorderSide(color: Theme.of(context).dividerColor),
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -106,21 +114,32 @@ class _SuperAppShellState extends State<SuperAppShell> {
                       final selected = _index == i;
                       return ListTile(
                         leading: i == 2 && unread > 0
-                            ? Badge.count(count: unread > 99 ? 99 : unread, child: Icon(_icons[i]))
+                            ? Badge.count(
+                                count: unread > 99 ? 99 : unread,
+                                child: Icon(_icons[i]),
+                              )
                             : Icon(_icons[i]),
                         title: Text(_labels[i]),
                         selected: selected,
                         onTap: () => setState(() => _index = i),
                         selectedColor: AppTheme.primary,
-                        iconColor: selected ? AppTheme.primary : AppTheme.textSecondary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        iconColor: selected
+                            ? AppTheme.primary
+                            : AppTheme.textSecondary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       );
                     }),
                     ListTile(
                       leading: const Icon(Icons.calendar_month_rounded),
                       title: const Text('Reservas'),
                       onTap: () {
-                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReservasScreen()));
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ReservasScreen(),
+                          ),
+                        );
                       },
                     ),
                     const Spacer(),
@@ -131,7 +150,9 @@ class _SuperAppShellState extends State<SuperAppShell> {
                   ],
                 ),
               ),
-              Expanded(child: IndexedStack(index: _index, children: _pages)),
+              Expanded(
+                child: IndexedStack(index: _index, children: _pages),
+              ),
             ],
           ),
         );
@@ -152,23 +173,57 @@ class _SuperAppShellState extends State<SuperAppShell> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Acceso rápido', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                const Text(
+                  'Acceso rápido',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                ),
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 10,
                   runSpacing: 10,
                   children: [
-                    if (auth.canViewModule('incidents'))
-                      _quickAction('Nueva incidencia', Icons.warning_amber_rounded, const IncidenciasScreen()),
-                    if (auth.canViewModule('documents'))
-                      _quickAction('Nuevo documento', Icons.description_rounded, const DocumentosScreen()),
-                    if (auth.canViewModule('communications'))
-                      _quickAction('Nueva comunicación', Icons.chat_bubble_outline_rounded, const CommunicationsScreen()),
-                    if (auth.canViewModule('suppliers'))
-                      _quickAction('Nuevo proveedor', Icons.local_shipping_rounded, const SuppliersScreen()),
-                    _quickAction('Nueva sugerencia', Icons.lightbulb_outline_rounded, const SuggestionsScreen()),
-                    _quickAction('Nueva reserva', Icons.calendar_month_rounded, const ReservasScreen()),
-                    if (auth.isAdmin) _quickAction('Aprobaciones', Icons.fact_check_rounded, const ApprovalsInboxScreen()),
+                    if (auth.canEditModule('incidents'))
+                      _quickAction(
+                        'Nueva incidencia',
+                        Icons.warning_amber_rounded,
+                        const IncidenciasScreen(),
+                      ),
+                    if (auth.canEditModule('documents'))
+                      _quickAction(
+                        'Nuevo documento',
+                        Icons.description_rounded,
+                        const DocumentosScreen(),
+                      ),
+                    if (auth.canEditModule('communications'))
+                      _quickAction(
+                        'Nueva comunicación',
+                        Icons.chat_bubble_outline_rounded,
+                        const CommunicationsScreen(),
+                      ),
+                    if (auth.canEditModule('suppliers'))
+                      _quickAction(
+                        'Nuevo proveedor',
+                        Icons.local_shipping_rounded,
+                        const SuppliersScreen(),
+                      ),
+                    if (auth.canEditModule('suggestions'))
+                      _quickAction(
+                        'Nueva sugerencia',
+                        Icons.lightbulb_outline_rounded,
+                        const SuggestionsScreen(),
+                      ),
+                    if (auth.canEditModule('reservas'))
+                      _quickAction(
+                        'Nueva reserva',
+                        Icons.calendar_month_rounded,
+                        const ReservasScreen(),
+                      ),
+                    if (auth.isAdmin)
+                      _quickAction(
+                        'Aprobaciones',
+                        Icons.fact_check_rounded,
+                        const ApprovalsInboxScreen(),
+                      ),
                   ],
                 ),
               ],
@@ -182,14 +237,20 @@ class _SuperAppShellState extends State<SuperAppShell> {
   Widget _quickAction(String label, IconData icon, Widget page) {
     return Builder(
       builder: (context) {
+        final screenWidth = MediaQuery.of(context).size.width;
+        final tileWidth = screenWidth >= 720
+            ? 180.0
+            : ((screenWidth - 48) / 2).clamp(140.0, 220.0);
         return InkWell(
           onTap: () {
             Navigator.of(context).pop();
-            Navigator.of(this.context).push(MaterialPageRoute(builder: (_) => page));
+            Navigator.of(
+              this.context,
+            ).push(MaterialPageRoute(builder: (_) => page));
           },
           borderRadius: BorderRadius.circular(12),
           child: Ink(
-            width: 150,
+            width: tileWidth,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
@@ -199,7 +260,15 @@ class _SuperAppShellState extends State<SuperAppShell> {
               children: [
                 Icon(icon, size: 18),
                 const SizedBox(width: 8),
-                Expanded(child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -217,13 +286,24 @@ class _SuperAppShellState extends State<SuperAppShell> {
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(Icons.hexagon_rounded, color: Theme.of(context).colorScheme.primary, size: 18),
+            child: Icon(
+              Icons.hexagon_rounded,
+              color: Theme.of(context).colorScheme.primary,
+              size: 18,
+            ),
           ),
           const SizedBox(width: 10),
-          Text('CICancer', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            'CICancer',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
         ],
       ),
     );
@@ -256,7 +336,10 @@ class _SuperAppShellState extends State<SuperAppShell> {
   String _initials(String name) {
     final clean = name.trim();
     if (clean.isEmpty) return 'U';
-    final parts = clean.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+    final parts = clean
+        .split(RegExp(r'\s+'))
+        .where((e) => e.isNotEmpty)
+        .toList();
     if (parts.length == 1) return parts.first[0].toUpperCase();
     return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }

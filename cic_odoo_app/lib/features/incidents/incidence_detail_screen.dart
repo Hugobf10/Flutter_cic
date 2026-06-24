@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../features/forms/dynamic_form.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
 import '../../theme/app_theme.dart';
 
@@ -62,11 +64,21 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
       showDragHandle: true,
       builder: (ctx) {
         return Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + MediaQuery.of(ctx).viewInsets.bottom),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            16 + MediaQuery.of(ctx).viewInsets.bottom,
+          ),
           child: DynamicForm(
             submitLabel: 'Guardar cambios',
             fields: [
-              DynamicFieldConfig(key: 'name', label: 'Título', required: true, initialValue: _record!['name']),
+              DynamicFieldConfig(
+                key: 'name',
+                label: 'Título',
+                required: true,
+                initialValue: _record!['name'],
+              ),
               DynamicFieldConfig(
                 key: 'tipo',
                 label: 'Tipo',
@@ -75,7 +87,10 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
                 required: true,
                 options: const [
                   DynamicFieldOption(value: 'nc', label: 'No conformidad'),
-                  DynamicFieldOption(value: 'om', label: 'Oportunidad de mejora'),
+                  DynamicFieldOption(
+                    value: 'om',
+                    label: 'Oportunidad de mejora',
+                  ),
                 ],
               ),
               DynamicFieldConfig(
@@ -99,7 +114,10 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
                   DynamicFieldOption(value: 'interna', label: 'Interna'),
                   DynamicFieldOption(value: 'proveedor', label: 'Proveedor'),
                   DynamicFieldOption(value: 'auditoria', label: 'Auditoría'),
-                  DynamicFieldOption(value: 'reclamacion', label: 'Reclamación'),
+                  DynamicFieldOption(
+                    value: 'reclamacion',
+                    label: 'Reclamación',
+                  ),
                   DynamicFieldOption(value: 'otra', label: 'Otra'),
                 ],
               ),
@@ -159,8 +177,16 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    if (_error != null) return Scaffold(appBar: AppBar(title: const Text('Incidencia')), body: Center(child: Text(_error!)));
+    final auth = context.watch<AuthProvider>();
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Incidencia')),
+        body: Center(child: Text(_error!)),
+      );
+    }
 
     final r = _record!;
     final estado = (r['estado'] ?? '').toString();
@@ -169,12 +195,18 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detalle incidencia'),
-        actions: [IconButton(onPressed: _edit, icon: const Icon(Icons.edit_rounded))],
+        actions: [
+          if (auth.canEditModule('incidents'))
+            IconButton(onPressed: _edit, icon: const Icon(Icons.edit_rounded)),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
         children: [
-          Text(r['name']?.toString() ?? '-', style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            r['name']?.toString() ?? '-',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -205,7 +237,9 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
               minHeight: 7,
               value: (avance / 100).clamp(0, 1),
               backgroundColor: AppTheme.divider,
-              valueColor: AlwaysStoppedAnimation(estado == 'cerrada' ? AppTheme.success : AppTheme.primary),
+              valueColor: AlwaysStoppedAnimation(
+                estado == 'cerrada' ? AppTheme.success : AppTheme.primary,
+              ),
             ),
           ),
         ],
@@ -214,8 +248,14 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
   }
 
   Widget _chip(String t) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(color: AppTheme.surfaceElevated, borderRadius: AppTheme.radiusXl),
-        child: Text(t, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: AppTheme.surfaceElevated,
+      borderRadius: AppTheme.radiusXl,
+    ),
+    child: Text(
+      t,
+      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+    ),
+  );
 }

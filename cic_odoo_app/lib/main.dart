@@ -116,8 +116,8 @@ class _AuthGateState extends State<AuthGate> {
     }
 
     if (auth.isAuthenticated) {
-      if (!auth.hasIntranetAccess) {
-        return const _NoIntranetAccessScreen();
+      if (!auth.hasAppAccess) {
+        return const _NoAppAccessScreen();
       }
       return const SuperAppShell();
     }
@@ -207,8 +207,8 @@ class _FatalWidget extends StatelessWidget {
   }
 }
 
-class _NoIntranetAccessScreen extends StatelessWidget {
-  const _NoIntranetAccessScreen();
+class _NoAppAccessScreen extends StatelessWidget {
+  const _NoAppAccessScreen();
 
   @override
   Widget build(BuildContext context) {
@@ -226,12 +226,12 @@ class _NoIntranetAccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               const Text(
-                'Sin acceso a intranet',
+                'Sin acceso disponible',
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
               ),
               const SizedBox(height: 6),
               const Text(
-                'Tu usuario no tiene habilitado el portal de calidad. Contacta con administración.',
+                'Tu usuario ha iniciado sesión, pero no tiene módulos habilitados para usar la app. Revisa el acceso portal o los permisos asignados en Odoo.',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 14),

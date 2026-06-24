@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../app/ui/app_components.dart';
 import '../../config/app_config.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
@@ -25,11 +26,13 @@ class _ReservasScreenState extends State<ReservasScreen> {
   bool _isLoadingAvailability = false;
   bool _portalOnlyMode = false;
   String? _error;
+  String? _agendaError;
 
   List<Map<String, dynamic>> _services = [];
   List<Map<String, dynamic>> _variants = [];
   List<Map<String, dynamic>> _sessionTypes = [];
   List<Map<String, dynamic>> _reservas = [];
+  List<Map<String, dynamic>> _agendaReservas = [];
 
   int? _serviceTemplateId;
   int? _variantId;
@@ -59,7 +62,11 @@ class _ReservasScreenState extends State<ReservasScreen> {
     setState(() {
       _isLoading = true;
       _error = null;
+      _agendaError = null;
+      _portalOnlyMode = false;
     });
+    await _loadMisReservas();
+    await _loadAgendaReservas();
     try {
       final services = await _odoo.searchRead(
         'product.template',
@@ -71,16 +78,18 @@ class _ReservasScreenState extends State<ReservasScreen> {
         order: 'name',
         limit: 200,
       );
-      _services = services.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      _services = services
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
       if (_services.isNotEmpty) {
         _serviceTemplateId = _services.first['id'] as int;
         await _loadServiceOptions();
       }
-      await _loadMisReservas();
     } catch (e) {
       if (OdooService.isAccessError(e)) {
         _portalOnlyMode = true;
-        _error = 'Tu usuario portal no tiene acceso al motor interno de reservas.';
+        _error =
+            'Tu usuario no puede crear reservas por RPC, pero sí consultar las reservas disponibles en la app y abrir el portal oficial.';
       } else {
         _error = OdooService.prettyError(e);
       }
@@ -116,16 +125,28 @@ class _ReservasScreenState extends State<ReservasScreen> {
       limit: 100,
     );
 
-    _variants = variants.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-    _sessionTypes = sessionTypes.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    _variants = variants
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+    _sessionTypes = sessionTypes
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
     _variantId = _variants.isNotEmpty ? _variants.first['id'] as int : null;
-    _sessionTypeId = _sessionTypes.isNotEmpty ? _sessionTypes.first['id'] as int : null;
+    _sessionTypeId = _sessionTypes.isNotEmpty
+        ? _sessionTypes.first['id'] as int
+        : null;
     await _loadAvailability();
   }
 
   Future<void> _loadAvailability() async {
     if (_variantId == null) return;
-    final startDay = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day, 0, 0);
+    final startDay = DateTime(
+      _selectedDay.year,
+      _selectedDay.month,
+      _selectedDay.day,
+      0,
+      0,
+    );
     final endDay = startDay.add(const Duration(days: 1));
     setState(() => _isLoadingAvailability = true);
     try {
@@ -133,7 +154,11 @@ class _ReservasScreenState extends State<ReservasScreen> {
         'reserva.reserva',
         domain: [
           ['servicio_id', '=', _variantId],
-          ['estado', 'in', ['borrador', 'confirmada', 'facturada']],
+          [
+            'estado',
+            'in',
+            ['borrador', 'confirmada', 'facturada'],
+          ],
           ['fecha_inicio', '<', _formatOdooDateTime(endDay)],
           ['fecha_fin', '>', _formatOdooDateTime(startDay)],
         ],
@@ -142,15 +167,20 @@ class _ReservasScreenState extends State<ReservasScreen> {
         limit: 400,
       );
 
-      _busyRanges = rows.map((e) {
-        final m = Map<String, dynamic>.from(e as Map);
-        final start = _tryParseOdooDateTime(m['fecha_inicio']?.toString() ?? '');
-        final end = _tryParseOdooDateTime(m['fecha_fin']?.toString() ?? '');
-        if (start == null || end == null) {
-          return DateTimeRange(start: startDay, end: startDay);
-        }
-        return DateTimeRange(start: start, end: end);
-      }).where((r) => r.end.isAfter(r.start)).toList();
+      _busyRanges = rows
+          .map((e) {
+            final m = Map<String, dynamic>.from(e as Map);
+            final start = _tryParseOdooDateTime(
+              m['fecha_inicio']?.toString() ?? '',
+            );
+            final end = _tryParseOdooDateTime(m['fecha_fin']?.toString() ?? '');
+            if (start == null || end == null) {
+              return DateTimeRange(start: startDay, end: startDay);
+            }
+            return DateTimeRange(start: start, end: end);
+          })
+          .where((r) => r.end.isAfter(r.start))
+          .toList();
 
       if (_start != null && _isSlotBusy(_start!)) {
         _start = null;
@@ -190,6 +220,37 @@ class _ReservasScreenState extends State<ReservasScreen> {
     _reservas = result.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
+  Future<void> _loadAgendaReservas() async {
+    try {
+      final result = await _odoo.searchRead(
+        'reserva.reserva',
+        fields: [
+          'name',
+          'servicio_id',
+          'session_type_id',
+          'fecha_inicio',
+          'fecha_fin',
+          'duracion',
+          'importe_total',
+          'estado',
+          'motivo',
+          'contacto_id',
+        ],
+        order: 'fecha_inicio desc',
+        limit: 200,
+      );
+      _agendaReservas = result
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+      _agendaError = null;
+    } catch (e) {
+      _agendaReservas = List<Map<String, dynamic>>.from(_reservas);
+      _agendaError = OdooService.isAccessError(e)
+          ? 'Mostrando solo tus reservas por permisos.'
+          : OdooService.prettyError(e);
+    }
+  }
+
   void _setDurationMinutes(int minutes) {
     setState(() {
       _durationMinutes = minutes;
@@ -209,7 +270,10 @@ class _ReservasScreenState extends State<ReservasScreen> {
       return;
     }
     if (_wizardStep == 2 && _start == null) {
-      _showSnack('Selecciona una franja horaria para continuar.', isError: true);
+      _showSnack(
+        'Selecciona una franja horaria para continuar.',
+        isError: true,
+      );
       return;
     }
     if (_wizardStep < 3) {
@@ -266,19 +330,17 @@ class _ReservasScreenState extends State<ReservasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: AppTheme.surface,
-        body: Padding(
-          padding: EdgeInsets.all(16),
-          child: ShimmerList(),
-        ),
+        body: Padding(padding: EdgeInsets.all(16), child: ShimmerList()),
       );
     }
 
     if (_error != null) {
       if (_portalOnlyMode) {
-        return _buildPortalReservationMode();
+        return _buildPortalReservationMode(auth);
       }
       return Scaffold(
         backgroundColor: AppTheme.surface,
@@ -286,25 +348,38 @@ class _ReservasScreenState extends State<ReservasScreen> {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(20),
-            child: Text(_error!, style: const TextStyle(color: AppTheme.textMuted)),
+            child: Text(
+              _error!,
+              style: const TextStyle(color: AppTheme.textMuted),
+            ),
           ),
         ),
       );
     }
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         backgroundColor: AppTheme.surface,
         appBar: AppBar(
           title: const Text('Reservas'),
           actions: [
-            IconButton(onPressed: _loadInitial, icon: const Icon(Icons.refresh_rounded)),
+            IconButton(
+              onPressed: _loadInitial,
+              icon: const Icon(Icons.refresh_rounded),
+            ),
           ],
           bottom: const TabBar(
             tabs: [
-              Tab(text: 'Nueva reserva', icon: Icon(Icons.add_circle_outline_rounded)),
+              Tab(
+                text: 'Nueva reserva',
+                icon: Icon(Icons.add_circle_outline_rounded),
+              ),
               Tab(text: 'Mis reservas', icon: Icon(Icons.list_alt_rounded)),
+              Tab(
+                text: 'Reservas hechas',
+                icon: Icon(Icons.event_available_rounded),
+              ),
             ],
           ),
         ),
@@ -317,10 +392,19 @@ class _ReservasScreenState extends State<ReservasScreen> {
                 children: [
                   const SectionHeader(
                     title: 'Reserva rápida',
-                    subtitle: 'Selecciona servicio, recurso y horario en 4 pasos',
+                    subtitle:
+                        'Selecciona servicio, recurso y horario en 4 pasos',
                     icon: Icons.calendar_month_rounded,
                   ),
-                  _buildNewReservationCard(),
+                  if (auth.canEditModule('reservas'))
+                    _buildNewReservationCard()
+                  else
+                    const AppEmptyState(
+                      title: 'Reserva no disponible',
+                      subtitle:
+                          'Este usuario puede consultar reservas, pero no crear nuevas desde la app.',
+                      icon: Icons.lock_outline_rounded,
+                    ),
                 ],
               ),
             ),
@@ -334,7 +418,49 @@ class _ReservasScreenState extends State<ReservasScreen> {
                     subtitle: '${_reservas.length} registros',
                     icon: Icons.list_alt_rounded,
                   ),
-                  ..._reservas.map(_buildReservaCard),
+                  if (_reservas.isEmpty)
+                    const AppEmptyState(
+                      title: 'Sin reservas',
+                      subtitle: 'No tienes reservas registradas.',
+                      icon: Icons.event_busy_outlined,
+                    )
+                  else
+                    ..._reservas.map((r) => _buildReservaCard(r, auth: auth)),
+                ],
+              ),
+            ),
+            RefreshIndicator(
+              onRefresh: _loadInitial,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                children: [
+                  SectionHeader(
+                    title: 'Reservas hechas',
+                    subtitle: '${_agendaReservas.length} registros visibles',
+                    icon: Icons.event_available_rounded,
+                  ),
+                  if (_agendaError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        _agendaError!,
+                        style: const TextStyle(
+                          color: AppTheme.textMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  if (_agendaReservas.isEmpty)
+                    const AppEmptyState(
+                      title: 'Sin reservas visibles',
+                      subtitle:
+                          'No hay reservas disponibles para consultar con este usuario.',
+                      icon: Icons.event_note_outlined,
+                    )
+                  else
+                    ..._agendaReservas.map(
+                      (r) => _buildReservaCard(r, auth: auth),
+                    ),
                 ],
               ),
             ),
@@ -344,54 +470,100 @@ class _ReservasScreenState extends State<ReservasScreen> {
     );
   }
 
-  Widget _buildPortalReservationMode() {
-    return Scaffold(
-      backgroundColor: AppTheme.surface,
-      appBar: AppBar(
-        title: const Text('Reservas'),
-        actions: [
-          IconButton(onPressed: _loadInitial, icon: const Icon(Icons.refresh_rounded)),
-        ],
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 560),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceCard,
-              borderRadius: AppTheme.radiusMd,
-              border: Border.all(color: AppTheme.divider),
+  Widget _buildPortalReservationMode(AuthProvider auth) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: AppTheme.surface,
+        appBar: AppBar(
+          title: const Text('Reservas'),
+          actions: [
+            IconButton(
+              onPressed: _loadInitial,
+              icon: const Icon(Icons.refresh_rounded),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.travel_explore_rounded, color: AppTheme.primary),
-                    SizedBox(width: 8),
-                    Text('Reservas en modo portal', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Este perfil no tiene permisos de backend para crear reservas por RPC. Puedes gestionarlas desde el portal oficial.',
-                  style: TextStyle(color: AppTheme.textSecondary),
-                ),
-                const SizedBox(height: 14),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _openReservationsPortal,
-                    icon: const Icon(Icons.open_in_new_rounded),
-                    label: const Text('Abrir portal de reservas'),
+          ],
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Mis reservas', icon: Icon(Icons.list_alt_rounded)),
+              Tab(text: 'Portal', icon: Icon(Icons.open_in_new_rounded)),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            RefreshIndicator(
+              onRefresh: _loadInitial,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                children: [
+                  SectionHeader(
+                    title: 'Mis reservas',
+                    subtitle: '${_reservas.length} registros',
+                    icon: Icons.list_alt_rounded,
+                  ),
+                  if (_reservas.isEmpty)
+                    const AppEmptyState(
+                      title: 'Sin reservas',
+                      subtitle: 'No tienes reservas registradas.',
+                      icon: Icons.event_busy_outlined,
+                    )
+                  else
+                    ..._reservas.map((r) => _buildReservaCard(r, auth: auth)),
+                ],
+              ),
+            ),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceCard,
+                    borderRadius: AppTheme.radiusMd,
+                    border: Border.all(color: AppTheme.divider),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(
+                            Icons.travel_explore_rounded,
+                            color: AppTheme.primary,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Reservas en modo portal',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Este perfil puede consultar sus reservas en la app. Si necesita crear o editar más acciones, puede continuar en el portal oficial.',
+                        style: TextStyle(color: AppTheme.textSecondary),
+                      ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _openReservationsPortal,
+                          icon: const Icon(Icons.open_in_new_rounded),
+                          label: const Text('Abrir portal de reservas'),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -399,16 +571,26 @@ class _ReservasScreenState extends State<ReservasScreen> {
 
   Future<void> _openReservationsPortal() async {
     final auth = context.read<AuthProvider>();
-    final base = (auth.serverUrl.isNotEmpty ? auth.serverUrl : AppConfig.odooBaseUrl).trim();
+    final base =
+        (auth.serverUrl.isNotEmpty ? auth.serverUrl : AppConfig.odooBaseUrl)
+            .trim();
     final uri = Uri.parse('$base/my/reservas');
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   Widget _buildNewReservationCard() {
-    final selectedServiceList = _services.where((s) => s['id'] == _serviceTemplateId).toList();
-    final selectedVariantList = _variants.where((v) => v['id'] == _variantId).toList();
-    final selectedService = selectedServiceList.isEmpty ? null : selectedServiceList.first;
-    final selectedVariant = selectedVariantList.isEmpty ? null : selectedVariantList.first;
+    final selectedServiceList = _services
+        .where((s) => s['id'] == _serviceTemplateId)
+        .toList();
+    final selectedVariantList = _variants
+        .where((v) => v['id'] == _variantId)
+        .toList();
+    final selectedService = selectedServiceList.isEmpty
+        ? null
+        : selectedServiceList.first;
+    final selectedVariant = selectedVariantList.isEmpty
+        ? null
+        : selectedVariantList.first;
     final hourlyPrice = selectedVariant?['lst_price'];
     return Container(
       padding: const EdgeInsets.all(14),
@@ -455,12 +637,15 @@ class _ReservasScreenState extends State<ReservasScreen> {
                       : _nextStep,
                   icon: _wizardStep == 3
                       ? (_isCreating
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Icon(Icons.check_circle_outline_rounded))
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.check_circle_outline_rounded))
                       : const Icon(Icons.arrow_forward_rounded),
                   label: Text(
                     _wizardStep == 3
@@ -487,7 +672,9 @@ class _ReservasScreenState extends State<ReservasScreen> {
             children: [
               CircleAvatar(
                 radius: 12,
-                backgroundColor: done || active ? AppTheme.primary : AppTheme.surfaceElevated,
+                backgroundColor: done || active
+                    ? AppTheme.primary
+                    : AppTheme.surfaceElevated,
                 child: Text(
                   done ? '✓' : '${i + 1}',
                   style: TextStyle(
@@ -526,7 +713,13 @@ class _ReservasScreenState extends State<ReservasScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Paso 1: elige el servicio', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+              const Text(
+                'Paso 1: elige el servicio',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -555,7 +748,13 @@ class _ReservasScreenState extends State<ReservasScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Paso 2: elige recurso', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+              const Text(
+                'Paso 2: elige recurso',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -564,7 +763,9 @@ class _ReservasScreenState extends State<ReservasScreen> {
                   final id = v['id'] as int;
                   final selected = _variantId == id;
                   return ChoiceChip(
-                    label: Text('${v['display_name']} (${_money(v['lst_price'])}/h)'),
+                    label: Text(
+                      '${v['display_name']} (${_money(v['lst_price'])}/h)',
+                    ),
                     selected: selected,
                     onSelected: (_) async {
                       if (selected) return;
@@ -579,12 +780,16 @@ class _ReservasScreenState extends State<ReservasScreen> {
                 DropdownButtonFormField<int>(
                   key: ValueKey<int?>(_sessionTypeId),
                   initialValue: _sessionTypeId,
-                  decoration: const InputDecoration(labelText: 'Tipo de sesión'),
+                  decoration: const InputDecoration(
+                    labelText: 'Tipo de sesión',
+                  ),
                   items: _sessionTypes
-                      .map((t) => DropdownMenuItem<int>(
-                            value: t['id'] as int,
-                            child: Text((t['name'] ?? '').toString()),
-                          ))
+                      .map(
+                        (t) => DropdownMenuItem<int>(
+                          value: t['id'] as int,
+                          child: Text((t['name'] ?? '').toString()),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) => setState(() => _sessionTypeId = v),
                 ),
@@ -593,14 +798,23 @@ class _ReservasScreenState extends State<ReservasScreen> {
           ),
         );
       case 2:
-        final days = List.generate(7, (i) => DateTime.now().add(Duration(days: i)));
+        final days = List.generate(
+          7,
+          (i) => DateTime.now().add(Duration(days: i)),
+        );
         final slots = _availableSlotsForDay(_selectedDay);
         return SingleChildScrollView(
           key: const ValueKey('step_time'),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Paso 3: elige horario', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+              const Text(
+                'Paso 3: elige horario',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
               const SizedBox(height: 8),
               SizedBox(
                 height: 44,
@@ -623,7 +837,13 @@ class _ReservasScreenState extends State<ReservasScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              const Text('Horas disponibles', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+              const Text(
+                'Horas disponibles',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
               const SizedBox(height: 8),
               if (_isLoadingAvailability)
                 const Padding(
@@ -634,7 +854,8 @@ class _ReservasScreenState extends State<ReservasScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: slots.map((slot) {
-                  final selected = _start != null && _start!.isAtSameMomentAs(slot);
+                  final selected =
+                      _start != null && _start!.isAtSameMomentAs(slot);
                   final busy = _isSlotBusy(slot);
                   return ChoiceChip(
                     label: Text(_slotLabel(slot)),
@@ -642,16 +863,24 @@ class _ReservasScreenState extends State<ReservasScreen> {
                     onSelected: busy
                         ? null
                         : (_) {
-                      setState(() {
-                        _start = slot;
-                        _end = _start!.add(Duration(minutes: _durationMinutes));
-                      });
-                    },
+                            setState(() {
+                              _start = slot;
+                              _end = _start!.add(
+                                Duration(minutes: _durationMinutes),
+                              );
+                            });
+                          },
                   );
                 }).toList(),
               ),
               const SizedBox(height: 10),
-              const Text('Duración', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+              const Text(
+                'Duración',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -684,7 +913,9 @@ class _ReservasScreenState extends State<ReservasScreen> {
             children: [
               TextField(
                 controller: _motivoCtrl,
-                decoration: const InputDecoration(labelText: 'Motivo (opcional)'),
+                decoration: const InputDecoration(
+                  labelText: 'Motivo (opcional)',
+                ),
               ),
               const SizedBox(height: 10),
               Container(
@@ -698,7 +929,10 @@ class _ReservasScreenState extends State<ReservasScreen> {
                 child: Text(
                   'Resumen: ${selectedService?['name'] ?? '-'} · ${selectedVariant?['display_name'] ?? '-'}\n'
                   '${_fmt(_start!)} -> ${_fmt(_end!)} · ${_money(((hourlyPrice is num ? hourlyPrice.toDouble() : 0) * (_durationMinutes / 60)))}',
-                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ],
@@ -707,11 +941,15 @@ class _ReservasScreenState extends State<ReservasScreen> {
     }
   }
 
-  Widget _buildReservaCard(Map<String, dynamic> r) {
+  Widget _buildReservaCard(
+    Map<String, dynamic> r, {
+    required AuthProvider auth,
+  }) {
     final id = (r['id'] as num).toInt();
     final estado = (r['estado'] ?? 'borrador').toString();
     final servicio = _nameFromMany2one(r['servicio_id']);
     final session = _nameFromMany2one(r['session_type_id']);
+    final contacto = _nameFromMany2one(r['contacto_id']);
     final start = (r['fecha_inicio'] ?? '').toString();
     final end = (r['fecha_fin'] ?? '').toString();
     final duracion = (r['duracion'] as num?)?.toDouble() ?? 0;
@@ -745,21 +983,40 @@ class _ReservasScreenState extends State<ReservasScreen> {
             ],
           ),
           const SizedBox(height: 6),
-          Text('$start  ->  $end', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          Text(
+            '$start  ->  $end',
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          ),
           const SizedBox(height: 4),
-          Text('Duración: ${duracion.toStringAsFixed(1)}h  ·  Total: ${_money(total)}',
-              style: const TextStyle(color: AppTheme.textMuted, fontSize: 12)),
+          Text(
+            'Duración: ${duracion.toStringAsFixed(1)}h  ·  Total: ${_money(total)}',
+            style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+          ),
           if (session.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text('Tipo: $session', style: const TextStyle(color: AppTheme.textMuted, fontSize: 12)),
+              child: Text(
+                'Tipo: $session',
+                style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+              ),
             ),
           if (motivo.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text('Motivo: $motivo', style: const TextStyle(color: AppTheme.textMuted, fontSize: 12)),
+              child: Text(
+                'Motivo: $motivo',
+                style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+              ),
             ),
-          if (estado == 'borrador') ...[
+          if (contacto.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Solicitante: $contacto',
+                style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+              ),
+            ),
+          if (estado == 'borrador' && auth.canEditModule('reservas')) ...[
             const SizedBox(height: 10),
             Align(
               alignment: Alignment.centerRight,
@@ -789,8 +1046,18 @@ class _ReservasScreenState extends State<ReservasScreen> {
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: AppTheme.radiusXl),
-      child: Text(estado, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700)),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: AppTheme.radiusXl,
+      ),
+      child: Text(
+        estado,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 
@@ -817,15 +1084,23 @@ class _ReservasScreenState extends State<ReservasScreen> {
   }
 
   String _money(dynamic value) {
-    final n = value is num ? value.toDouble() : double.tryParse(value.toString()) ?? 0;
+    final n = value is num
+        ? value.toDouble()
+        : double.tryParse(value.toString()) ?? 0;
     return '${n.toStringAsFixed(2)} EUR';
   }
 
   String _durationLabel(int minutes) {
     final h = minutes ~/ 60;
     final m = minutes % 60;
-    if (h == 0) return '$m' 'm';
-    if (m == 0) return '$h' 'h';
+    if (h == 0) {
+      return '$m'
+          'm';
+    }
+    if (m == 0) {
+      return '$h'
+          'h';
+    }
     return '$h.5h';
   }
 
@@ -850,8 +1125,15 @@ class _ReservasScreenState extends State<ReservasScreen> {
     final dayStart = DateTime(day.year, day.month, day.day, 8, 0);
     final dayEnd = DateTime(day.year, day.month, day.day, 20, 0);
     final slots = <DateTime>[];
-    for (var d = dayStart; !d.isAfter(dayEnd); d = d.add(const Duration(minutes: 30))) {
-      if (_sameDay(d, now) && d.isBefore(now.add(const Duration(minutes: 30)))) continue;
+    for (
+      var d = dayStart;
+      !d.isAfter(dayEnd);
+      d = d.add(const Duration(minutes: 30))
+    ) {
+      if (_sameDay(d, now) &&
+          d.isBefore(now.add(const Duration(minutes: 30)))) {
+        continue;
+      }
       slots.add(d);
     }
     return slots;
@@ -860,7 +1142,8 @@ class _ReservasScreenState extends State<ReservasScreen> {
   bool _isSlotBusy(DateTime slotStart) {
     final slotEnd = slotStart.add(Duration(minutes: _durationMinutes));
     for (final range in _busyRanges) {
-      final overlap = slotStart.isBefore(range.end) && slotEnd.isAfter(range.start);
+      final overlap =
+          slotStart.isBefore(range.end) && slotEnd.isAfter(range.start);
       if (overlap) return true;
     }
     return false;

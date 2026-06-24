@@ -29,7 +29,9 @@ class AppStateProvider extends ChangeNotifier {
   }
 
   void toggleThemeMode() {
-    _themeMode = _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    _themeMode = _themeMode == ThemeMode.dark
+        ? ThemeMode.light
+        : ThemeMode.dark;
     notifyListeners();
   }
 
@@ -59,18 +61,10 @@ class AppStateProvider extends ChangeNotifier {
           ..clear()
           ..addAll(granted);
       } else {
-        _grantedPermissions
-          ..clear()
-          ..addAll(ModuleRegistry.all
-              .where((m) => m.requiredPermission != null)
-              .map((m) => m.requiredPermission!));
+        _grantedPermissions.clear();
       }
     } catch (_) {
-      _grantedPermissions
-        ..clear()
-        ..addAll(ModuleRegistry.all
-            .where((m) => m.requiredPermission != null)
-            .map((m) => m.requiredPermission!));
+      _grantedPermissions.clear();
     }
 
     _loadingAcl = false;
@@ -86,65 +80,48 @@ class AppStateProvider extends ChangeNotifier {
     try {
       final incidentRows = await _odoo.searchRead(
         'calidad.incidencia',
-        fields: ['name', 'tipo', 'fecha', 'state'],
+        fields: ['name', 'tipo', 'fecha', 'estado'],
         order: 'id desc',
         limit: 5,
       );
       for (final row in incidentRows) {
         final m = Map<String, dynamic>.from(row as Map);
-        items.add(AppNotification(
-          id: (m['id'] as num).toInt(),
-          title: m['name']?.toString() ?? 'Incidencia',
-          subtitle: m['tipo']?.toString() ?? 'Nueva incidencia',
-          level: 'high',
-          createdAtLabel: m['fecha']?.toString() ?? 'Ahora',
-          moduleKey: 'incidents',
-        ));
+        items.add(
+          AppNotification(
+            id: (m['id'] as num).toInt(),
+            title: m['name']?.toString() ?? 'Incidencia',
+            subtitle: m['tipo']?.toString() ?? 'Nueva incidencia',
+            level: 'high',
+            createdAtLabel: m['fecha']?.toString() ?? 'Ahora',
+            moduleKey: 'incidents',
+          ),
+        );
       }
     } catch (_) {}
 
     try {
       final commRows = await _odoo.searchRead(
         'calidad.comunicacion',
-        fields: ['name', 'tipo', 'fecha_envio', 'state'],
+        fields: ['name', 'tipo', 'fecha', 'estado'],
         order: 'id desc',
         limit: 5,
       );
       for (final row in commRows) {
         final m = Map<String, dynamic>.from(row as Map);
-        items.add(AppNotification(
-          id: (m['id'] as num).toInt(),
-          title: m['name']?.toString() ?? 'Comunicación',
-          subtitle: m['tipo']?.toString() ?? 'Nueva comunicación',
-          level: 'medium',
-          createdAtLabel: m['fecha_envio']?.toString() ?? 'Ahora',
-          moduleKey: 'communications',
-        ));
+        items.add(
+          AppNotification(
+            id: (m['id'] as num).toInt(),
+            title: m['name']?.toString() ?? 'Comunicación',
+            subtitle: m['tipo']?.toString() ?? 'Nueva comunicación',
+            level: 'medium',
+            createdAtLabel: m['fecha']?.toString() ?? 'Ahora',
+            moduleKey: 'communications',
+          ),
+        );
       }
     } catch (_) {}
 
-    if (items.isEmpty) {
-      _notifications = const [
-        AppNotification(
-          id: 1,
-          title: 'Incidencia crítica asignada',
-          subtitle: 'Fuga de reactivo en laboratorio',
-          level: 'high',
-          createdAtLabel: 'Hace 5 min',
-          moduleKey: 'incidents',
-        ),
-        AppNotification(
-          id: 2,
-          title: 'Aprobación requerida',
-          subtitle: 'Evaluación de proveedor',
-          level: 'medium',
-          createdAtLabel: 'Hace 30 min',
-          moduleKey: 'suppliers',
-        ),
-      ];
-    } else {
-      _notifications = items;
-    }
+    _notifications = items;
 
     _loadingNotifications = false;
     notifyListeners();

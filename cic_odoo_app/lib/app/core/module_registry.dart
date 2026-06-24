@@ -76,6 +76,7 @@ class ModuleRegistry {
       icon: Icons.event_note_rounded,
       color: Color(0xFFFF8C42),
       requiredPermission: 'planning.view',
+      description: 'Agenda y planificación de reservas',
       implemented: true,
     ),
     AppModule(
@@ -148,7 +149,8 @@ class ModuleRegistry {
       icon: Icons.open_in_browser_rounded,
       color: Color(0xFFEC4899),
       requiredPermission: 'portal.view',
-      implemented: false,
+      description: 'Accesos portal, autoservicio y nóminas',
+      implemented: true,
     ),
     AppModule(
       key: 'organization',
@@ -156,6 +158,7 @@ class ModuleRegistry {
       icon: Icons.account_tree_rounded,
       color: Color(0xFF14B8A6),
       requiredPermission: 'organization.view',
+      description: 'Pendiente de integrar con estructura organizativa',
       implemented: false,
     ),
     AppModule(
@@ -189,7 +192,8 @@ class ModuleRegistry {
       icon: Icons.build_circle_rounded,
       color: Color(0xFFF59E0B),
       requiredPermission: 'maintenance.view',
-      implemented: false,
+      description: 'Solicitudes y equipos enlazados con calidad',
+      implemented: true,
     ),
   ];
 }

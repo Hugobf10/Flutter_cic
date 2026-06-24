@@ -22,7 +22,15 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
   final OdooService _odoo = OdooService();
   String _filtroEstado = 'todas';
 
-  static const _fields = ['name', 'tipo', 'categoria', 'estado', 'fecha', 'avance', 'unidad_id'];
+  static const _fields = [
+    'name',
+    'tipo',
+    'categoria',
+    'estado',
+    'fecha',
+    'avance',
+    'unidad_id',
+  ];
 
   @override
   void initState() {
@@ -31,8 +39,18 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
   }
 
   void _loadData() {
-    final domain = _filtroEstado == 'todas' ? <dynamic>[] : [['estado', '=', _filtroEstado]];
-    _provider.loadRecords('calidad.incidencia', domain: domain, fields: _fields, order: 'fecha desc', limit: 50);
+    final domain = _filtroEstado == 'todas'
+        ? <dynamic>[]
+        : [
+            ['estado', '=', _filtroEstado],
+          ];
+    _provider.loadRecords(
+      'calidad.incidencia',
+      domain: domain,
+      fields: _fields,
+      order: 'fecha desc',
+      limit: 50,
+    );
   }
 
   Future<void> _openCreateDialog() async {
@@ -43,7 +61,12 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
       showDragHandle: true,
       builder: (ctx) {
         return Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + MediaQuery.of(ctx).viewInsets.bottom),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            16 + MediaQuery.of(ctx).viewInsets.bottom,
+          ),
           child: DynamicForm(
             submitLabel: 'Crear incidencia',
             fields: const [
@@ -56,7 +79,10 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
                 required: true,
                 options: [
                   DynamicFieldOption(value: 'nc', label: 'No conformidad'),
-                  DynamicFieldOption(value: 'om', label: 'Oportunidad de mejora'),
+                  DynamicFieldOption(
+                    value: 'om',
+                    label: 'Oportunidad de mejora',
+                  ),
                 ],
               ),
               DynamicFieldConfig(
@@ -80,11 +106,19 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
                   DynamicFieldOption(value: 'interna', label: 'Interna'),
                   DynamicFieldOption(value: 'proveedor', label: 'Proveedor'),
                   DynamicFieldOption(value: 'auditoria', label: 'Auditoría'),
-                  DynamicFieldOption(value: 'reclamacion', label: 'Reclamación'),
+                  DynamicFieldOption(
+                    value: 'reclamacion',
+                    label: 'Reclamación',
+                  ),
                   DynamicFieldOption(value: 'otra', label: 'Otra'),
                 ],
               ),
-              DynamicFieldConfig(key: 'fecha', label: 'Fecha', type: DynamicFieldType.date, required: true),
+              DynamicFieldConfig(
+                key: 'fecha',
+                label: 'Fecha',
+                type: DynamicFieldType.date,
+                required: true,
+              ),
               DynamicFieldConfig(
                 key: 'descripcion',
                 label: 'Descripción',
@@ -119,6 +153,7 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
     return ChangeNotifierProvider.value(
       value: _provider,
       child: Scaffold(
@@ -126,14 +161,25 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
         appBar: AppBar(
           title: const Text('Incidencias'),
           actions: [
-            IconButton(icon: const Icon(Icons.add_rounded), onPressed: _openCreateDialog),
-            IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _loadData),
+            if (auth.canEditModule('incidents'))
+              IconButton(
+                icon: const Icon(Icons.add_rounded),
+                onPressed: _openCreateDialog,
+              ),
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded),
+              onPressed: _loadData,
+            ),
           ],
         ),
         body: Column(
           children: [
             _buildFilterChips(),
-            Expanded(child: Consumer<DataProvider>(builder: (context, p, child) => _buildList(p))),
+            Expanded(
+              child: Consumer<DataProvider>(
+                builder: (context, p, child) => _buildList(p),
+              ),
+            ),
           ],
         ),
       ),
@@ -141,7 +187,12 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
   }
 
   Widget _buildFilterChips() {
-    final filters = {'todas': 'Todas', 'abierta': 'Abiertas', 'en_proceso': 'En proceso', 'cerrada': 'Cerradas'};
+    final filters = {
+      'todas': 'Todas',
+      'abierta': 'Abiertas',
+      'en_proceso': 'En proceso',
+      'cerrada': 'Cerradas',
+    };
     return Container(
       height: 52,
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -154,7 +205,10 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
             child: FilterChip(
               label: Text(e.value),
               selected: selected,
-              onSelected: (_) { setState(() => _filtroEstado = e.key); _loadData(); },
+              onSelected: (_) {
+                setState(() => _filtroEstado = e.key);
+                _loadData();
+              },
               selectedColor: AppTheme.primary.withValues(alpha: 0.2),
               checkmarkColor: AppTheme.primary,
               labelStyle: TextStyle(
@@ -163,7 +217,11 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
                 fontSize: 13,
               ),
               backgroundColor: AppTheme.surfaceCard,
-              side: BorderSide(color: selected ? AppTheme.primary.withValues(alpha: 0.5) : AppTheme.divider),
+              side: BorderSide(
+                color: selected
+                    ? AppTheme.primary.withValues(alpha: 0.5)
+                    : AppTheme.divider,
+              ),
               shape: RoundedRectangleBorder(borderRadius: AppTheme.radiusXl),
             ),
           );
@@ -173,18 +231,36 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
   }
 
   Widget _buildList(DataProvider p) {
-    if (p.isLoading && p.records.isEmpty) return const Padding(padding: EdgeInsets.all(16), child: ShimmerList());
+    if (p.isLoading && p.records.isEmpty) {
+      return const Padding(padding: EdgeInsets.all(16), child: ShimmerList());
+    }
     if (p.errorMessage != null) {
-      return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(Icons.error_outline, color: AppTheme.danger, size: 40),
-        const SizedBox(height: 8),
-        Text(p.errorMessage!, style: const TextStyle(color: AppTheme.textMuted, fontSize: 12)),
-        const SizedBox(height: 12),
-        ElevatedButton(onPressed: _loadData, child: const Text('Reintentar')),
-      ]));
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, color: AppTheme.danger, size: 40),
+            const SizedBox(height: 8),
+            Text(
+              p.errorMessage!,
+              style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _loadData,
+              child: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      );
     }
     if (p.records.isEmpty) {
-      return const Center(child: Text('No hay incidencias.', style: TextStyle(color: AppTheme.textMuted)));
+      return const Center(
+        child: Text(
+          'No hay incidencias.',
+          style: TextStyle(color: AppTheme.textMuted),
+        ),
+      );
     }
 
     return RefreshIndicator(
@@ -193,7 +269,12 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
         itemCount: p.records.length + 1,
         itemBuilder: (_, i) {
-          if (i == 0) return SectionHeader(title: '${p.totalCount} incidencias', subtitle: 'Ordenadas por fecha');
+          if (i == 0) {
+            return SectionHeader(
+              title: '${p.totalCount} incidencias',
+              subtitle: 'Ordenadas por fecha',
+            );
+          }
           return _buildCard(Map<String, dynamic>.from(p.records[i - 1] as Map));
         },
       ),
@@ -205,14 +286,23 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
     final tipo = inc['tipo']?.toString() ?? '';
     final estado = inc['estado']?.toString() ?? '';
     final avance = (inc['avance'] as num?)?.toDouble() ?? 0;
-    final unidad = inc['unidad_id'] is List ? (inc['unidad_id'] as List).last?.toString() ?? '' : '';
+    final unidad = inc['unidad_id'] is List
+        ? (inc['unidad_id'] as List).last?.toString() ?? ''
+        : '';
 
     Color estadoColor;
     switch (estado) {
-      case 'abierta': estadoColor = AppTheme.danger; break;
-      case 'en_proceso': estadoColor = AppTheme.warning; break;
-      case 'cerrada': estadoColor = AppTheme.success; break;
-      default: estadoColor = AppTheme.textMuted;
+      case 'abierta':
+        estadoColor = AppTheme.danger;
+        break;
+      case 'en_proceso':
+        estadoColor = AppTheme.warning;
+        break;
+      case 'cerrada':
+        estadoColor = AppTheme.success;
+        break;
+      default:
+        estadoColor = AppTheme.textMuted;
     }
 
     return InkWell(
@@ -221,7 +311,9 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
           ? null
           : () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => IncidenceDetailScreen(id: id)),
+                MaterialPageRoute(
+                  builder: (_) => IncidenceDetailScreen(id: id),
+                ),
               );
             },
       child: Container(
@@ -235,49 +327,101 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          Row(children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: (tipo == 'nc' ? AppTheme.danger : AppTheme.info).withValues(alpha: 0.15),
-                borderRadius: AppTheme.radiusXl,
-              ),
-              child: Text(tipo == 'nc' ? 'NC' : 'OM',
-                  style: TextStyle(color: tipo == 'nc' ? AppTheme.danger : AppTheme.info, fontSize: 10, fontWeight: FontWeight.w800)),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(color: estadoColor.withValues(alpha: 0.15), borderRadius: AppTheme.radiusXl),
-              child: Text(estado.replaceAll('_', ' '), style: TextStyle(color: estadoColor, fontSize: 10, fontWeight: FontWeight.w700)),
-            ),
-            const Spacer(),
-            Text(inc['fecha']?.toString() ?? '', style: const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
-          ]),
-          const SizedBox(height: 10),
-          Text(inc['name']?.toString() ?? '', style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
-          if (unidad.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(unidad, style: const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
-          ],
-          if (avance > 0) ...[
-            const SizedBox(height: 10),
-            Row(children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: AppTheme.radiusXl,
-                  child: LinearProgressIndicator(
-                    value: avance / 100,
-                    backgroundColor: AppTheme.divider,
-                    valueColor: AlwaysStoppedAnimation(avance >= 100 ? AppTheme.success : AppTheme.primary),
-                    minHeight: 5,
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: (tipo == 'nc' ? AppTheme.danger : AppTheme.info)
+                        .withValues(alpha: 0.15),
+                    borderRadius: AppTheme.radiusXl,
+                  ),
+                  child: Text(
+                    tipo == 'nc' ? 'NC' : 'OM',
+                    style: TextStyle(
+                      color: tipo == 'nc' ? AppTheme.danger : AppTheme.info,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: estadoColor.withValues(alpha: 0.15),
+                    borderRadius: AppTheme.radiusXl,
+                  ),
+                  child: Text(
+                    estado.replaceAll('_', ' '),
+                    style: TextStyle(
+                      color: estadoColor,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  inc['fecha']?.toString() ?? '',
+                  style: const TextStyle(
+                    color: AppTheme.textMuted,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              inc['name']?.toString() ?? '',
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
               ),
-              const SizedBox(width: 8),
-              Text('${avance.toStringAsFixed(0)}%', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.w600)),
-            ]),
-          ],
+            ),
+            if (unidad.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                unidad,
+                style: const TextStyle(color: AppTheme.textMuted, fontSize: 11),
+              ),
+            ],
+            if (avance > 0) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: AppTheme.radiusXl,
+                      child: LinearProgressIndicator(
+                        value: avance / 100,
+                        backgroundColor: AppTheme.divider,
+                        valueColor: AlwaysStoppedAnimation(
+                          avance >= 100 ? AppTheme.success : AppTheme.primary,
+                        ),
+                        minHeight: 5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${avance.toStringAsFixed(0)}%',
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../features/module_placeholders/module_placeholder_screen.dart';
+import '../../features/maintenance/maintenance_screen.dart';
+import '../../features/planning/planning_screen.dart';
 import '../../features/chemicals/chemicals_screen.dart';
 import '../../features/communications/communications_screen.dart';
 import '../../features/equipment/equipment_screen.dart';
@@ -8,6 +10,7 @@ import '../../features/health/health_screen.dart';
 import '../../features/normativa/normativa_screen.dart';
 import '../../features/payroll/payroll_screen.dart';
 import '../../features/permissions/permissions_center_screen.dart';
+import '../../features/portal/portal_screen.dart';
 import '../../features/purchases/purchases_screen.dart';
 import '../../features/suggestions/suggestions_screen.dart';
 import '../../features/suppliers/suppliers_screen.dart';
@@ -15,7 +18,6 @@ import '../../features/training/training_screen.dart';
 import '../../features/quality/quality_center_screen.dart';
 import '../../features/recruitment/recruitment_screen.dart';
 import '../../features/goals/goals_screen.dart';
-import '../../features/action_plans/action_plans_screen.dart';
 import '../../screens/documentos/documentos_screen.dart';
 import '../../screens/home/home_screen.dart';
 import '../../screens/incidencias/incidencias_screen.dart';
@@ -36,7 +38,7 @@ class ModuleRouter {
       case 'elearning':
         return const TrainingScreen();
       case 'planning':
-        return const ActionPlansScreen();
+        return const PlanningScreen();
       case 'reservas':
         return const ReservasScreen();
       case 'goals':
@@ -62,7 +64,9 @@ class ModuleRouter {
       case 'suppliers':
         return const SuppliersScreen();
       case 'maintenance':
+        return const MaintenanceScreen();
       case 'portal':
+        return const PortalScreen();
       case 'organization':
         return ModulePlaceholderScreen(title: title);
       case 'purchases':

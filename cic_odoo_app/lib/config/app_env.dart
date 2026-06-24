@@ -1,4 +1,10 @@
 class AppEnv {
-  static const odooBaseUrl = 'https://staging-cicancer.octupus.app';
-  static const odooDatabase = 'staging-cicancer.octupus.app';
+  static const String odooBaseUrl = String.fromEnvironment(
+    'ODOO_BASE_URL',
+    defaultValue: '',
+  );
+  static const String odooDatabase = String.fromEnvironment(
+    'ODOO_DATABASE',
+    defaultValue: '',
+  );
 }

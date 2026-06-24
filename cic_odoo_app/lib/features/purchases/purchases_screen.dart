@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 import '../../app/ui/app_components.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/app_permission_service.dart';
 import '../../services/attachment_service.dart';
 import '../../services/native_ocr_service.dart';
@@ -146,17 +148,18 @@ class _ProductsTabState extends State<_ProductsTab> {
   }
 
   Future<void> _openCreateProduct() async {
-    final created = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (_) => const _CreateProductSheet(),
+    final created = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => const _CreateProductScreen(),
+      ),
     );
     if (created == true) await _load(_searchCtrl.text);
   }
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
     return RefreshIndicator(
       onRefresh: () => _load(_searchCtrl.text),
       child: ListView(
@@ -180,12 +183,15 @@ class _ProductsTabState extends State<_ProductsTab> {
             ],
           ),
           const SizedBox(height: 12),
-          AppButton.primary(
-            label: 'Nuevo producto',
-            icon: Icons.add_rounded,
-            onPressed: _openCreateProduct,
-          ),
-          const SizedBox(height: 18),
+          if (auth.canEditModule('purchases')) ...[
+            AppButton.primary(
+              label: 'Nuevo producto',
+              icon: Icons.add_rounded,
+              onPressed: _openCreateProduct,
+            ),
+            const SizedBox(height: 18),
+          ] else
+            const SizedBox(height: 6),
           if (_loading)
             const SizedBox(
               height: 260,
@@ -284,14 +290,14 @@ class _ProductCard extends StatelessWidget {
   }
 }
 
-class _CreateProductSheet extends StatefulWidget {
-  const _CreateProductSheet();
+class _CreateProductScreen extends StatefulWidget {
+  const _CreateProductScreen();
 
   @override
-  State<_CreateProductSheet> createState() => _CreateProductSheetState();
+  State<_CreateProductScreen> createState() => _CreateProductScreenState();
 }
 
-class _CreateProductSheetState extends State<_CreateProductSheet> {
+class _CreateProductScreenState extends State<_CreateProductScreen> {
   final OdooService _odoo = OdooService();
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
@@ -360,18 +366,17 @@ class _CreateProductSheetState extends State<_CreateProductSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        6,
-        20,
-        20 + MediaQuery.of(context).viewInsets.bottom,
-      ),
+    return AppScaffold(
+      title: 'Nuevo producto',
+      actions: [
+        IconButton(
+          onPressed: _saving ? null : () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.close_rounded),
+        ),
+      ],
       child: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: ListView(
           children: [
             const AppSectionHeader(
               title: 'Nuevo producto',
@@ -712,6 +717,7 @@ class _ReceptionTabState extends State<_ReceptionTab> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
     final order = _order;
     return RefreshIndicator(
       onRefresh: _loadOrder,
@@ -738,13 +744,13 @@ class _ReceptionTabState extends State<_ReceptionTab> {
               IconButton.filledTonal(
                 onPressed: _pickInvoice,
                 icon: const Icon(Icons.upload_file_rounded),
-                tooltip: 'Leer factura',
+                tooltip: 'Cargar factura',
               ),
               const SizedBox(width: 8),
               IconButton.filled(
                 onPressed: _scanOrderWithCamera,
                 icon: const Icon(Icons.document_scanner_rounded),
-                tooltip: 'Leer código con cámara',
+                tooltip: 'Escanear con cámara',
               ),
             ],
           ),
@@ -778,8 +784,10 @@ class _ReceptionTabState extends State<_ReceptionTab> {
             _OrderHeader(order: order),
             const SizedBox(height: 14),
             AppSectionHeader(
-              title: 'Productos pedidos',
-              subtitle: 'Indica cuántas unidades han llegado.',
+              title: 'Líneas del pedido',
+              subtitle: auth.canEditModule('purchases')
+                  ? 'Indica cuántas unidades han llegado.'
+                  : 'Consulta las cantidades pedidas y recibidas.',
             ),
             ..._lines.map(
               (line) => Padding(
@@ -793,12 +801,13 @@ class _ReceptionTabState extends State<_ReceptionTab> {
               ),
             ),
             const SizedBox(height: 8),
-            AppButton.primary(
-              label: 'Guardar recepción',
-              icon: Icons.task_alt_rounded,
-              loading: _saving,
-              onPressed: _saving ? null : _saveReception,
-            ),
+            if (auth.canEditModule('purchases'))
+              AppButton.primary(
+                label: 'Guardar recepción',
+                icon: Icons.task_alt_rounded,
+                loading: _saving,
+                onPressed: _saving ? null : _saveReception,
+              ),
           ],
         ],
       ),
@@ -853,7 +862,7 @@ class _OrderHeader extends StatelessWidget {
             ),
           ),
           AppStatusChip(
-            label: state.isEmpty ? 'Pedido' : state,
+            label: _purchaseStateLabel(state),
             color: AppTheme.primary,
           ),
         ],
@@ -885,16 +894,19 @@ class _ReceiptLineCard extends StatelessWidget {
           Text(product, style: const TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
           Text(
-            'Pedido: ${_formatQty(ordered)} $unit · Recibido en Odoo: ${_formatQty(received)} $unit',
+            'Pedido: ${_formatQty(ordered)} $unit · Recibido: ${_formatQty(received)} $unit',
             style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
           ),
           const SizedBox(height: 10),
-          AppInput(
-            controller: controller,
-            labelText: 'Cantidad llegada ahora',
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            prefixIcon: Icons.inventory_rounded,
-          ),
+          if (context.watch<AuthProvider>().canEditModule('purchases'))
+            AppInput(
+              controller: controller,
+              labelText: 'Cantidad recibida ahora',
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              prefixIcon: Icons.inventory_rounded,
+            ),
         ],
       ),
     );
@@ -915,6 +927,25 @@ String _formatQty(num value) {
     return doubleValue.toInt().toString();
   }
   return doubleValue.toStringAsFixed(2);
+}
+
+String _purchaseStateLabel(String state) {
+  switch (state) {
+    case 'draft':
+      return 'Borrador';
+    case 'sent':
+      return 'Enviado';
+    case 'to approve':
+      return 'Pendiente de aprobación';
+    case 'purchase':
+      return 'Pedido confirmado';
+    case 'done':
+      return 'Finalizado';
+    case 'cancel':
+      return 'Cancelado';
+    default:
+      return state.isEmpty ? 'Pedido' : state;
+  }
 }
 
 int? _many2OneId(dynamic value) {

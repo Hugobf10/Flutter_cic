@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:provider/provider.dart';
 
 import '../../app/screens/document_viewer_screen.dart';
 import '../../features/forms/dynamic_form.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
 import '../../theme/app_theme.dart';
@@ -61,14 +63,23 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
       showDragHandle: true,
       builder: (ctx) {
         return Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + MediaQuery.of(ctx).viewInsets.bottom),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            16 + MediaQuery.of(ctx).viewInsets.bottom,
+          ),
           child: DynamicForm(
             submitLabel: 'Registrar químico',
             fields: const [
               DynamicFieldConfig(key: 'name', label: 'Nombre', required: true),
               DynamicFieldConfig(key: 'codigo', label: 'Código'),
               DynamicFieldConfig(key: 'tipo', label: 'Tipo'),
-              DynamicFieldConfig(key: 'fecha_caducidad', label: 'Fecha caducidad', type: DynamicFieldType.date),
+              DynamicFieldConfig(
+                key: 'fecha_caducidad',
+                label: 'Fecha caducidad',
+                type: DynamicFieldType.date,
+              ),
             ],
             onSubmit: (values) async {
               final date = values['fecha_caducidad'] as DateTime?;
@@ -78,7 +89,9 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
               await _odoo.create('calidad.quimico', {
                 'name': values['name'],
                 'codigo': values['codigo'],
-                'tipo': (values['tipo']?.toString().trim().isEmpty ?? true) ? 'otro' : values['tipo'],
+                'tipo': (values['tipo']?.toString().trim().isEmpty ?? true)
+                    ? 'otro'
+                    : values['tipo'],
                 if (date != null) 'fecha_caducidad': '$y-$m-$d',
               });
             },
@@ -91,61 +104,110 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Químicos'),
         actions: [
-          IconButton(onPressed: _openCreate, icon: const Icon(Icons.add_rounded)),
+          if (auth.canEditModule('chemicals'))
+            IconButton(
+              onPressed: _openCreate,
+              icon: const Icon(Icons.add_rounded),
+            ),
           IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
         ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(child: Padding(padding: const EdgeInsets.all(16), child: Text(_error!)))
-              : _rows.isEmpty
-                  ? const Center(child: Text('Sin productos químicos.', style: TextStyle(color: AppTheme.textMuted)))
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                      itemCount: _rows.length,
-                      separatorBuilder: (_, i) => const SizedBox(height: 8),
-                      itemBuilder: (_, i) {
-                        final it = _rows[i];
-                        final unidad = it['unidad_id'] is List ? it['unidad_id'][1].toString() : '';
-                        return Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppTheme.surfaceCard,
-                            borderRadius: AppTheme.radiusMd,
-                            border: Border.all(color: AppTheme.divider.withValues(alpha: 0.6)),
-                          ),
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text((it['name'] ?? '').toString(), style: const TextStyle(fontWeight: FontWeight.w700)),
-                            Text('Tipo: ${it['tipo'] ?? '-'} · Peligroso: ${it['es_peligroso'] == true ? 'Sí' : 'No'}', style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
-                            if ((it['fecha_caducidad'] ?? '').toString().isNotEmpty)
-                              Text('Caducidad: ${it['fecha_caducidad']}', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                            if (unidad.isNotEmpty)
-                              Text('Unidad: $unidad', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                OutlinedButton.icon(
-                                  onPressed: () => _openDetails(it),
-                                  icon: const Icon(Icons.info_outline_rounded, size: 16),
-                                  label: const Text('Detalle'),
-                                ),
-                                const SizedBox(width: 8),
-                                OutlinedButton.icon(
-                                  onPressed: () => _openSafetySheet(it),
-                                  icon: const Icon(Icons.description_outlined, size: 16),
-                                  label: const Text('Ficha'),
-                                ),
-                              ],
-                            ),
-                          ]),
-                        );
-                      },
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(_error!),
+              ),
+            )
+          : _rows.isEmpty
+          ? const Center(
+              child: Text(
+                'Sin productos químicos.',
+                style: TextStyle(color: AppTheme.textMuted),
+              ),
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+              itemCount: _rows.length,
+              separatorBuilder: (_, i) => const SizedBox(height: 8),
+              itemBuilder: (_, i) {
+                final it = _rows[i];
+                final unidad = it['unidad_id'] is List
+                    ? it['unidad_id'][1].toString()
+                    : '';
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceCard,
+                    borderRadius: AppTheme.radiusMd,
+                    border: Border.all(
+                      color: AppTheme.divider.withValues(alpha: 0.6),
                     ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        (it['name'] ?? '').toString(),
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      Text(
+                        'Tipo: ${it['tipo'] ?? '-'} · Peligroso: ${it['es_peligroso'] == true ? 'Sí' : 'No'}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                      if ((it['fecha_caducidad'] ?? '').toString().isNotEmpty)
+                        Text(
+                          'Caducidad: ${it['fecha_caducidad']}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
+                      if (unidad.isNotEmpty)
+                        Text(
+                          'Unidad: $unidad',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () => _openDetails(it),
+                            icon: const Icon(
+                              Icons.info_outline_rounded,
+                              size: 16,
+                            ),
+                            label: const Text('Detalle'),
+                          ),
+                          const SizedBox(width: 8),
+                          OutlinedButton.icon(
+                            onPressed: () => _openSafetySheet(it),
+                            icon: const Icon(
+                              Icons.description_outlined,
+                              size: 16,
+                            ),
+                            label: const Text('Ficha'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
     );
   }
 
@@ -160,7 +222,10 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text((it['name'] ?? '').toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            Text(
+              (it['name'] ?? '').toString(),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 8),
             Text('Código: ${(it['codigo'] ?? '-')}'),
             Text('Tipo: ${(it['tipo'] ?? '-')}'),
@@ -189,7 +254,11 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
       if (file.mimeType.contains('pdf') || file.mimeType.startsWith('image/')) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => DocumentViewerScreen(file: file.file, title: file.name, mimeType: file.mimeType),
+            builder: (_) => DocumentViewerScreen(
+              file: file.file,
+              title: file.name,
+              mimeType: file.mimeType,
+            ),
           ),
         );
       } else {
@@ -197,7 +266,9 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo abrir la ficha: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo abrir la ficha: $e')));
     }
   }
 }

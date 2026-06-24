@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/module_router.dart';
+import '../core/module_registry.dart';
 import '../models/app_module.dart';
 import '../providers/app_state_provider.dart';
 import '../ui/app_components.dart';
+import '../widgets/module_tile.dart';
 import '../../providers/auth_provider.dart';
 
 class ModulesHubScreen extends StatefulWidget {
@@ -26,9 +28,9 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final appState = context.watch<AppStateProvider>();
+    context.watch<AppStateProvider>();
     final auth = context.watch<AuthProvider>();
-    final modules = _filter(_intranetModules(appState.availableModules, auth), _query)
+    final modules = _filter(_intranetModules(ModuleRegistry.all, auth), _query)
       ..sort((a, b) => a.title.compareTo(b.title));
 
     return AppScaffold(
@@ -38,48 +40,33 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
           AppSearchBar(
             controller: _searchCtrl,
             hintText: 'Buscar módulos...',
-            onChanged: (value) => setState(() => _query = value.trim().toLowerCase()),
+            onChanged: (value) =>
+                setState(() => _query = value.trim().toLowerCase()),
           ),
           const SizedBox(height: 12),
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final width = constraints.maxWidth;
-                final crossAxisCount = width >= 1200 ? 4 : width >= 900 ? 3 : width >= 640 ? 3 : 2;
                 return GridView.builder(
                   itemCount: modules.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 280,
                     crossAxisSpacing: 8,
                     mainAxisSpacing: 8,
-                    childAspectRatio: 1.45,
+                    mainAxisExtent: 164,
                   ),
                   itemBuilder: (_, i) {
                     final module = modules[i];
-                    return AppCard(
+                    return ModuleTile(
+                      module: module,
                       onTap: () {
-                        Navigator.of(context).push(MaterialPageRoute(
-                          builder: (_) => ModuleRouter.build(module.key, module.title),
-                        ));
-                      },
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: module.color.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(module.icon, size: 18, color: module.color),
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                ModuleRouter.build(module.key, module.title),
                           ),
-                          const Spacer(),
-                          Text(module.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 2),
-                          Text(module.description ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
-                        ],
-                      ),
+                        );
+                      },
                     );
                   },
                 );
@@ -94,10 +81,12 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
   List<AppModule> _filter(List<AppModule> modules, String query) {
     if (query.isEmpty) return modules;
     return modules
-        .where((m) =>
-            m.title.toLowerCase().contains(query) ||
-            m.key.toLowerCase().contains(query) ||
-            (m.description ?? '').toLowerCase().contains(query))
+        .where(
+          (m) =>
+              m.title.toLowerCase().contains(query) ||
+              m.key.toLowerCase().contains(query) ||
+              (m.description ?? '').toLowerCase().contains(query),
+        )
         .toList();
   }
 
@@ -121,7 +110,12 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
       'suppliers',
       'purchases',
       'recruitment',
+      'portal',
+      'organization',
+      'maintenance',
     };
-    return modules.where((m) => allowed.contains(m.key) && auth.canViewModule(m.key)).toList();
+    return modules
+        .where((m) => allowed.contains(m.key) && auth.canViewModule(m.key))
+        .toList();
   }
 }

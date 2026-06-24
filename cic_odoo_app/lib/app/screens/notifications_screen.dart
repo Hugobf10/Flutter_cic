@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/module_navigation.dart';
 import '../models/app_notification.dart';
 import '../providers/app_state_provider.dart';
 import '../ui/app_components.dart';
+import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -19,6 +21,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppStateProvider>();
+    final auth = context.watch<AuthProvider>();
     final list = _applyFilter(appState.notifications);
 
     return AppScaffold(
@@ -42,16 +45,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             child: appState.loadingNotifications
                 ? const AppLoadingView(label: 'Cargando actividad...')
                 : list.isEmpty
-                    ? const AppEmptyState(
-                        title: 'Sin actividad',
-                        subtitle: 'No hay notificaciones para este filtro.',
-                        icon: Icons.notifications_none_rounded,
-                      )
-                    : ListView.separated(
-                        itemCount: list.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (_, i) => _NotificationCard(item: list[i]),
-                      ),
+                ? const AppEmptyState(
+                    title: 'Sin actividad',
+                    subtitle: 'No hay notificaciones para este filtro.',
+                    icon: Icons.notifications_none_rounded,
+                  )
+                : ListView.separated(
+                    itemCount: list.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (_, i) =>
+                        _NotificationCard(item: list[i], auth: auth),
+                  ),
           ),
         ],
       ),
@@ -79,9 +83,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 }
 
 class _NotificationCard extends StatelessWidget {
-  const _NotificationCard({required this.item});
+  const _NotificationCard({required this.item, required this.auth});
 
   final AppNotification item;
+  final AuthProvider auth;
 
   @override
   Widget build(BuildContext context) {
@@ -92,6 +97,11 @@ class _NotificationCard extends StatelessWidget {
     };
 
     return AppListTile(
+      onTap: () => ModuleNavigation.openModule(
+        context,
+        auth: auth,
+        moduleKey: item.moduleKey,
+      ),
       leading: Container(
         width: 30,
         height: 30,
@@ -103,7 +113,9 @@ class _NotificationCard extends StatelessWidget {
       ),
       title: item.title,
       subtitle: '${item.subtitle} · ${item.createdAtLabel}',
-      trailing: item.unread ? const Icon(Icons.circle, size: 10, color: AppTheme.primary) : null,
+      trailing: item.unread
+          ? const Icon(Icons.circle, size: 10, color: AppTheme.primary)
+          : null,
     );
   }
 }
