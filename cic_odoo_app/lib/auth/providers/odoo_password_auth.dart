@@ -25,10 +25,11 @@ class OdooPasswordAuth implements AuthProvider {
     _odoo.init(baseUrl: serverUrl);
     final ok = await _odoo.authenticate(login, password, database: database);
     if (!ok) {
+      final sanitized = OdooService.prettyAuthError(_odoo.lastAuthError);
       return AuthResult(
         success: false,
-        errorMessage: _odoo.lastAuthError?.isNotEmpty == true
-            ? 'Error autenticando: ${_odoo.lastAuthError}'
+        errorMessage: sanitized.isNotEmpty
+            ? sanitized
             : 'Credenciales incorrectas o servidor no disponible.',
       );
     }

@@ -26,23 +26,28 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
   }
 
   Future<void> _load() async {
+    final auth = context.read<AuthProvider>();
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
+      final domain = <dynamic>[
+        ['tipo', '=', 'sugerencia'],
+      ];
+      if (auth.isPortalUser) {
+        domain.add(['partner_id', '=', auth.partnerId]);
+      }
       final rows = await _odoo.searchRead(
         'calidad.comunicacion',
-        domain: const [
-          ['tipo', '=', 'sugerencia'],
-        ],
+        domain: domain,
         fields: const ['name', 'descripcion', 'fecha', 'estado'],
         order: 'fecha desc, id desc',
         limit: 80,
       );
       _rows = rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     } catch (e) {
-      _error = e.toString();
+      _error = OdooService.prettyError(e);
     }
     if (mounted) setState(() => _loading = false);
   }

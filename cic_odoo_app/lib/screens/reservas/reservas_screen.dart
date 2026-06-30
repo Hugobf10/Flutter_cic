@@ -42,6 +42,7 @@ class _ReservasScreenState extends State<ReservasScreen> {
   int _durationMinutes = 60;
   int _wizardStep = 0;
   DateTime _selectedDay = DateTime.now();
+  DateTime _agendaDay = DateTime.now();
   List<DateTimeRange> _busyRanges = [];
 
   @override
@@ -66,7 +67,7 @@ class _ReservasScreenState extends State<ReservasScreen> {
       _portalOnlyMode = false;
     });
     await _loadMisReservas();
-    await _loadAgendaReservas();
+    await _loadAgendaReservas(day: _agendaDay);
     try {
       final services = await _odoo.searchRead(
         'product.template',
@@ -196,34 +197,50 @@ class _ReservasScreenState extends State<ReservasScreen> {
     final auth = context.read<AuthProvider>();
     final partnerId = auth.partnerId;
 
-    final result = await _odoo.searchRead(
-      'reserva.reserva',
-      domain: [
-        ['contacto_id', '=', partnerId],
-      ],
-      fields: [
-        'name',
-        'servicio_id',
-        'session_type_id',
-        'fecha_inicio',
-        'fecha_fin',
-        'duracion',
-        'importe_total',
-        'estado',
-        'motivo',
-        'sale_order_id',
-      ],
-      order: 'fecha_inicio desc',
-      limit: 200,
-    );
-
-    _reservas = result.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-  }
-
-  Future<void> _loadAgendaReservas() async {
     try {
       final result = await _odoo.searchRead(
         'reserva.reserva',
+        domain: [
+          ['contacto_id', '=', partnerId],
+        ],
+        fields: [
+          'name',
+          'servicio_id',
+          'session_type_id',
+          'fecha_inicio',
+          'fecha_fin',
+          'duracion',
+          'importe_total',
+          'estado',
+          'motivo',
+          'sale_order_id',
+          'contacto_id',
+        ],
+        order: 'fecha_inicio desc',
+        limit: 200,
+      );
+
+      _reservas = result
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+    } catch (e) {
+      _reservas = [];
+      _error ??= OdooService.prettyError(e);
+    }
+  }
+
+  Future<void> _loadAgendaReservas({DateTime? day}) async {
+    final selected = day ?? _agendaDay;
+    final startDay = DateTime(selected.year, selected.month, selected.day);
+    final endDay = startDay.add(const Duration(days: 1));
+    try {
+      final result = await _odoo.searchRead(
+        'reserva.reserva',
+        domain: [
+          ['fecha_inicio', '<', _formatOdooDateTime(endDay)],
+          ['fecha_fin', '>=', _formatOdooDateTime(startDay)],
+          ['estado', 'in', ['borrador', 'confirmada', 'facturada']],
+        ],
         fields: [
           'name',
           'servicio_id',
@@ -236,19 +253,43 @@ class _ReservasScreenState extends State<ReservasScreen> {
           'motivo',
           'contacto_id',
         ],
-        order: 'fecha_inicio desc',
-        limit: 200,
+        order: 'fecha_inicio asc',
+        limit: 400,
       );
       _agendaReservas = result
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList();
       _agendaError = null;
     } catch (e) {
-      _agendaReservas = List<Map<String, dynamic>>.from(_reservas);
+      _agendaReservas = _reservas
+          .where((r) {
+            final start = _tryParseOdooDateTime(
+              r['fecha_inicio']?.toString() ?? '',
+            );
+            if (start == null) return false;
+            return start.year == startDay.year &&
+                start.month == startDay.month &&
+                start.day == startDay.day;
+          })
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
       _agendaError = OdooService.isAccessError(e)
-          ? 'Mostrando solo tus reservas por permisos.'
+          ? 'Mostrando solo tus reservas del día por permisos.'
           : OdooService.prettyError(e);
     }
+  }
+
+  Future<void> _changeAgendaDay(int delta) async {
+    setState(() {
+      _agendaDay = DateTime(
+        _agendaDay.year,
+        _agendaDay.month,
+        _agendaDay.day + delta,
+      );
+      _agendaError = null;
+    });
+    await _loadAgendaReservas(day: _agendaDay);
+    if (mounted) setState(() {});
   }
 
   void _setDurationMinutes(int minutes) {
@@ -377,8 +418,8 @@ class _ReservasScreenState extends State<ReservasScreen> {
               ),
               Tab(text: 'Mis reservas', icon: Icon(Icons.list_alt_rounded)),
               Tab(
-                text: 'Reservas hechas',
-                icon: Icon(Icons.event_available_rounded),
+                text: 'Agenda diaria',
+                icon: Icon(Icons.calendar_view_day_rounded),
               ),
             ],
           ),
@@ -435,10 +476,13 @@ class _ReservasScreenState extends State<ReservasScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                 children: [
                   SectionHeader(
-                    title: 'Reservas hechas',
-                    subtitle: '${_agendaReservas.length} registros visibles',
-                    icon: Icons.event_available_rounded,
+                    title: 'Agenda del día',
+                    subtitle:
+                        '${_agendaReservas.length} reservas visibles el ${_formatAgendaDay(_agendaDay)}',
+                    icon: Icons.calendar_view_day_rounded,
                   ),
+                  _buildAgendaDaySelector(),
+                  const SizedBox(height: 12),
                   if (_agendaError != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
@@ -452,15 +496,13 @@ class _ReservasScreenState extends State<ReservasScreen> {
                     ),
                   if (_agendaReservas.isEmpty)
                     const AppEmptyState(
-                      title: 'Sin reservas visibles',
+                      title: 'Sin reservas este día',
                       subtitle:
-                          'No hay reservas disponibles para consultar con este usuario.',
-                      icon: Icons.event_note_outlined,
+                          'No hay reservas disponibles para consultar en la fecha seleccionada.',
+                      icon: Icons.calendar_today_outlined,
                     )
                   else
-                    ..._agendaReservas.map(
-                      (r) => _buildReservaCard(r, auth: auth),
-                    ),
+                    _buildAgendaTimeline(auth),
                 ],
               ),
             ),
@@ -472,7 +514,7 @@ class _ReservasScreenState extends State<ReservasScreen> {
 
   Widget _buildPortalReservationMode(AuthProvider auth) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         backgroundColor: AppTheme.surface,
         appBar: AppBar(
@@ -486,6 +528,10 @@ class _ReservasScreenState extends State<ReservasScreen> {
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Mis reservas', icon: Icon(Icons.list_alt_rounded)),
+              Tab(
+                text: 'Agenda diaria',
+                icon: Icon(Icons.calendar_view_day_rounded),
+              ),
               Tab(text: 'Portal', icon: Icon(Icons.open_in_new_rounded)),
             ],
           ),
@@ -513,9 +559,45 @@ class _ReservasScreenState extends State<ReservasScreen> {
                 ],
               ),
             ),
+            RefreshIndicator(
+              onRefresh: _loadInitial,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                children: [
+                  SectionHeader(
+                    title: 'Agenda del día',
+                    subtitle:
+                        '${_agendaReservas.length} reservas visibles el ${_formatAgendaDay(_agendaDay)}',
+                    icon: Icons.calendar_view_day_rounded,
+                  ),
+                  _buildAgendaDaySelector(),
+                  const SizedBox(height: 12),
+                  if (_agendaError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        _agendaError!,
+                        style: const TextStyle(
+                          color: AppTheme.textMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  if (_agendaReservas.isEmpty)
+                    const AppEmptyState(
+                      title: 'Sin reservas este día',
+                      subtitle:
+                          'No hay reservas visibles en la fecha seleccionada.',
+                      icon: Icons.calendar_today_outlined,
+                    )
+                  else
+                    _buildAgendaTimeline(auth),
+                ],
+              ),
+            ),
             Center(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 560),
                   padding: const EdgeInsets.all(16),
@@ -567,6 +649,207 @@ class _ReservasScreenState extends State<ReservasScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildAgendaDaySelector() {
+    return AppCard(
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => _changeAgendaDay(-1),
+            icon: const Icon(Icons.chevron_left_rounded),
+          ),
+          Expanded(
+            child: Column(
+              children: [
+                const Text(
+                  'Día consultado',
+                  style: TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _formatAgendaDay(_agendaDay),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => _changeAgendaDay(1),
+            icon: const Icon(Icons.chevron_right_rounded),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAgendaTimeline(AuthProvider auth) {
+    final sorted = List<Map<String, dynamic>>.from(_agendaReservas)
+      ..sort((a, b) {
+        final aDate = _tryParseOdooDateTime(a['fecha_inicio']?.toString() ?? '');
+        final bDate = _tryParseOdooDateTime(b['fecha_inicio']?.toString() ?? '');
+        if (aDate == null && bDate == null) return 0;
+        if (aDate == null) return 1;
+        if (bDate == null) return -1;
+        return aDate.compareTo(bDate);
+      });
+
+    return Column(
+      children: sorted.map((r) {
+        final start = _tryParseOdooDateTime(r['fecha_inicio']?.toString() ?? '');
+        final end = _tryParseOdooDateTime(r['fecha_fin']?.toString() ?? '');
+        final servicio = r['servicio_id'] is List
+            ? r['servicio_id'][1].toString()
+            : 'Servicio';
+        final contacto = r['contacto_id'] is List
+            ? r['contacto_id'][1].toString()
+            : 'Sin contacto';
+        final estado = (r['estado'] ?? '').toString();
+        final color = _estadoColor(estado);
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: AppCard(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 78,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: AppTheme.radiusSm,
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        _formatHour(start),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          color: color,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _formatHour(end),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              servicio,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                          ),
+                          AppStatusChip(
+                            label: _formatEstado(estado),
+                            color: color,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        contacto,
+                        style: const TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                      if ((r['session_type_id'] is List)) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Tipo: ${r['session_type_id'][1]}',
+                          style: const TextStyle(
+                            color: AppTheme.textMuted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                      if ((r['motivo'] ?? '').toString().trim().isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          (r['motivo'] ?? '').toString(),
+                          style: const TextStyle(
+                            color: AppTheme.textMuted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  String _formatAgendaDay(DateTime value) {
+    final dd = value.day.toString().padLeft(2, '0');
+    final mm = value.month.toString().padLeft(2, '0');
+    return '$dd/$mm/${value.year}';
+  }
+
+  String _formatHour(DateTime? value) {
+    if (value == null) return '--:--';
+    final hh = value.hour.toString().padLeft(2, '0');
+    final mm = value.minute.toString().padLeft(2, '0');
+    return '$hh:$mm';
+  }
+
+  Color _estadoColor(String estado) {
+    switch (estado) {
+      case 'confirmada':
+        return AppTheme.success;
+      case 'facturada':
+        return AppTheme.primary;
+      case 'cancelada':
+        return AppTheme.danger;
+      case 'borrador':
+      default:
+        return AppTheme.warning;
+    }
+  }
+
+  String _formatEstado(String estado) {
+    switch (estado) {
+      case 'confirmada':
+        return 'Confirmada';
+      case 'facturada':
+        return 'Facturada';
+      case 'cancelada':
+        return 'Cancelada';
+      case 'borrador':
+        return 'Borrador';
+      default:
+        return estado.isEmpty ? 'Reserva' : estado;
+    }
   }
 
   Future<void> _openReservationsPortal() async {

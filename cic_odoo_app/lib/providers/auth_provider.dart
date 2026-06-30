@@ -319,6 +319,7 @@ class AuthProvider extends ChangeNotifier {
           'permiso_normativa_ver',
           'permiso_equipos_ver',
           'permiso_quimicos_ver',
+          'permiso_objetivos_ver',
           'permiso_incidencias_editar',
           'permiso_formacion_editar',
           'permiso_documentos_editar',
@@ -328,6 +329,7 @@ class AuthProvider extends ChangeNotifier {
           'permiso_normativa_editar',
           'permiso_equipos_editar',
           'permiso_quimicos_editar',
+          'permiso_objetivos_editar',
         ],
       );
     } catch (_) {

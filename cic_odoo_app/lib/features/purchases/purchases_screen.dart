@@ -27,7 +27,7 @@ class _PurchasesScreenState extends State<PurchasesScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -50,6 +50,7 @@ class _PurchasesScreenState extends State<PurchasesScreen>
               controller: _tabController,
               tabs: const [
                 Tab(text: 'Productos'),
+                Tab(text: 'Pedidos'),
                 Tab(text: 'Recepción'),
               ],
             ),
@@ -57,7 +58,7 @@ class _PurchasesScreenState extends State<PurchasesScreen>
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: const [_ProductsTab(), _ReceptionTab()],
+              children: const [_ProductsTab(), _PurchaseOrdersTab(), _ReceptionTab()],
             ),
           ),
         ],
@@ -121,13 +122,15 @@ class _ProductsTabState extends State<_ProductsTab> {
         domain: domain,
         fields: const [
           'name',
-          'default_code',
-          'barcode',
-          'list_price',
-          'standard_price',
-          'purchase_ok',
-          'uom_id',
-        ],
+        'default_code',
+        'barcode',
+        'list_price',
+        'standard_price',
+        'purchase_ok',
+        'uom_id',
+        'uom_po_id',
+        'product_variant_id',
+      ],
         order: 'write_date desc',
         limit: 60,
       );
@@ -151,10 +154,20 @@ class _ProductsTabState extends State<_ProductsTab> {
     final created = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => const _CreateProductScreen(),
+        builder: (_) => const _ProductFormScreen(),
       ),
     );
     if (created == true) await _load(_searchCtrl.text);
+  }
+
+  Future<void> _openEditProduct(Map<String, dynamic> product) async {
+    final updated = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => _ProductFormScreen(product: product),
+      ),
+    );
+    if (updated == true) await _load(_searchCtrl.text);
   }
 
   @override
@@ -219,7 +232,12 @@ class _ProductsTabState extends State<_ProductsTab> {
             ..._products.map(
               (product) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: _ProductCard(product: product),
+                child: _ProductCard(
+                  product: product,
+                  onTap: auth.canEditModule('purchases')
+                      ? () => _openEditProduct(product)
+                      : null,
+                ),
               ),
             ),
           ],
@@ -230,9 +248,10 @@ class _ProductsTabState extends State<_ProductsTab> {
 }
 
 class _ProductCard extends StatelessWidget {
-  const _ProductCard({required this.product});
+  const _ProductCard({required this.product, this.onTap});
 
   final Map<String, dynamic> product;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -240,6 +259,7 @@ class _ProductCard extends StatelessWidget {
     final barcode = (product['barcode'] ?? '').toString();
     final price = product['list_price'];
     return AppCard(
+      onTap: onTap,
       child: Row(
         children: [
           Container(
@@ -284,20 +304,30 @@ class _ProductCard extends StatelessWidget {
                 ? AppTheme.success
                 : AppTheme.textMuted,
           ),
+          if (onTap != null) ...[
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.edit_outlined,
+              size: 18,
+              color: AppTheme.textMuted,
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-class _CreateProductScreen extends StatefulWidget {
-  const _CreateProductScreen();
+class _ProductFormScreen extends StatefulWidget {
+  const _ProductFormScreen({this.product});
+
+  final Map<String, dynamic>? product;
 
   @override
-  State<_CreateProductScreen> createState() => _CreateProductScreenState();
+  State<_ProductFormScreen> createState() => _ProductFormScreenState();
 }
 
-class _CreateProductScreenState extends State<_CreateProductScreen> {
+class _ProductFormScreenState extends State<_ProductFormScreen> {
   final OdooService _odoo = OdooService();
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
@@ -306,6 +336,23 @@ class _CreateProductScreenState extends State<_CreateProductScreen> {
   final _priceCtrl = TextEditingController();
   final _costCtrl = TextEditingController();
   bool _saving = false;
+
+  bool get _isEditing => widget.product != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final product = widget.product;
+    if (product != null) {
+      _nameCtrl.text = (product['name'] ?? '').toString();
+      _refCtrl.text = (product['default_code'] ?? '').toString();
+      _barcodeCtrl.text = (product['barcode'] ?? '').toString();
+      final price = _num(product['list_price']);
+      final cost = _num(product['standard_price']);
+      if (price > 0) _priceCtrl.text = _formatQty(price);
+      if (cost > 0) _costCtrl.text = _formatQty(cost);
+    }
+  }
 
   @override
   void dispose() {
@@ -334,7 +381,7 @@ class _CreateProductScreenState extends State<_CreateProductScreen> {
     }
     setState(() => _saving = true);
     try {
-      await _odoo.create('product.template', {
+      final payload = {
         'name': _nameCtrl.text.trim(),
         'purchase_ok': true,
         'sale_ok': false,
@@ -346,12 +393,22 @@ class _CreateProductScreenState extends State<_CreateProductScreen> {
           'list_price': _parseDecimal(_priceCtrl.text),
         if (_costCtrl.text.trim().isNotEmpty)
           'standard_price': _parseDecimal(_costCtrl.text),
-      });
+      };
+      if (_isEditing) {
+        final id = (widget.product!['id'] as num).toInt();
+        await _odoo.write('product.template', id, payload);
+      } else {
+        await _odoo.create('product.template', payload);
+      }
       if (!mounted) return;
       Navigator.of(context).pop(true);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Producto creado.')));
+      ).showSnackBar(
+        SnackBar(
+          content: Text(_isEditing ? 'Producto actualizado.' : 'Producto creado.'),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -367,7 +424,7 @@ class _CreateProductScreenState extends State<_CreateProductScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'Nuevo producto',
+      title: _isEditing ? 'Editar producto' : 'Nuevo producto',
       actions: [
         IconButton(
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
@@ -427,13 +484,452 @@ class _CreateProductScreenState extends State<_CreateProductScreen> {
             ),
             const SizedBox(height: 18),
             AppButton.primary(
-              label: 'Crear producto',
+              label: _isEditing ? 'Guardar cambios' : 'Crear producto',
               icon: Icons.check_rounded,
               loading: _saving,
               onPressed: _saving ? null : _save,
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PurchaseOrdersTab extends StatefulWidget {
+  const _PurchaseOrdersTab();
+
+  @override
+  State<_PurchaseOrdersTab> createState() => _PurchaseOrdersTabState();
+}
+
+class _PurchaseOrdersTabState extends State<_PurchaseOrdersTab> {
+  final OdooService _odoo = OdooService();
+  bool _loading = true;
+  String? _error;
+  List<Map<String, dynamic>> _orders = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final rows = await _odoo.searchRead(
+        'purchase.order',
+        fields: const ['name', 'partner_id', 'state', 'date_order', 'amount_total'],
+        order: 'date_order desc, id desc',
+        limit: 80,
+      );
+      _orders = rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    } catch (e) {
+      _error = OdooService.prettyError(e);
+    }
+    if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _openCreateOrder() async {
+    final created = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => const _CreatePurchaseOrderScreen(),
+      ),
+    );
+    if (created == true) await _load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 110),
+        children: [
+          if (auth.canEditModule('purchases')) ...[
+            AppButton.primary(
+              label: 'Nuevo pedido de compra',
+              icon: Icons.add_shopping_cart_rounded,
+              onPressed: _openCreateOrder,
+            ),
+            const SizedBox(height: 18),
+          ] else
+            const SizedBox(height: 6),
+          if (_loading)
+            const SizedBox(
+              height: 260,
+              child: AppLoadingView(label: 'Cargando pedidos...'),
+            )
+          else if (_error != null)
+            AppEmptyState(
+              title: 'No se pudieron cargar pedidos',
+              subtitle: _error!,
+              icon: Icons.shopping_cart_outlined,
+              action: AppButton.outline(
+                label: 'Reintentar',
+                icon: Icons.refresh_rounded,
+                onPressed: _load,
+              ),
+            )
+          else if (_orders.isEmpty)
+            const AppEmptyState(
+              title: 'Sin pedidos visibles',
+              subtitle: 'No hay pedidos de compra disponibles para este usuario.',
+              icon: Icons.receipt_long_outlined,
+            )
+          else ...[
+            AppSectionHeader(title: '${_orders.length} pedidos recientes'),
+            ..._orders.map(
+              (order) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _OrderHeader(order: order),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CreatePurchaseOrderScreen extends StatefulWidget {
+  const _CreatePurchaseOrderScreen();
+
+  @override
+  State<_CreatePurchaseOrderScreen> createState() => _CreatePurchaseOrderScreenState();
+}
+
+class _CreatePurchaseOrderScreenState extends State<_CreatePurchaseOrderScreen> {
+  final OdooService _odoo = OdooService();
+  bool _loading = true;
+  bool _saving = false;
+  String? _error;
+  List<Map<String, dynamic>> _suppliers = [];
+  List<Map<String, dynamic>> _products = [];
+  int? _supplierId;
+  final List<_DraftPurchaseLine> _lines = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOptions();
+  }
+
+  Future<void> _loadOptions() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final suppliers = await _odoo.searchRead(
+        'res.partner',
+        domain: [
+          ['supplier_rank', '>', 0],
+        ],
+        fields: const ['name'],
+        order: 'name',
+        limit: 120,
+      );
+      final products = await _odoo.searchRead(
+        'product.template',
+        domain: [
+          ['purchase_ok', '=', true],
+        ],
+        fields: const [
+          'name',
+          'default_code',
+          'list_price',
+          'standard_price',
+          'product_variant_id',
+          'uom_po_id',
+        ],
+        order: 'name',
+        limit: 200,
+      );
+      _suppliers =
+          suppliers.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      _products =
+          products.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      if (_suppliers.isNotEmpty) {
+        _supplierId = (_suppliers.first['id'] as num).toInt();
+      }
+      if (_products.isNotEmpty) {
+        _lines
+          ..clear()
+          ..add(_DraftPurchaseLine(productId: (_products.first['id'] as num).toInt()));
+      }
+    } catch (e) {
+      _error = OdooService.prettyError(e);
+    }
+    if (mounted) setState(() => _loading = false);
+  }
+
+  void _addLine() {
+    if (_products.isEmpty) return;
+    setState(() {
+      _lines.add(
+        _DraftPurchaseLine(productId: (_products.first['id'] as num).toInt()),
+      );
+    });
+  }
+
+  void _removeLine(_DraftPurchaseLine line) {
+    if (_lines.length == 1) return;
+    setState(() => _lines.remove(line));
+  }
+
+  Future<void> _save() async {
+    if (_supplierId == null || _lines.isEmpty) return;
+    final orderLines = <dynamic>[];
+    for (final line in _lines) {
+      final product = _products.firstWhere(
+        (p) => (p['id'] as num).toInt() == line.productId,
+      );
+      final variant = product['product_variant_id'] as List?;
+      final uomPo = product['uom_po_id'] as List?;
+      final variantId =
+          variant != null && variant.isNotEmpty && variant.first is num
+              ? (variant.first as num).toInt()
+              : null;
+      final uomId =
+          uomPo != null && uomPo.isNotEmpty && uomPo.first is num
+              ? (uomPo.first as num).toInt()
+              : null;
+      if (variantId == null) continue;
+      orderLines.add([
+        0,
+        0,
+        {
+          'product_id': variantId,
+          'name': (product['name'] ?? 'Producto').toString(),
+          'product_qty': line.qty,
+          'price_unit': line.price,
+          'date_planned': _formatOdooDateTime(DateTime.now().add(const Duration(days: 1))),
+          ...?uomId == null ? null : {'product_uom': uomId},
+        },
+      ]);
+    }
+    if (orderLines.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay líneas válidas para crear el pedido.')),
+      );
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      await _odoo.create('purchase.order', {
+        'partner_id': _supplierId,
+        'order_line': orderLines,
+      });
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pedido de compra creado en borrador.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo crear el pedido: ${OdooService.prettyError(e)}')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppScaffold(
+      title: 'Nuevo pedido de compra',
+      actions: [
+        IconButton(
+          onPressed: _saving ? null : () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.close_rounded),
+        ),
+      ],
+      child: _loading
+          ? const AppLoadingView(label: 'Cargando opciones...')
+          : _error != null
+              ? AppEmptyState(
+                  title: 'No se pudo preparar el pedido',
+                  subtitle: _error!,
+                  icon: Icons.error_outline_rounded,
+                )
+              : ListView(
+                  children: [
+                    const AppSectionHeader(
+                      title: 'Pedido en borrador',
+                      subtitle: 'Selecciona proveedor y añade las líneas de compra.',
+                    ),
+                    DropdownButtonFormField<int>(
+                      initialValue: _supplierId,
+                      items: _suppliers
+                          .map(
+                            (supplier) => DropdownMenuItem<int>(
+                              value: (supplier['id'] as num).toInt(),
+                              child: Text((supplier['name'] ?? '').toString()),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) => setState(() => _supplierId = value),
+                      decoration: const InputDecoration(
+                        labelText: 'Proveedor',
+                        prefixIcon: Icon(Icons.business_rounded),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const AppSectionHeader(title: 'Líneas'),
+                    ..._lines.map((line) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _DraftPurchaseLineCard(
+                          line: line,
+                          products: _products,
+                          onRemove: () => _removeLine(line),
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 8),
+                    AppButton.outline(
+                      label: 'Añadir línea',
+                      icon: Icons.add_rounded,
+                      onPressed: _addLine,
+                    ),
+                    const SizedBox(height: 18),
+                    AppButton.primary(
+                      label: 'Crear pedido',
+                      icon: Icons.check_rounded,
+                      loading: _saving,
+                      onPressed: _saving ? null : _save,
+                    ),
+                  ],
+                ),
+    );
+  }
+}
+
+class _DraftPurchaseLine {
+  _DraftPurchaseLine({required this.productId});
+
+  int productId;
+  double qty = 1;
+  double price = 0;
+}
+
+class _DraftPurchaseLineCard extends StatefulWidget {
+  const _DraftPurchaseLineCard({
+    required this.line,
+    required this.products,
+    required this.onRemove,
+  });
+
+  final _DraftPurchaseLine line;
+  final List<Map<String, dynamic>> products;
+  final VoidCallback onRemove;
+
+  @override
+  State<_DraftPurchaseLineCard> createState() => _DraftPurchaseLineCardState();
+}
+
+class _DraftPurchaseLineCardState extends State<_DraftPurchaseLineCard> {
+  late final TextEditingController _qtyCtrl;
+  late final TextEditingController _priceCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    final product = widget.products.firstWhere(
+      (p) => (p['id'] as num).toInt() == widget.line.productId,
+    );
+    widget.line.price = widget.line.price <= 0
+        ? (_num(product['standard_price']) > 0
+              ? _num(product['standard_price'])
+              : _num(product['list_price']))
+        : widget.line.price;
+    _qtyCtrl = TextEditingController(text: _formatQty(widget.line.qty));
+    _priceCtrl = TextEditingController(text: _formatQty(widget.line.price));
+  }
+
+  @override
+  void dispose() {
+    _qtyCtrl.dispose();
+    _priceCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DropdownButtonFormField<int>(
+            initialValue: widget.line.productId,
+            items: widget.products
+                .map(
+                  (product) => DropdownMenuItem<int>(
+                    value: (product['id'] as num).toInt(),
+                    child: Text((product['name'] ?? '').toString()),
+                  ),
+                )
+                .toList(),
+            onChanged: (value) {
+              if (value == null) return;
+              setState(() {
+                widget.line.productId = value;
+                final product = widget.products.firstWhere(
+                  (p) => (p['id'] as num).toInt() == value,
+                );
+                widget.line.price = _num(product['standard_price']) > 0
+                    ? _num(product['standard_price'])
+                    : _num(product['list_price']);
+                _priceCtrl.text = _formatQty(widget.line.price);
+              });
+            },
+            decoration: const InputDecoration(
+              labelText: 'Producto',
+              prefixIcon: Icon(Icons.inventory_2_outlined),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: AppInput(
+                  controller: _qtyCtrl,
+                  labelText: 'Cantidad',
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  prefixIcon: Icons.format_list_numbered_rounded,
+                  onChanged: (value) => widget.line.qty = _parseDecimal(value),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: AppInput(
+                  controller: _priceCtrl,
+                  labelText: 'Precio unitario',
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  prefixIcon: Icons.euro_rounded,
+                  onChanged: (value) => widget.line.price = _parseDecimal(value),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: widget.onRemove,
+              icon: const Icon(Icons.delete_outline_rounded),
+              label: const Text('Quitar línea'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -946,6 +1442,16 @@ String _purchaseStateLabel(String state) {
     default:
       return state.isEmpty ? 'Pedido' : state;
   }
+}
+
+String _formatOdooDateTime(DateTime value) {
+  final year = value.year.toString().padLeft(4, '0');
+  final month = value.month.toString().padLeft(2, '0');
+  final day = value.day.toString().padLeft(2, '0');
+  final hour = value.hour.toString().padLeft(2, '0');
+  final minute = value.minute.toString().padLeft(2, '0');
+  final second = value.second.toString().padLeft(2, '0');
+  return '$year-$month-$day $hour:$minute:$second';
 }
 
 int? _many2OneId(dynamic value) {

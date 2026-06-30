@@ -50,6 +50,26 @@ class OdooService {
     return firstLine;
   }
 
+  static String prettyAuthError(Object? error) {
+    final raw = error?.toString() ?? '';
+    final normalized = raw.toLowerCase();
+
+    if (normalized.contains('database not found')) {
+      return 'Base de datos no encontrada. Revisa el servidor y el nombre exacto de la BBDD.';
+    }
+    if (normalized.contains('wrong login/password') ||
+        normalized.contains('bad login or password') ||
+        normalized.contains('credenciales') ||
+        normalized.contains('invalid login')) {
+      return 'Usuario o contraseña incorrectos.';
+    }
+    if (normalized.contains('accesserror')) {
+      return 'No se pudo iniciar sesión en Odoo con esos datos.';
+    }
+
+    return prettyError(error);
+  }
+
   /// Inicializa el cliente con la URL de Odoo.
   void init({String? baseUrl, OdooSession? session}) {
     _client = OdooClient(
