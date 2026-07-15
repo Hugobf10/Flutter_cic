@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -10,10 +14,10 @@ import '../../app/ui/app_components.dart';
 import '../../config/app_config.dart';
 import '../../features/goals/goals_screen.dart';
 import '../../features/payroll/payroll_screen.dart';
-import '../../features/training/training_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/dashboard_provider.dart';
 import '../documentos/documentos_screen.dart';
+import '../reservas/reservas_screen.dart';
 import '../../theme/app_theme.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -24,9 +28,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  late Future<List<_WordPressPost>> _newsFuture;
+
   @override
   void initState() {
     super.initState();
+    _newsFuture = _loadNews();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final dashboard = context.read<DashboardProvider>();
       dashboard.loadDashboard();
@@ -35,7 +42,33 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _onRefresh() async {
+    setState(() {
+      _newsFuture = _loadNews();
+    });
     await context.read<DashboardProvider>().loadDashboard();
+  }
+
+  Future<List<_WordPressPost>> _loadNews() async {
+    final uri = Uri.tryParse(AppConfig.wordpressApiUrl);
+    if (uri == null) return const [];
+    try {
+      final response = await http
+          .get(uri)
+          .timeout(const Duration(seconds: AppConfig.httpTimeoutSeconds));
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return const [];
+      }
+      final decoded = jsonDecode(response.body);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map>()
+          .map((raw) => _WordPressPost.fromJson(Map<String, dynamic>.from(raw)))
+          .where((post) => post.title.isNotEmpty)
+          .take(5)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
   }
 
   @override
@@ -45,7 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final appState = context.watch<AppStateProvider>();
 
     return AppScaffold(
-      title: 'Inicio',
+      title: 'CIC Salamanca',
       actions: [
         IconButton(
           onPressed: _onRefresh,
@@ -56,13 +89,17 @@ class _HomeScreenState extends State<HomeScreen> {
         onRefresh: _onRefresh,
         child: ListView(
           children: [
-            _Greeting(auth: auth),
-            const SizedBox(height: 14),
-            const AppSectionHeader(title: 'Accesos rápidos'),
+            _HomeHero(auth: auth, unreadCount: appState.unreadNotifications),
+            const SizedBox(height: 18),
+            const AppSectionHeader(
+              title: 'Accesos rápidos',
+              subtitle: 'Tus secciones más usadas',
+            ),
             const _QuickActions(),
             const SizedBox(height: 16),
-            if (dashboard.permissionDenied)
-              _PortalBanner(onOpen: () => _openPortalIntranet(auth)),
+            _NewsSection(newsFuture: _newsFuture),
+            const SizedBox(height: 16),
+            if (dashboard.permissionDenied) const _AccessScopeBanner(),
             if (dashboard.state == DashboardState.loading &&
                 dashboard.dashboardData == null)
               const Padding(
@@ -85,8 +122,8 @@ class _HomeScreenState extends State<HomeScreen> {
               )
             else ...[
               const AppSectionHeader(
-                title: 'Pendientes',
-                subtitle: 'Lo más importante hoy',
+                title: 'Tu día',
+                subtitle: 'Lo más relevante ahora mismo',
               ),
               _PendingList(kpis: dashboard.kpis, auth: auth),
             ],
@@ -109,43 +146,144 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  Future<void> _openPortalIntranet(AuthProvider auth) async {
-    final base =
-        (auth.serverUrl.isNotEmpty ? auth.serverUrl : AppConfig.odooBaseUrl)
-            .trim();
-    final uri = Uri.parse('$base/my/calidad');
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
-  }
 }
 
-class _Greeting extends StatelessWidget {
-  const _Greeting({required this.auth});
+class _HomeHero extends StatelessWidget {
+  const _HomeHero({required this.auth, required this.unreadCount});
 
   final AuthProvider auth;
+  final int unreadCount;
 
   @override
   Widget build(BuildContext context) {
     final name = auth.userName.trim().isEmpty ? 'Usuario' : auth.userName;
-    return AppCard(
-      child: Row(
+    final firstName = name.split(' ').first;
+    final now = DateTime.now();
+    final day = now.day.toString().padLeft(2, '0');
+    final month = now.month.toString().padLeft(2, '0');
+    final avatarBytes = _decodeAvatar(auth.profileImageBase64);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: AppTheme.primaryGradient,
+        borderRadius: AppTheme.radiusLg,
+        boxShadow: AppTheme.glowShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppAvatar(name: name, size: 48),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hola, ${name.split(' ').first}',
-                  style: Theme.of(context).textTheme.titleLarge,
+          Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  auth.userLogin,
-                  style: Theme.of(context).textTheme.bodySmall,
+                child: Center(
+                  child: avatarBytes == null
+                      ? AppAvatar(name: name, size: 42)
+                      : CircleAvatar(
+                          radius: 21,
+                          backgroundImage: MemoryImage(avatarBytes),
+                        ),
                 ),
-              ],
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: AppTheme.radiusXl,
+                ),
+                child: Text(
+                  '$day/$month',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'Hola, $firstName',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(color: Colors.white),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Todo tu espacio de trabajo en una sola app, limpio y directo.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.88),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: _HeroStat(label: 'Usuario', value: auth.userLogin),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _HeroStat(
+                  label: 'Avisos',
+                  value: unreadCount.toString(),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Uint8List? _decodeAvatar(String raw) {
+    if (raw.trim().isEmpty) return null;
+    try {
+      return Uint8List.fromList(base64Decode(raw));
+    } catch (_) {
+      return null;
+    }
+  }
+}
+
+class _HeroStat extends StatelessWidget {
+  const _HeroStat({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -165,33 +303,41 @@ class _QuickActions extends StatelessWidget {
         (
           title: 'Documentos',
           icon: Icons.description_rounded,
-          onTap: () => Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const DocumentosScreen())),
+          onTap: () {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const DocumentosScreen()));
+          },
         ),
-      if (auth.canViewModule('training'))
+      if (auth.canViewModule('reservas'))
         (
-          title: 'Formación',
-          icon: Icons.school_rounded,
-          onTap: () => Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const TrainingScreen())),
+          title: 'Reservas',
+          icon: Icons.calendar_month_rounded,
+          onTap: () {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const ReservasScreen()));
+          },
         ),
       if (auth.canViewModule('goals'))
         (
           title: 'Objetivos',
           icon: Icons.track_changes_rounded,
-          onTap: () => Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const GoalsScreen())),
+          onTap: () {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const GoalsScreen()));
+          },
         ),
       if (auth.canViewModule('payroll'))
         (
           title: 'Nóminas',
           icon: Icons.receipt_long_rounded,
-          onTap: () => Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const PayrollScreen())),
+          onTap: () {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const PayrollScreen()));
+          },
         ),
     ];
 
@@ -212,34 +358,162 @@ class _QuickActions extends StatelessWidget {
           itemCount: actions.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: cols,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            childAspectRatio: 2.2,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            childAspectRatio: 1.1,
           ),
           itemBuilder: (_, i) {
             final a = actions[i];
-            return AppListTile(
+            return AppCard(
               onTap: a.onTap,
-              leading: Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(a.icon, color: AppTheme.primary, size: 18),
-              ),
-              title: a.title,
-              trailing: const Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
-                color: AppTheme.textMuted,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(a.icon, color: AppTheme.primary, size: 20),
+                  ),
+                  const Spacer(),
+                  Text(
+                    a.title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Abrir módulo',
+                    style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                  ),
+                ],
               ),
             );
           },
         );
       },
     );
+  }
+}
+
+class _NewsSection extends StatelessWidget {
+  const _NewsSection({required this.newsFuture});
+
+  final Future<List<_WordPressPost>> newsFuture;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<_WordPressPost>>(
+      future: newsFuture,
+      builder: (context, snapshot) {
+        final posts = snapshot.data ?? const <_WordPressPost>[];
+        if (posts.isEmpty &&
+            snapshot.connectionState != ConnectionState.waiting) {
+          return const SizedBox.shrink();
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const AppSectionHeader(
+              title: 'Noticias',
+              subtitle: 'Últimas publicaciones del CIC',
+            ),
+            if (snapshot.connectionState == ConnectionState.waiting)
+              const AppCard(
+                child: SizedBox(
+                  height: 72,
+                  child: AppLoadingView(label: 'Cargando noticias...'),
+                ),
+              )
+            else
+              SizedBox(
+                height: 138,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: posts.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 10),
+                  itemBuilder: (context, index) {
+                    final post = posts[index];
+                    return SizedBox(
+                      width: 260,
+                      child: AppCard(
+                        onTap: post.link == null
+                            ? null
+                            : () => launchUrl(
+                                post.link!,
+                                mode: LaunchMode.externalApplication,
+                              ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              post.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: AppTheme.textPrimaryFor(context),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              post.excerpt,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: AppTheme.textSecondaryFor(context),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _WordPressPost {
+  const _WordPressPost({
+    required this.title,
+    required this.excerpt,
+    required this.link,
+  });
+
+  final String title;
+  final String excerpt;
+  final Uri? link;
+
+  factory _WordPressPost.fromJson(Map<String, dynamic> json) {
+    return _WordPressPost(
+      title: _cleanHtml((json['title'] as Map?)?['rendered']?.toString() ?? ''),
+      excerpt: _cleanHtml(
+        (json['excerpt'] as Map?)?['rendered']?.toString() ?? '',
+      ),
+      link: Uri.tryParse((json['link'] ?? '').toString()),
+    );
+  }
+
+  static String _cleanHtml(String value) {
+    return value
+        .replaceAll(RegExp(r'<[^>]+>'), ' ')
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#8217;', "'")
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 }
 
@@ -282,15 +556,15 @@ class _PendingList extends StatelessWidget {
             title: title,
             subtitle: helper.isEmpty ? 'Pendiente' : helper,
             leading: Container(
-              width: 34,
-              height: 34,
+              width: 42,
+              height: 42,
               decoration: BoxDecoration(
                 color: AppTheme.primaryLight,
-                borderRadius: AppTheme.radiusSm,
+                borderRadius: BorderRadius.circular(14),
               ),
               child: const Icon(
                 Icons.analytics_rounded,
-                size: 16,
+                size: 18,
                 color: AppTheme.primary,
               ),
             ),
@@ -355,10 +629,8 @@ class _ActivityList extends StatelessWidget {
   }
 }
 
-class _PortalBanner extends StatelessWidget {
-  const _PortalBanner({required this.onOpen});
-
-  final VoidCallback onOpen;
+class _AccessScopeBanner extends StatelessWidget {
+  const _AccessScopeBanner();
 
   @override
   Widget build(BuildContext context) {
@@ -370,16 +642,15 @@ class _PortalBanner extends StatelessWidget {
             const Icon(
               Icons.info_outline_rounded,
               size: 18,
-              color: AppTheme.primary,
+              color: AppTheme.info,
             ),
             const SizedBox(width: 8),
             const Expanded(
               child: Text(
-                'Vista intranet portal activa. Algunas métricas globales requieren permisos de gestión.',
+                'Algunas métricas globales no están disponibles para este perfil. La app seguirá mostrando solo la información permitida dentro de sus permisos actuales.',
                 style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
               ),
             ),
-            TextButton(onPressed: onOpen, child: const Text('Abrir')),
           ],
         ),
       ),

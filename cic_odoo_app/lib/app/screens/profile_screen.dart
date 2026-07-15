@@ -98,67 +98,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? AppEmptyState(
-                  title: 'No se pudo cargar el perfil',
-                  subtitle: _error!,
-                  icon: Icons.error_outline_rounded,
-                  action: AppButton.primary(label: 'Reintentar', onPressed: _load),
-                )
-              : ListView(
-                  children: [
-                    AppCard(
-                      child: Row(
-                        children: [
-                          _buildAvatar(name),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(name,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
-                                Text(
-                                  (_partner['email'] ?? auth.userLogin).toString(),
-                                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-                                ),
-                                if (auth.unidadNombre.isNotEmpty)
-                                  Text(
-                                    'Unidad: ${auth.unidadNombre}',
-                                    style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    const AppSectionHeader(title: 'Información personal'),
-                    _InfoTile(label: 'Teléfono', value: (_partner['phone'] ?? '-').toString()),
-                    _InfoTile(label: 'Móvil', value: (_partner['mobile'] ?? '-').toString()),
-                    _InfoTile(label: 'Puesto', value: (_partner['function'] ?? '-').toString()),
-                    const SizedBox(height: 14),
-                    const AppSectionHeader(title: 'Currículum'),
-                    _buildCvCard(),
-                    const SizedBox(height: 14),
-                    AppCard(
-                      child: SwitchListTile.adaptive(
-                        contentPadding: EdgeInsets.zero,
-                        value: appState.themeMode == ThemeMode.dark,
-                        onChanged: (_) => appState.toggleThemeMode(),
-                        title: const Text('Modo oscuro'),
-                        subtitle: const Text('Alternar tema claro / oscuro'),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    AppButton.primary(
-                      label: 'Cerrar sesión',
-                      icon: Icons.logout_rounded,
-                      onPressed: () => context.read<AuthProvider>().logout(),
-                    ),
-                  ],
+          ? AppEmptyState(
+              title: 'No se pudo cargar el perfil',
+              subtitle: _error!,
+              icon: Icons.error_outline_rounded,
+              action: AppButton.primary(label: 'Reintentar', onPressed: _load),
+            )
+          : ListView(
+              children: [
+                _ProfileHero(
+                  name: name,
+                  email: (_partner['email'] ?? auth.userLogin).toString(),
+                  unitName: auth.unidadNombre,
+                  avatar: _buildAvatar(name),
                 ),
+                const SizedBox(height: 14),
+                const AppSectionHeader(
+                  title: 'Información personal',
+                  subtitle: 'Datos básicos del perfil',
+                ),
+                _InfoTile(
+                  icon: Icons.phone_outlined,
+                  label: 'Teléfono',
+                  value: (_partner['phone'] ?? '-').toString(),
+                ),
+                _InfoTile(
+                  icon: Icons.smartphone_outlined,
+                  label: 'Móvil',
+                  value: (_partner['mobile'] ?? '-').toString(),
+                ),
+                _InfoTile(
+                  icon: Icons.badge_outlined,
+                  label: 'Puesto',
+                  value: (_partner['function'] ?? '-').toString(),
+                ),
+                const SizedBox(height: 14),
+                const AppSectionHeader(
+                  title: 'Documentación',
+                  subtitle: 'Archivos asociados al perfil',
+                ),
+                _buildCvCard(),
+                const SizedBox(height: 14),
+                AppCard(
+                  child: SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    value: appState.themeMode == ThemeMode.dark,
+                    onChanged: (_) => appState.toggleThemeMode(),
+                    title: const Text('Modo oscuro'),
+                    subtitle: const Text('Alternar tema claro / oscuro'),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                AppButton.primary(
+                  label: 'Cerrar sesión',
+                  icon: Icons.logout_rounded,
+                  onPressed: () => context.read<AuthProvider>().logout(),
+                ),
+              ],
+            ),
     );
   }
 
@@ -178,12 +175,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildCvCard() {
     final cvRef = _partner['cv_attachment_id'];
-    final cvId = (cvRef is List && cvRef.isNotEmpty) ? (cvRef.first as num).toInt() : null;
+    final cvId = (cvRef is List && cvRef.isNotEmpty)
+        ? (cvRef.first as num).toInt()
+        : null;
     final cvName = (_partner['cv_attachment_name'] ?? 'CV').toString();
     return AppCard(
       child: Row(
         children: [
-          const Icon(Icons.description_rounded),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.description_rounded,
+              color: AppTheme.primary,
+            ),
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -211,8 +221,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 } catch (e) {
                   if (!mounted) return;
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(SnackBar(content: Text('No se pudo abrir el CV: $e')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('No se pudo abrir el CV: $e')),
+                  );
                 }
               },
               child: const Text('Ver'),
@@ -224,8 +235,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 }
 
 class _InfoTile extends StatelessWidget {
-  const _InfoTile({required this.label, required this.value});
+  const _InfoTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
+  final IconData icon;
   final String label;
   final String value;
 
@@ -236,10 +252,40 @@ class _InfoTile extends StatelessWidget {
       child: AppCard(
         child: Row(
           children: [
-            Expanded(
-              child: Text(label, style: const TextStyle(color: AppTheme.textSecondary)),
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceElevated,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: AppTheme.textSecondary, size: 18),
             ),
-            Text(value, style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: AppTheme.textSecondaryFor(context),
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    value,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppTheme.textPrimaryFor(context),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -247,3 +293,74 @@ class _InfoTile extends StatelessWidget {
   }
 }
 
+class _ProfileHero extends StatelessWidget {
+  const _ProfileHero({
+    required this.name,
+    required this.email,
+    required this.unitName,
+    required this.avatar,
+  });
+
+  final String name;
+  final String email;
+  final String unitName;
+  final Widget avatar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: AppTheme.primaryGradient,
+        borderRadius: AppTheme.radiusLg,
+        boxShadow: AppTheme.glowShadow,
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: avatar,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  email,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.86),
+                    fontSize: 13,
+                  ),
+                ),
+                if (unitName.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Unidad: $unitName',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

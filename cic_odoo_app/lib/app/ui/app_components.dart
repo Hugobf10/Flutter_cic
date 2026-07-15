@@ -23,15 +23,18 @@ class AppScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.surface,
+      backgroundColor: AppTheme.surfaceFor(context),
       appBar: showAppBar ? AppBar(title: Text(title), actions: actions) : null,
       floatingActionButton: floatingActionButton,
-      body: SafeArea(
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1120),
-            child: Padding(padding: padding, child: child),
+      body: Container(
+        decoration: BoxDecoration(gradient: AppTheme.heroGradientFor(context)),
+        child: SafeArea(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1120),
+              child: Padding(padding: padding, child: child),
+            ),
           ),
         ),
       ),
@@ -57,9 +60,10 @@ class AppCard extends StatelessWidget {
       duration: const Duration(milliseconds: 180),
       padding: padding,
       decoration: BoxDecoration(
-        color: AppTheme.surfaceCard,
+        gradient: AppTheme.cardGradientFor(context),
         borderRadius: AppTheme.radiusMd,
-        border: Border.all(color: AppTheme.divider),
+        border: Border.all(color: AppTheme.dividerFor(context)),
+        boxShadow: AppTheme.softShadow,
       ),
       child: child,
     );
@@ -310,10 +314,10 @@ class AppListTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.textPrimaryFor(context),
                   ),
                 ),
                 if (subtitle != null) ...[
@@ -321,9 +325,9 @@ class AppListTile extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
                       subtitle!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.textSecondaryFor(context),
                       ),
                     ),
                   ),
@@ -365,23 +369,27 @@ class AppEmptyState extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: AppTheme.surfaceElevated,
+                color: AppTheme.elevatedFor(context),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(icon, size: 26, color: AppTheme.textMuted),
+              child: Icon(
+                icon,
+                size: 26,
+                color: AppTheme.textMutedFor(context),
+              ),
             ),
             const SizedBox(height: 12),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimary,
+                color: AppTheme.textPrimaryFor(context),
               ),
             ),
             const SizedBox(height: 6),
             Text(
               subtitle,
-              style: const TextStyle(color: AppTheme.textSecondary),
+              style: TextStyle(color: AppTheme.textSecondaryFor(context)),
               textAlign: TextAlign.center,
             ),
             if (action != null) ...[const SizedBox(height: 14), action!],
@@ -410,7 +418,10 @@ class AppLoadingView extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             label,
-            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+            style: TextStyle(
+              color: AppTheme.textSecondaryFor(context),
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -526,15 +537,13 @@ class AppBottomNavigation extends StatelessWidget {
       minimum: const EdgeInsets.fromLTRB(12, 0, 12, 10),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: AppTheme.surfaceCard,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(20),
-            bottom: Radius.circular(20),
-          ),
-          border: Border.all(color: AppTheme.divider),
+          color: AppTheme.cardFor(context).withValues(alpha: 0.96),
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: AppTheme.dividerFor(context)),
+          boxShadow: AppTheme.softShadow,
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
           child: Row(
             children: List.generate(items.length, (i) {
               final selected = i == currentIndex;
@@ -553,7 +562,7 @@ class AppBottomNavigation extends StatelessWidget {
                       color: selected
                           ? AppTheme.primary.withValues(alpha: 0.12)
                           : Colors.transparent,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(18),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -564,7 +573,7 @@ class AppBottomNavigation extends StatelessWidget {
                               size: 20,
                               color: selected
                                   ? AppTheme.primary
-                                  : AppTheme.textSecondary,
+                                  : AppTheme.textSecondaryFor(context),
                             ),
                         const SizedBox(height: 4),
                         Text(
@@ -576,7 +585,7 @@ class AppBottomNavigation extends StatelessWidget {
                                 : FontWeight.w500,
                             color: selected
                                 ? AppTheme.primary
-                                : AppTheme.textSecondary,
+                                : AppTheme.textSecondaryFor(context),
                           ),
                         ),
                       ],

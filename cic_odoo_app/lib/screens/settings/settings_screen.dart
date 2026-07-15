@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/app_config.dart';
+import '../../app/ui/app_components.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 
@@ -12,17 +13,14 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
 
-    return Scaffold(
-      backgroundColor: AppTheme.surface,
-      appBar: AppBar(title: const Text('Ajustes')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+    return AppScaffold(
+      title: 'Ajustes',
+      child: ListView(
         children: [
-          // ── Perfil ──
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: AppTheme.heroGradient,
+              gradient: AppTheme.primaryGradient,
               borderRadius: AppTheme.radiusLg,
               boxShadow: AppTheme.glowShadow,
             ),
@@ -46,27 +44,55 @@ class SettingsScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(auth.userName, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+                      Text(
+                        auth.userName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                       const SizedBox(height: 2),
-                      Text(auth.userLogin, style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13)),
-                      Text('ID: ${auth.userId}', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
+                      Text(
+                        auth.userLogin,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.82),
+                          fontSize: 13,
+                        ),
+                      ),
+                      Text(
+                        'ID: ${auth.userId}',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 11,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
-
-          // ── Sección Info ──
+          const SizedBox(height: 20),
           _buildSectionTitle('Información de conexión'),
-          _buildTile(Icons.dns_outlined, 'Servidor', auth.serverUrl.isNotEmpty ? auth.serverUrl : AppConfig.odooBaseUrl),
-          _buildTile(Icons.storage_outlined, 'Base de datos', auth.database.isNotEmpty ? auth.database : AppConfig.odooDatabaseName),
-          _buildTile(Icons.info_outline_rounded, 'Versión de la app', AppConfig.appVersion),
-
-          const SizedBox(height: 24),
-
-          // ── Sección Acciones ──
+          _buildTile(
+            Icons.dns_outlined,
+            'Servidor',
+            auth.serverUrl.isNotEmpty ? auth.serverUrl : AppConfig.odooBaseUrl,
+          ),
+          _buildTile(
+            Icons.storage_outlined,
+            'Base de datos',
+            auth.database.isNotEmpty
+                ? auth.database
+                : AppConfig.odooDatabaseName,
+          ),
+          _buildTile(
+            Icons.info_outline_rounded,
+            'Versión de la app',
+            AppConfig.appVersion,
+          ),
+          const SizedBox(height: 20),
           _buildSectionTitle('Cuenta'),
           _buildActionTile(
             icon: Icons.logout_rounded,
@@ -88,51 +114,93 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildTile(IconData icon, String title, String value) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceCard,
-        borderRadius: AppTheme.radiusMd,
-        border: Border.all(color: AppTheme.divider.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: AppTheme.textMuted, size: 20),
-          const SizedBox(width: 14),
-          Expanded(child: Text(title, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13))),
-          Flexible(child: Text(value, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13, fontWeight: FontWeight.w600), textAlign: TextAlign.end, overflow: TextOverflow.ellipsis)),
-        ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: AppCard(
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceElevated,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: AppTheme.textMuted, size: 18),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+            Flexible(
+              child: Text(
+                value,
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.end,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildActionTile({required IconData icon, required String title, required String subtitle, required Color color, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.06),
-          borderRadius: AppTheme.radiusMd,
-          border: Border.all(color: color.withValues(alpha: 0.2)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.w700)),
-                  Text(subtitle, style: const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
-                ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppTheme.radiusMd,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.06),
+            borderRadius: AppTheme.radiusMd,
+            border: Border.all(color: color.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: AppTheme.textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Icon(Icons.chevron_right_rounded, color: color.withValues(alpha: 0.5)),
-          ],
+              Icon(
+                Icons.chevron_right_rounded,
+                color: color.withValues(alpha: 0.5),
+              ),
+            ],
+          ),
         ),
       ),
     );

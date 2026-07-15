@@ -7,6 +7,7 @@ import '../../features/suppliers/suppliers_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../screens/documentos/documentos_screen.dart';
 import '../../screens/home/home_screen.dart';
+import '../../screens/reservas/reservation_entry_target.dart';
 import '../../screens/incidencias/incidencias_screen.dart';
 import '../../screens/reservas/reservas_screen.dart';
 import '../../theme/app_theme.dart';
@@ -26,6 +27,7 @@ class SuperAppShell extends StatefulWidget {
 
 class _SuperAppShellState extends State<SuperAppShell> {
   int _index = 0;
+  bool _openingPendingReservation = false;
 
   static const _labels = ['Inicio', 'Módulos', 'Actividad', 'Perfil'];
   static const _icons = [
@@ -53,6 +55,15 @@ class _SuperAppShellState extends State<SuperAppShell> {
   @override
   Widget build(BuildContext context) {
     final unread = context.watch<AppStateProvider>().unreadNotifications;
+    final pendingReservation = context
+        .watch<AppStateProvider>()
+        .pendingReservationTarget;
+
+    if (pendingReservation != null && !_openingPendingReservation) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _openPendingReservation(pendingReservation);
+      });
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -63,7 +74,7 @@ class _SuperAppShellState extends State<SuperAppShell> {
             body: IndexedStack(index: _index, children: _pages),
             floatingActionButton: FloatingActionButton(
               onPressed: _openQuickActions,
-              backgroundColor: AppTheme.primary,
+              backgroundColor: AppTheme.primaryDark,
               foregroundColor: Colors.white,
               child: const Icon(Icons.add_rounded),
             ),
@@ -92,19 +103,15 @@ class _SuperAppShellState extends State<SuperAppShell> {
         return Scaffold(
           floatingActionButton: FloatingActionButton.extended(
             onPressed: _openQuickActions,
+            backgroundColor: AppTheme.primaryDark,
             icon: const Icon(Icons.flash_on_rounded),
-            label: const Text('Acceso rápido'),
+            label: const Text('Acciones'),
           ),
           body: Row(
             children: [
               Container(
                 width: 248,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  border: Border(
-                    right: BorderSide(color: Theme.of(context).dividerColor),
-                  ),
-                ),
+                decoration: const BoxDecoration(gradient: AppTheme.heroGradient),
                 child: Column(
                   children: [
                     const SizedBox(height: 24),
@@ -127,7 +134,7 @@ class _SuperAppShellState extends State<SuperAppShell> {
                             ? AppTheme.primary
                             : AppTheme.textSecondary,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       );
                     }),
@@ -158,6 +165,28 @@ class _SuperAppShellState extends State<SuperAppShell> {
         );
       },
     );
+  }
+
+  Future<void> _openPendingReservation(ReservationEntryTarget target) async {
+    if (!mounted || _openingPendingReservation) return;
+    _openingPendingReservation = true;
+    final consumed = context
+        .read<AppStateProvider>()
+        .consumePendingReservationTarget();
+    if (consumed == null) {
+      _openingPendingReservation = false;
+      return;
+    }
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ReservasScreen(initialTarget: consumed),
+      ),
+    );
+
+    if (mounted) {
+      _openingPendingReservation = false;
+    }
   }
 
   Future<void> _openQuickActions() async {
@@ -281,28 +310,43 @@ class _SuperAppShellState extends State<SuperAppShell> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 30,
-            height: 30,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
+              gradient: AppTheme.primaryGradient,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: AppTheme.glowShadow,
             ),
-            child: Icon(
-              Icons.hexagon_rounded,
-              color: Theme.of(context).colorScheme.primary,
+            child: const Icon(
+              Icons.favorite_outline_rounded,
+              color: Colors.white,
               size: 18,
             ),
           ),
           const SizedBox(width: 10),
-          Text(
-            'CICancer',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'CIC Salamanca',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'Espacio de trabajo',
+                  style: TextStyle(
+                    color: AppTheme.textMuted,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -314,8 +358,10 @@ class _SuperAppShellState extends State<SuperAppShell> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Theme.of(context).dividerColor),
+        boxShadow: AppTheme.softShadow,
       ),
       child: Row(
         children: [

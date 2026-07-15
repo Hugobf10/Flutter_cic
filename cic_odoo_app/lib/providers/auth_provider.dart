@@ -37,6 +37,9 @@ class AuthProvider extends ChangeNotifier {
   bool get accesoCalidad => _partnerProfile['acceso_calidad'] == true;
   bool get portalCalidadHabilitado =>
       _partnerProfile['portal_calidad_habilitado'] == true;
+  String get profileImageBase64 =>
+      (_partnerProfile['image_128'] ?? _partnerProfile['image_1920'] ?? '')
+          .toString();
   String get unidadNombre {
     final unidad = _partnerProfile['unidad_id'];
     if (unidad is List && unidad.length >= 2) return unidad[1].toString();
@@ -51,11 +54,7 @@ class AuthProvider extends ChangeNotifier {
 
   bool get hasIntranetAccess =>
       isAdmin || (accesoIntranet && accesoCalidad && portalCalidadHabilitado);
-  bool get hasPortalAppAccess =>
-      isPortalUser &&
-      (portalCalidadHabilitado ||
-          accesoCalidad ||
-          enabledPortalPermissions > 0);
+  bool get hasPortalAppAccess => isPortalUser;
   bool get hasAppAccess => isAdmin || hasIntranetAccess || hasPortalAppAccess;
 
   Map<String, bool> get portalPermissions => {
@@ -64,6 +63,9 @@ class AuthProvider extends ChangeNotifier {
     'Documentos': _partnerProfile['permiso_documentos_ver'] == true,
     'Salud': _partnerProfile['permiso_salud_ver'] == true,
     'Comunicaciones': _partnerProfile['permiso_comunicaciones_ver'] == true,
+    'Nóminas': true,
+    'Reservas': true,
+    'Sugerencias': true,
     'Proveedores': _partnerProfile['permiso_proveedores_ver'] == true,
     'Normativa': _partnerProfile['permiso_normativa_ver'] == true,
     'Equipos': _partnerProfile['permiso_equipos_ver'] == true,
@@ -149,9 +151,10 @@ class AuthProvider extends ChangeNotifier {
     if (isPortalUser) {
       switch (moduleKey) {
         case 'dashboard':
-        case 'portal':
         case 'payroll':
           return hasPortalAppAccess;
+        case 'portal':
+          return false;
         case 'quality':
           return canViewModule('incidents') ||
               canViewModule('training') ||
@@ -160,15 +163,16 @@ class AuthProvider extends ChangeNotifier {
               canViewModule('suggestions') ||
               canViewModule('goals');
         case 'reservas':
+        case 'planning':
           return hasPortalAppAccess;
         case 'training':
         case 'elearning':
         case 'suggestions':
+        case 'documents':
+        case 'goals':
           return hasPortalAppAccess;
         case 'incidents':
-        case 'goals':
         case 'action_plans':
-        case 'documents':
         case 'health':
         case 'communications':
         case 'suppliers':
@@ -307,6 +311,7 @@ class AuthProvider extends ChangeNotifier {
         partnerId,
         fields: const [
           'unidad_id',
+          'image_128',
           'acceso_intranet',
           'acceso_calidad',
           'portal_calidad_habilitado',

@@ -23,11 +23,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final appState = context.watch<AppStateProvider>();
     final auth = context.watch<AuthProvider>();
     final list = _applyFilter(appState.notifications);
+    final unreadCount = appState.notifications.where((e) => e.unread).length;
+    final highCount = appState.notifications.where((e) => e.level == 'high').length;
 
     return AppScaffold(
       title: 'Actividad',
       child: Column(
         children: [
+          _NotificationsHero(
+            totalCount: appState.notifications.length,
+            unreadCount: unreadCount,
+            highCount: highCount,
+          ),
+          const SizedBox(height: 16),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -82,6 +90,114 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 }
 
+class _NotificationsHero extends StatelessWidget {
+  const _NotificationsHero({
+    required this.totalCount,
+    required this.unreadCount,
+    required this.highCount,
+  });
+
+  final int totalCount;
+  final int unreadCount;
+  final int highCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Centro de actividad',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Aquí ves lo más reciente, lo importante y lo pendiente de revisar.',
+            style: TextStyle(color: AppTheme.textSecondary),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _NotificationStat(
+                  label: 'Total',
+                  value: totalCount.toString(),
+                  color: AppTheme.primary,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _NotificationStat(
+                  label: 'No leídas',
+                  value: unreadCount.toString(),
+                  color: AppTheme.info,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _NotificationStat(
+                  label: 'Importantes',
+                  value: highCount.toString(),
+                  color: AppTheme.warning,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NotificationStat extends StatelessWidget {
+  const _NotificationStat({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _NotificationCard extends StatelessWidget {
   const _NotificationCard({required this.item, required this.auth});
 
@@ -103,13 +219,13 @@ class _NotificationCard extends StatelessWidget {
         moduleKey: item.moduleKey,
       ),
       leading: Container(
-        width: 30,
-        height: 30,
+        width: 38,
+        height: 38,
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(Icons.notifications_rounded, size: 16, color: color),
+        child: Icon(Icons.notifications_rounded, size: 18, color: color),
       ),
       title: item.title,
       subtitle: '${item.subtitle} · ${item.createdAtLabel}',

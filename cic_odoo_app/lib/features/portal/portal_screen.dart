@@ -103,72 +103,69 @@ class _PortalScreenState extends State<PortalScreen> {
       child: _loading
           ? const AppLoadingView(label: 'Cargando portal...')
           : _error != null
-              ? AppEmptyState(
-                  title: 'No se pudo cargar el portal',
-                  subtitle: _error!,
-                  icon: Icons.error_outline_rounded,
-                  action: AppButton.primary(
-                    label: 'Reintentar',
-                    onPressed: _load,
-                  ),
-                )
-              : ListView(
-                  children: [
-                    _PortalHero(partner: _partner, auth: auth),
-                    const SizedBox(height: 20),
-                    AppSectionHeader(
-                      title: 'Accesos rápidos',
-                      subtitle:
-                          'Atajos disponibles según los permisos reales del usuario en Odoo.',
-                    ),
-                    if (actions.isEmpty)
-                      const AppEmptyState(
-                        title: 'Sin accesos disponibles',
-                        subtitle:
-                            'Este usuario no tiene secciones de portal habilitadas en este momento.',
-                        icon: Icons.lock_outline_rounded,
-                      )
-                    else
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final width = constraints.maxWidth;
-                          final columns = width >= 980
-                              ? 3
-                              : width >= 680
-                                  ? 2
-                                  : 1;
-                          final spacing = 12.0;
-                          final itemWidth =
-                              (width - spacing * (columns - 1)) / columns;
-
-                          return Wrap(
-                            spacing: spacing,
-                            runSpacing: spacing,
-                            children: actions
-                                .map(
-                                  (action) => SizedBox(
-                                    width: itemWidth,
-                                    child: _PortalActionCard(action: action),
-                                  ),
-                                )
-                                .toList(),
-                          );
-                        },
-                      ),
-                    const SizedBox(height: 20),
-                    AppSectionHeader(
-                      title: 'Permisos activos',
-                      subtitle:
-                          'Resumen del acceso efectivo del usuario portal en la aplicación.',
-                    ),
-                    ...permissionRows.map(
-                      (row) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _PortalPermissionCard(row: row),
-                      ),
-                    ),
-                  ],
+          ? AppEmptyState(
+              title: 'No se pudo cargar el portal',
+              subtitle: _error!,
+              icon: Icons.error_outline_rounded,
+              action: AppButton.primary(label: 'Reintentar', onPressed: _load),
+            )
+          : ListView(
+              children: [
+                _PortalHero(partner: _partner, auth: auth),
+                const SizedBox(height: 20),
+                AppSectionHeader(
+                  title: 'Accesos rápidos',
+                  subtitle:
+                      'Atajos disponibles según los permisos reales del usuario en Odoo.',
                 ),
+                if (actions.isEmpty)
+                  const AppEmptyState(
+                    title: 'Sin accesos disponibles',
+                    subtitle:
+                        'Este usuario no tiene secciones de portal habilitadas en este momento.',
+                    icon: Icons.lock_outline_rounded,
+                  )
+                else
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final width = constraints.maxWidth;
+                      final columns = width >= 980
+                          ? 3
+                          : width >= 680
+                          ? 2
+                          : 1;
+                      final spacing = 12.0;
+                      final itemWidth =
+                          (width - spacing * (columns - 1)) / columns;
+
+                      return Wrap(
+                        spacing: spacing,
+                        runSpacing: spacing,
+                        children: actions
+                            .map(
+                              (action) => SizedBox(
+                                width: itemWidth,
+                                child: _PortalActionCard(action: action),
+                              ),
+                            )
+                            .toList(),
+                      );
+                    },
+                  ),
+                const SizedBox(height: 20),
+                AppSectionHeader(
+                  title: 'Permisos activos',
+                  subtitle:
+                      'Resumen del acceso efectivo del usuario portal en la aplicación.',
+                ),
+                ...permissionRows.map(
+                  (row) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _PortalPermissionCard(row: row),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -180,9 +177,9 @@ class _PortalScreenState extends State<PortalScreen> {
         icon: Icons.account_circle_outlined,
         color: AppTheme.primary,
         onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const ProfileScreen()),
-          );
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
         },
       ),
       if (auth.canViewModule('payroll'))
@@ -192,9 +189,9 @@ class _PortalScreenState extends State<PortalScreen> {
           icon: Icons.receipt_long_rounded,
           color: AppTheme.success,
           onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const PayrollScreen()),
-            );
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const PayrollScreen()));
           },
         ),
       if (auth.canViewModule('reservas'))
@@ -249,9 +246,9 @@ class _PortalScreenState extends State<PortalScreen> {
           icon: Icons.flag_outlined,
           color: AppTheme.success,
           onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const GoalsScreen()),
-            );
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const GoalsScreen()));
           },
         ),
       if (auth.canViewModule('action_plans'))
@@ -361,30 +358,38 @@ class _PortalScreenState extends State<PortalScreen> {
         title: 'Sugerencias y formación personal',
         subtitle:
             'Autoservicio disponible para perfiles portal según la documentación de Odoo.',
-        canView: auth.canViewModule('suggestions') || auth.canViewModule('training'),
-        canEdit: auth.canEditModule('suggestions') || auth.canEditModule('training'),
+        canView:
+            auth.canViewModule('suggestions') || auth.canViewModule('training'),
+        canEdit:
+            auth.canEditModule('suggestions') || auth.canEditModule('training'),
       ),
       _PortalPermissionRow(
         title: 'Objetivos y planes',
         subtitle: 'Control del trabajo asignado y acciones derivadas.',
-        canView: auth.canViewModule('goals') || auth.canViewModule('action_plans'),
-        canEdit: auth.canEditModule('goals') || auth.canEditModule('action_plans'),
+        canView:
+            auth.canViewModule('goals') || auth.canViewModule('action_plans'),
+        canEdit:
+            auth.canEditModule('goals') || auth.canEditModule('action_plans'),
       ),
       _PortalPermissionRow(
         title: 'Incidencias y documentación',
         subtitle: 'Secciones gobernadas por permisos específicos del partner.',
-        canView: auth.canViewModule('incidents') || auth.canViewModule('documents'),
-        canEdit: auth.canEditModule('incidents') || auth.canEditModule('documents'),
+        canView:
+            auth.canViewModule('incidents') || auth.canViewModule('documents'),
+        canEdit:
+            auth.canEditModule('incidents') || auth.canEditModule('documents'),
       ),
       _PortalPermissionRow(
         title: 'Activos y cumplimiento',
         subtitle: 'Equipos, químicos, salud, normativa y proveedores.',
-        canView: auth.canViewModule('equipment') ||
+        canView:
+            auth.canViewModule('equipment') ||
             auth.canViewModule('chemicals') ||
             auth.canViewModule('health') ||
             auth.canViewModule('normative') ||
             auth.canViewModule('suppliers'),
-        canEdit: auth.canEditModule('equipment') ||
+        canEdit:
+            auth.canEditModule('equipment') ||
             auth.canEditModule('chemicals') ||
             auth.canEditModule('health') ||
             auth.canEditModule('normative') ||
@@ -395,10 +400,7 @@ class _PortalScreenState extends State<PortalScreen> {
 }
 
 class _PortalHero extends StatelessWidget {
-  const _PortalHero({
-    required this.partner,
-    required this.auth,
-  });
+  const _PortalHero({required this.partner, required this.auth});
 
   final Map<String, dynamic> partner;
   final AuthProvider auth;

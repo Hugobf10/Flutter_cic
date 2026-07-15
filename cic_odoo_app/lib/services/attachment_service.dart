@@ -110,7 +110,7 @@ class AttachmentService {
     required String name,
     required Uint8List bytes,
   }) async {
-    final cleanName = name.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+    final cleanName = sanitizeFileName(name);
     try {
       final dir = await getTemporaryDirectory();
       await dir.create(recursive: true);
@@ -126,6 +126,27 @@ class AttachmentService {
       await file.writeAsBytes(bytes, flush: true);
       return file;
     }
+  }
+
+  Future<File> writeBytesToDocuments({
+    required String name,
+    required Uint8List bytes,
+    String? folderName,
+  }) async {
+    await AppPermissionService.requestDownloads();
+    final cleanName = sanitizeFileName(name);
+    final baseDir = await getApplicationDocumentsDirectory();
+    final targetDir = folderName == null || folderName.trim().isEmpty
+        ? baseDir
+        : Directory('${baseDir.path}/${sanitizeFileName(folderName)}');
+    await targetDir.create(recursive: true);
+    final file = File('${targetDir.path}/$cleanName');
+    await file.writeAsBytes(bytes, flush: true);
+    return file;
+  }
+
+  static String sanitizeFileName(String name) {
+    return name.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
   }
 
   String _inferMimeType(String fileName) {

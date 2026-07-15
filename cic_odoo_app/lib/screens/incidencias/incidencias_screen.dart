@@ -235,15 +235,23 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
       return const Padding(padding: EdgeInsets.all(16), child: ShimmerList());
     }
     if (p.errorMessage != null) {
+      final limitedAccess = OdooService.isAccessError(p.errorMessage);
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, color: AppTheme.danger, size: 40),
+            Icon(
+              limitedAccess ? Icons.lock_outline_rounded : Icons.error_outline,
+              color: limitedAccess ? AppTheme.warning : AppTheme.danger,
+              size: 40,
+            ),
             const SizedBox(height: 8),
             Text(
-              p.errorMessage!,
+              limitedAccess
+                  ? 'Este perfil no puede consultar el listado completo de incidencias por API con sus permisos actuales.'
+                  : p.errorMessage!,
               style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             ElevatedButton(

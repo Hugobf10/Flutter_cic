@@ -9,12 +9,18 @@ class AppConfig {
 
   static const String appName = String.fromEnvironment(
     'APP_NAME',
-    defaultValue: 'CIC Odoo',
+    defaultValue: 'CIC Salamanca',
   );
 
   static const String appVersion = String.fromEnvironment(
     'APP_VERSION',
     defaultValue: '1.0.0',
+  );
+
+  static const String wordpressApiUrl = String.fromEnvironment(
+    'WORDPRESS_API_URL',
+    defaultValue:
+        'https://www.cicancer.org/wp-json/wp/v2/posts?per_page=5&_embed=1',
   );
 
   static const int httpTimeoutSeconds = int.fromEnvironment(

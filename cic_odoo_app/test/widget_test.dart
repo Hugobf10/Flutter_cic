@@ -3,8 +3,8 @@ import 'package:cic_odoo_app/main.dart';
 
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
-    await tester.pumpWidget(const CicSuperApp());
+    await tester.pumpWidget(const CicSalamancaApp());
     // Verifica que el splash screen se muestra
-    expect(find.text('CIC SuperApp'), findsOneWidget);
+    expect(find.text('CIC Salamanca'), findsOneWidget);
   });
 }

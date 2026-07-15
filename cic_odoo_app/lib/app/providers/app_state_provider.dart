@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../screens/reservas/reservation_entry_target.dart';
 import '../../services/odoo_service.dart';
 import '../core/module_registry.dart';
 import '../models/app_module.dart';
@@ -14,12 +15,15 @@ class AppStateProvider extends ChangeNotifier {
 
   final Set<String> _grantedPermissions = <String>{};
   List<AppNotification> _notifications = const [];
+  ReservationEntryTarget? _pendingReservationTarget;
 
   ThemeMode get themeMode => _themeMode;
   bool get loadingAcl => _loadingAcl;
   bool get loadingNotifications => _loadingNotifications;
   List<AppNotification> get notifications => _notifications;
   int get unreadNotifications => _notifications.where((n) => n.unread).length;
+  ReservationEntryTarget? get pendingReservationTarget =>
+      _pendingReservationTarget;
 
   List<AppModule> get availableModules {
     return ModuleRegistry.all.where((m) {
@@ -33,6 +37,18 @@ class AppStateProvider extends ChangeNotifier {
         ? ThemeMode.light
         : ThemeMode.dark;
     notifyListeners();
+  }
+
+  void setPendingReservationTarget(ReservationEntryTarget target) {
+    _pendingReservationTarget = target;
+    notifyListeners();
+  }
+
+  ReservationEntryTarget? consumePendingReservationTarget() {
+    final target = _pendingReservationTarget;
+    _pendingReservationTarget = null;
+    notifyListeners();
+    return target;
   }
 
   Future<void> initialize() async {

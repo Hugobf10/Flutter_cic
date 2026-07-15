@@ -9,7 +9,9 @@ import 'app/screens/superapp_shell.dart';
 import 'config/app_config.dart';
 import 'providers/auth_provider.dart';
 import 'providers/dashboard_provider.dart';
+import 'screens/reservas/reservation_entry_target.dart';
 import 'screens/login/login_screen.dart';
+import 'services/deep_link_service.dart';
 import 'services/app_logger.dart';
 import 'services/monitoring_service.dart';
 import 'theme/app_theme.dart';
@@ -51,7 +53,7 @@ Future<void> main() async {
         data: {'app': AppConfig.appName, 'env': AppConfig.odooBaseUrl},
         scope: 'bootstrap',
       );
-      runApp(const CicSuperApp());
+      runApp(const CicSalamancaApp());
     },
     (error, stack) {
       AppLogger.error(
@@ -64,8 +66,8 @@ Future<void> main() async {
   );
 }
 
-class CicSuperApp extends StatelessWidget {
-  const CicSuperApp({super.key});
+class CicSalamancaApp extends StatelessWidget {
+  const CicSalamancaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -83,12 +85,48 @@ class CicSuperApp extends StatelessWidget {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: appState.themeMode,
-            home: const AuthGate(),
+            home: const _DeepLinkBootstrap(child: AuthGate()),
           );
         },
       ),
     );
   }
+}
+
+class _DeepLinkBootstrap extends StatefulWidget {
+  const _DeepLinkBootstrap({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_DeepLinkBootstrap> createState() => _DeepLinkBootstrapState();
+}
+
+class _DeepLinkBootstrapState extends State<_DeepLinkBootstrap> {
+  final DeepLinkService _deepLinkService = DeepLinkService();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _deepLinkService.start(_handleIncomingUri);
+    });
+  }
+
+  @override
+  void dispose() {
+    _deepLinkService.dispose();
+    super.dispose();
+  }
+
+  void _handleIncomingUri(Uri uri) {
+    final target = ReservationEntryTarget.fromUri(uri);
+    if (target == null || !mounted) return;
+    context.read<AppStateProvider>().setPendingReservationTarget(target);
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class AuthGate extends StatefulWidget {
@@ -155,7 +193,7 @@ class _SplashScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'CIC SuperApp',
+              'CIC Salamanca',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 14),

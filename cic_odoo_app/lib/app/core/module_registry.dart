@@ -6,7 +6,7 @@ class ModuleRegistry {
   static const List<AppModule> all = [
     AppModule(
       key: 'dashboard',
-      title: 'Tablero',
+      title: 'Inicio',
       icon: Icons.space_dashboard_rounded,
       color: Color(0xFF5B7CFA),
       requiredPermission: 'dashboard.view',
@@ -51,6 +51,24 @@ class ModuleRegistry {
       icon: Icons.description_rounded,
       color: Color(0xFF4D84FF),
       requiredPermission: 'documents.view',
+      implemented: true,
+    ),
+    AppModule(
+      key: 'payroll',
+      title: 'Nóminas',
+      icon: Icons.receipt_long_rounded,
+      color: Color(0xFF64748B),
+      requiredPermission: null,
+      description: 'Documentos salariales del portal',
+      implemented: true,
+    ),
+    AppModule(
+      key: 'goals',
+      title: 'Objetivos',
+      icon: Icons.track_changes_rounded,
+      color: Color(0xFF2563EB),
+      requiredPermission: 'goals.view',
+      description: 'Objetivos y planes personales',
       implemented: true,
     ),
     AppModule(

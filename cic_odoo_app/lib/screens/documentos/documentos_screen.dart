@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../app/screens/document_viewer_screen.dart';
 import '../../app/ui/app_components.dart';
@@ -28,7 +29,7 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
     'version_count',
     'descarga_count',
     'version_actual_id',
-    'unidad_id'
+    'unidad_id',
   ];
 
   @override
@@ -46,9 +47,19 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
   void _loadData({String? search}) {
     final domain = <dynamic>[];
     if (search != null && search.isNotEmpty) {
-      domain.addAll(['|', ['name', 'ilike', search], ['codigo', 'ilike', search]]);
+      domain.addAll([
+        '|',
+        ['name', 'ilike', search],
+        ['codigo', 'ilike', search],
+      ]);
     }
-    _provider.loadRecords('calidad.documento', domain: domain, fields: _fields, order: 'codigo, name', limit: 80);
+    _provider.loadRecords(
+      'calidad.documento',
+      domain: domain,
+      fields: _fields,
+      order: 'codigo, name',
+      limit: 80,
+    );
   }
 
   @override
@@ -70,7 +81,9 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: Consumer<DataProvider>(builder: (context, p, _) => _buildList(p)),
+              child: Consumer<DataProvider>(
+                builder: (context, p, _) => _buildList(p),
+              ),
             ),
           ],
         ),
@@ -83,10 +96,17 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (p.errorMessage != null) {
+      final limitedAccess = OdooService.isAccessError(p.errorMessage);
       return AppEmptyState(
-        title: 'No se pudieron cargar documentos',
-        subtitle: p.errorMessage!,
-        icon: Icons.error_outline_rounded,
+        title: limitedAccess
+            ? 'Documentos con acceso limitado'
+            : 'No se pudieron cargar documentos',
+        subtitle: limitedAccess
+            ? 'Este perfil no puede consultar el listado completo de documentos por API con sus permisos actuales.'
+            : p.errorMessage!,
+        icon: limitedAccess
+            ? Icons.lock_outline_rounded
+            : Icons.error_outline_rounded,
       );
     }
     if (p.records.isEmpty) {
@@ -122,7 +142,9 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
     final codigo = (doc['codigo'] ?? '').toString();
     final title = (doc['name'] ?? 'Documento').toString();
     final versions = (doc['version_count'] as num?)?.toInt() ?? 0;
-    final subtitle = codigo.isEmpty ? 'PDF · $versions versiones' : '$codigo · PDF · $versions versiones';
+    final subtitle = codigo.isEmpty
+        ? 'PDF · $versions versiones'
+        : '$codigo · PDF · $versions versiones';
     final id = (doc['id'] as num?)?.toInt();
 
     return AppPdfCard(
@@ -155,7 +177,11 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo abrir el documento: $e')),
+        SnackBar(
+          content: Text(
+            'No se pudo abrir el documento: ${OdooService.prettyError(e)}',
+          ),
+        ),
       );
     }
   }
@@ -170,13 +196,15 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
         defaultName: 'documento_$id.pdf',
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Archivo guardado en caché: ${file.file.path}')),
-      );
+      await Share.shareXFiles([
+        XFile(file.file.path, name: file.name, mimeType: file.mimeType),
+      ], subject: file.name);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo descargar: $e')),
+        SnackBar(
+          content: Text('No se pudo descargar: ${OdooService.prettyError(e)}'),
+        ),
       );
     }
   }
@@ -197,7 +225,9 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
     );
     final attachmentRef = version['attachment_id'];
     if (attachmentRef is! List || attachmentRef.isEmpty) return null;
-    await _odoo.callRecordMethod('calidad.documento', [documentId], 'action_registrar_descarga');
+    await _odoo.callRecordMethod('calidad.documento', [
+      documentId,
+    ], 'action_registrar_descarga');
     return (attachmentRef.first as num).toInt();
   }
 }

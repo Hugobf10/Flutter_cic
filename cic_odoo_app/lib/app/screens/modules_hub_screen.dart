@@ -8,6 +8,7 @@ import '../providers/app_state_provider.dart';
 import '../ui/app_components.dart';
 import '../widgets/module_tile.dart';
 import '../../providers/auth_provider.dart';
+import '../../theme/app_theme.dart';
 
 class ModulesHubScreen extends StatefulWidget {
   const ModulesHubScreen({super.key});
@@ -34,9 +35,38 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
       ..sort((a, b) => a.title.compareTo(b.title));
 
     return AppScaffold(
-      title: 'Módulos',
+      title: 'Explorar',
       child: Column(
         children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: AppTheme.cardGradient,
+              borderRadius: AppTheme.radiusLg,
+              border: Border.all(color: AppTheme.divider),
+              boxShadow: AppTheme.softShadow,
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Todos tus módulos',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'Busca rápido y abre solo lo que realmente usa este perfil.',
+                  style: TextStyle(color: AppTheme.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
           AppSearchBar(
             controller: _searchCtrl,
             hintText: 'Buscar módulos...',
@@ -44,6 +74,18 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
                 setState(() => _query = value.trim().toLowerCase()),
           ),
           const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '${modules.length} módulos disponibles',
+              style: const TextStyle(
+                color: AppTheme.textMuted,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -51,9 +93,9 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
                   itemCount: modules.length,
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: 280,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                    mainAxisExtent: 164,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    mainAxisExtent: 188,
                   ),
                   itemBuilder: (_, i) {
                     final module = modules[i];
@@ -93,12 +135,12 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
   List<AppModule> _intranetModules(List<AppModule> modules, AuthProvider auth) {
     if (auth.isAdmin) return modules;
     const allowed = {
-      'dashboard',
-      'quality',
       'incidents',
       'training',
       'elearning',
       'documents',
+      'payroll',
+      'goals',
       'reservas',
       'planning',
       'health',
@@ -110,8 +152,6 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
       'suppliers',
       'purchases',
       'recruitment',
-      'portal',
-      'organization',
       'maintenance',
     };
     return modules

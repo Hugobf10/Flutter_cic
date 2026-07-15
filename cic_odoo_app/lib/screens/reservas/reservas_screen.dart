@@ -1,32 +1,61 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../app/ui/app_components.dart';
-import '../../config/app_config.dart';
+import '../../features/purchases/barcode_scanner_screen.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/shimmer_loading.dart';
+import 'reservation_entry_target.dart';
 
 class ReservasScreen extends StatefulWidget {
-  const ReservasScreen({super.key});
+  const ReservasScreen({super.key, this.initialTarget});
+
+  final ReservationEntryTarget? initialTarget;
 
   @override
   State<ReservasScreen> createState() => _ReservasScreenState();
 }
 
-class _ReservasScreenState extends State<ReservasScreen> {
+class _ReservationApiCheckResult {
+  const _ReservationApiCheckResult({
+    required this.label,
+    required this.status,
+    required this.message,
+  });
+
+  final String label;
+  final _ReservationApiCheckStatus status;
+  final String message;
+}
+
+enum _ReservationApiCheckStatus { ok, limited, error }
+
+class _ReservasScreenState extends State<ReservasScreen>
+    with SingleTickerProviderStateMixin {
   final OdooService _odoo = OdooService();
   final TextEditingController _motivoCtrl = TextEditingController();
+  final AttachmentService _attachmentService = AttachmentService();
+  late final TabController _tabController;
 
   bool _isLoading = true;
   bool _isCreating = false;
   bool _isLoadingAvailability = false;
-  bool _portalOnlyMode = false;
+  bool _isExportingQr = false;
+  bool _isRunningApiChecks = false;
+  bool _limitedAccessMode = false;
   String? _error;
   String? _agendaError;
+  String? _reservasError;
+  List<_ReservationApiCheckResult> _apiCheckResults = const [];
 
   List<Map<String, dynamic>> _services = [];
   List<Map<String, dynamic>> _variants = [];
@@ -44,10 +73,21 @@ class _ReservasScreenState extends State<ReservasScreen> {
   DateTime _selectedDay = DateTime.now();
   DateTime _agendaDay = DateTime.now();
   List<DateTimeRange> _busyRanges = [];
+  ReservationEntryTarget? _activeTarget;
+  int? _agendaVariantFilterId;
 
   @override
   void initState() {
     super.initState();
+    _activeTarget = widget.initialTarget;
+    final targetDay = _currentReservationDay();
+    _selectedDay = targetDay;
+    _agendaDay = targetDay;
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: _activeTarget?.initialTabIndex ?? 0,
+    );
     _start = _roundNextHalfHour(DateTime.now());
     _end = _start!.add(Duration(minutes: _durationMinutes));
     _loadInitial();
@@ -55,6 +95,7 @@ class _ReservasScreenState extends State<ReservasScreen> {
 
   @override
   void dispose() {
+    _tabController.dispose();
     _motivoCtrl.dispose();
     super.dispose();
   }
@@ -64,11 +105,12 @@ class _ReservasScreenState extends State<ReservasScreen> {
       _isLoading = true;
       _error = null;
       _agendaError = null;
-      _portalOnlyMode = false;
+      _reservasError = null;
+      _limitedAccessMode = false;
     });
     await _loadMisReservas();
-    await _loadAgendaReservas(day: _agendaDay);
     try {
+      await _hydrateTargetContext();
       final services = await _odoo.searchRead(
         'product.template',
         domain: [
@@ -83,14 +125,19 @@ class _ReservasScreenState extends State<ReservasScreen> {
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList();
       if (_services.isNotEmpty) {
-        _serviceTemplateId = _services.first['id'] as int;
-        await _loadServiceOptions();
+        final desiredTemplateId =
+            _activeTarget?.serviceTemplateId ?? (_services.first['id'] as int);
+        _serviceTemplateId = _services.any((s) => s['id'] == desiredTemplateId)
+            ? desiredTemplateId
+            : _services.first['id'] as int;
+        await _loadServiceOptions(preferredVariantId: _activeTarget?.variantId);
       }
+      await _loadAgendaReservas(day: _agendaDay);
     } catch (e) {
       if (OdooService.isAccessError(e)) {
-        _portalOnlyMode = true;
+        _limitedAccessMode = true;
         _error =
-            'Tu usuario no puede crear reservas por RPC, pero sí consultar las reservas disponibles en la app y abrir el portal oficial.';
+            'Este perfil no puede cargar el asistente completo de reservas por API. La app mostrará el modo de consulta con la información disponible.';
       } else {
         _error = OdooService.prettyError(e);
       }
@@ -98,10 +145,49 @@ class _ReservasScreenState extends State<ReservasScreen> {
 
     if (mounted) {
       setState(() => _isLoading = false);
+      if (_activeTarget != null) {
+        _tabController.animateTo(_targetTabIndex());
+      }
     }
   }
 
-  Future<void> _loadServiceOptions() async {
+  Future<void> _hydrateTargetContext() async {
+    final target = _activeTarget;
+    if (target == null ||
+        target.variantId == null ||
+        target.serviceTemplateId != null) {
+      _agendaVariantFilterId = target?.variantId;
+      return;
+    }
+
+    try {
+      final rows = await _odoo.searchRead(
+        'product.product',
+        domain: [
+          ['id', '=', target.variantId],
+          ['active', '=', true],
+        ],
+        fields: ['display_name', 'product_tmpl_id'],
+        limit: 1,
+      );
+      if (rows.isEmpty) return;
+      final variant = Map<String, dynamic>.from(rows.first as Map);
+      final templateRef = variant['product_tmpl_id'];
+      final templateId = templateRef is List && templateRef.isNotEmpty
+          ? templateRef.first as int
+          : null;
+      _activeTarget = target.copyWith(
+        serviceTemplateId: templateId,
+        resourceLabel:
+            target.resourceLabel ?? variant['display_name']?.toString().trim(),
+      );
+      _agendaVariantFilterId = target.variantId;
+    } catch (_) {
+      _agendaVariantFilterId = target.variantId;
+    }
+  }
+
+  Future<void> _loadServiceOptions({int? preferredVariantId}) async {
     if (_serviceTemplateId == null) return;
 
     final variants = await _odoo.searchRead(
@@ -132,10 +218,16 @@ class _ReservasScreenState extends State<ReservasScreen> {
     _sessionTypes = sessionTypes
         .map((e) => Map<String, dynamic>.from(e as Map))
         .toList();
-    _variantId = _variants.isNotEmpty ? _variants.first['id'] as int : null;
+    final hasPreferredVariant =
+        preferredVariantId != null &&
+        _variants.any((v) => v['id'] == preferredVariantId);
+    _variantId = hasPreferredVariant
+        ? preferredVariantId
+        : (_variants.isNotEmpty ? _variants.first['id'] as int : null);
     _sessionTypeId = _sessionTypes.isNotEmpty
         ? _sessionTypes.first['id'] as int
         : null;
+    _agendaVariantFilterId ??= hasPreferredVariant ? preferredVariantId : null;
     await _loadAvailability();
   }
 
@@ -225,7 +317,9 @@ class _ReservasScreenState extends State<ReservasScreen> {
           .toList();
     } catch (e) {
       _reservas = [];
-      _error ??= OdooService.prettyError(e);
+      _reservasError = OdooService.isAccessError(e)
+          ? 'Tus reservas no están disponibles para este perfil por permisos API.'
+          : OdooService.prettyError(e);
     }
   }
 
@@ -234,13 +328,21 @@ class _ReservasScreenState extends State<ReservasScreen> {
     final startDay = DateTime(selected.year, selected.month, selected.day);
     final endDay = startDay.add(const Duration(days: 1));
     try {
+      final domain = <dynamic>[
+        ['fecha_inicio', '<', _formatOdooDateTime(endDay)],
+        ['fecha_fin', '>=', _formatOdooDateTime(startDay)],
+        [
+          'estado',
+          'in',
+          ['borrador', 'confirmada', 'facturada'],
+        ],
+      ];
+      if (_agendaVariantFilterId != null) {
+        domain.add(['servicio_id', '=', _agendaVariantFilterId]);
+      }
       final result = await _odoo.searchRead(
         'reserva.reserva',
-        domain: [
-          ['fecha_inicio', '<', _formatOdooDateTime(endDay)],
-          ['fecha_fin', '>=', _formatOdooDateTime(startDay)],
-          ['estado', 'in', ['borrador', 'confirmada', 'facturada']],
-        ],
+        domain: domain,
         fields: [
           'name',
           'servicio_id',
@@ -352,7 +454,10 @@ class _ReservasScreenState extends State<ReservasScreen> {
       _showSnack('Reserva creada correctamente.');
       if (mounted) setState(() {});
     } catch (e) {
-      _showSnack('No se pudo crear: $e', isError: true);
+      _showSnack(
+        'No se pudo crear: ${OdooService.prettyError(e)}',
+        isError: true,
+      );
     }
 
     if (mounted) setState(() => _isCreating = false);
@@ -365,8 +470,73 @@ class _ReservasScreenState extends State<ReservasScreen> {
       if (mounted) setState(() {});
       _showSnack('Reserva confirmada.');
     } catch (e) {
-      _showSnack('No se pudo confirmar: $e', isError: true);
+      _showSnack(
+        'No se pudo confirmar: ${OdooService.prettyError(e)}',
+        isError: true,
+      );
     }
+  }
+
+  Future<void> _scanReservationQr() async {
+    final raw = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+    );
+    if (!mounted || raw == null) return;
+
+    final target = ReservationEntryTarget.parse(raw);
+    if (target == null) {
+      _showSnack('El QR no corresponde a una reserva válida.', isError: true);
+      return;
+    }
+
+    await _applyReservationTarget(target);
+  }
+
+  Future<void> _applyReservationTarget(ReservationEntryTarget target) async {
+    final currentDay = _currentReservationDay();
+    setState(() {
+      _activeTarget = target;
+      _agendaVariantFilterId = target.variantId;
+      _selectedDay = currentDay;
+      _agendaDay = currentDay;
+      _error = null;
+      _agendaError = null;
+      _reservasError = null;
+    });
+
+    await _hydrateTargetContext();
+    final templateId = _activeTarget?.serviceTemplateId;
+    if (templateId != null) {
+      _serviceTemplateId = templateId;
+      await _loadServiceOptions(preferredVariantId: _activeTarget?.variantId);
+    } else if (target.variantId != null) {
+      _variantId = target.variantId;
+      await _loadAvailability();
+    }
+    await _loadAgendaReservas(day: _agendaDay);
+
+    if (!mounted) return;
+    _tabController.animateTo(_targetTabIndex());
+    setState(() {});
+    _showSnack(
+      _activeTarget?.resourceLabel?.trim().isNotEmpty == true
+          ? 'Disponibilidad cargada para ${_activeTarget!.resourceLabel}.'
+          : 'Disponibilidad cargada para el recurso escaneado.',
+    );
+  }
+
+  Future<void> _clearReservationTarget() async {
+    final currentDay = _currentReservationDay();
+    setState(() {
+      _activeTarget = null;
+      _agendaVariantFilterId = null;
+      _selectedDay = currentDay;
+      _agendaDay = currentDay;
+      _wizardStep = 0;
+    });
+    await _loadInitial();
+    if (!mounted) return;
+    _tabController.animateTo(0);
   }
 
   @override
@@ -380,8 +550,8 @@ class _ReservasScreenState extends State<ReservasScreen> {
     }
 
     if (_error != null) {
-      if (_portalOnlyMode) {
-        return _buildPortalReservationMode(auth);
+      if (_limitedAccessMode) {
+        return _buildLimitedAccessReservationMode(auth);
       }
       return Scaffold(
         backgroundColor: AppTheme.surface,
@@ -398,291 +568,819 @@ class _ReservasScreenState extends State<ReservasScreen> {
       );
     }
 
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        backgroundColor: AppTheme.surface,
-        appBar: AppBar(
-          title: const Text('Reservas'),
-          actions: [
-            IconButton(
-              onPressed: _loadInitial,
-              icon: const Icon(Icons.refresh_rounded),
-            ),
-          ],
-          bottom: const TabBar(
-            tabs: [
-              Tab(
-                text: 'Nueva reserva',
-                icon: Icon(Icons.add_circle_outline_rounded),
-              ),
-              Tab(text: 'Mis reservas', icon: Icon(Icons.list_alt_rounded)),
-              Tab(
-                text: 'Agenda diaria',
-                icon: Icon(Icons.calendar_view_day_rounded),
-              ),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          children: [
-            RefreshIndicator(
-              onRefresh: _loadInitial,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                children: [
-                  const SectionHeader(
-                    title: 'Reserva rápida',
-                    subtitle:
-                        'Selecciona servicio, recurso y horario en 4 pasos',
-                    icon: Icons.calendar_month_rounded,
-                  ),
-                  if (auth.canEditModule('reservas'))
-                    _buildNewReservationCard()
-                  else
-                    const AppEmptyState(
-                      title: 'Reserva no disponible',
-                      subtitle:
-                          'Este usuario puede consultar reservas, pero no crear nuevas desde la app.',
-                      icon: Icons.lock_outline_rounded,
-                    ),
-                ],
-              ),
-            ),
-            RefreshIndicator(
-              onRefresh: _loadInitial,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                children: [
-                  SectionHeader(
-                    title: 'Mis reservas',
-                    subtitle: '${_reservas.length} registros',
-                    icon: Icons.list_alt_rounded,
-                  ),
-                  if (_reservas.isEmpty)
-                    const AppEmptyState(
-                      title: 'Sin reservas',
-                      subtitle: 'No tienes reservas registradas.',
-                      icon: Icons.event_busy_outlined,
-                    )
-                  else
-                    ..._reservas.map((r) => _buildReservaCard(r, auth: auth)),
-                ],
-              ),
-            ),
-            RefreshIndicator(
-              onRefresh: _loadInitial,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                children: [
-                  SectionHeader(
-                    title: 'Agenda del día',
-                    subtitle:
-                        '${_agendaReservas.length} reservas visibles el ${_formatAgendaDay(_agendaDay)}',
-                    icon: Icons.calendar_view_day_rounded,
-                  ),
-                  _buildAgendaDaySelector(),
-                  const SizedBox(height: 12),
-                  if (_agendaError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(
-                        _agendaError!,
-                        style: const TextStyle(
-                          color: AppTheme.textMuted,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  if (_agendaReservas.isEmpty)
-                    const AppEmptyState(
-                      title: 'Sin reservas este día',
-                      subtitle:
-                          'No hay reservas disponibles para consultar en la fecha seleccionada.',
-                      icon: Icons.calendar_today_outlined,
-                    )
-                  else
-                    _buildAgendaTimeline(auth),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPortalReservationMode(AuthProvider auth) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        backgroundColor: AppTheme.surface,
-        appBar: AppBar(
-          title: const Text('Reservas'),
-          actions: [
-            IconButton(
-              onPressed: _loadInitial,
-              icon: const Icon(Icons.refresh_rounded),
-            ),
-          ],
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Mis reservas', icon: Icon(Icons.list_alt_rounded)),
-              Tab(
-                text: 'Agenda diaria',
-                icon: Icon(Icons.calendar_view_day_rounded),
-              ),
-              Tab(text: 'Portal', icon: Icon(Icons.open_in_new_rounded)),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          children: [
-            RefreshIndicator(
-              onRefresh: _loadInitial,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                children: [
-                  SectionHeader(
-                    title: 'Mis reservas',
-                    subtitle: '${_reservas.length} registros',
-                    icon: Icons.list_alt_rounded,
-                  ),
-                  if (_reservas.isEmpty)
-                    const AppEmptyState(
-                      title: 'Sin reservas',
-                      subtitle: 'No tienes reservas registradas.',
-                      icon: Icons.event_busy_outlined,
-                    )
-                  else
-                    ..._reservas.map((r) => _buildReservaCard(r, auth: auth)),
-                ],
-              ),
-            ),
-            RefreshIndicator(
-              onRefresh: _loadInitial,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                children: [
-                  SectionHeader(
-                    title: 'Agenda del día',
-                    subtitle:
-                        '${_agendaReservas.length} reservas visibles el ${_formatAgendaDay(_agendaDay)}',
-                    icon: Icons.calendar_view_day_rounded,
-                  ),
-                  _buildAgendaDaySelector(),
-                  const SizedBox(height: 12),
-                  if (_agendaError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(
-                        _agendaError!,
-                        style: const TextStyle(
-                          color: AppTheme.textMuted,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  if (_agendaReservas.isEmpty)
-                    const AppEmptyState(
-                      title: 'Sin reservas este día',
-                      subtitle:
-                          'No hay reservas visibles en la fecha seleccionada.',
-                      icon: Icons.calendar_today_outlined,
-                    )
-                  else
-                    _buildAgendaTimeline(auth),
-                ],
-              ),
-            ),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 560),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceCard,
-                    borderRadius: AppTheme.radiusMd,
-                    border: Border.all(color: AppTheme.divider),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(
-                            Icons.travel_explore_rounded,
-                            color: AppTheme.primary,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            'Reservas en modo portal',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'Este perfil puede consultar sus reservas en la app. Si necesita crear o editar más acciones, puede continuar en el portal oficial.',
-                        style: TextStyle(color: AppTheme.textSecondary),
-                      ),
-                      const SizedBox(height: 14),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: _openReservationsPortal,
-                          icon: const Icon(Icons.open_in_new_rounded),
-                          label: const Text('Abrir portal de reservas'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAgendaDaySelector() {
-    return AppCard(
-      child: Row(
-        children: [
+    return Scaffold(
+      backgroundColor: AppTheme.surface,
+      appBar: AppBar(
+        title: const Text('Reservas'),
+        actions: [
           IconButton(
-            onPressed: () => _changeAgendaDay(-1),
-            icon: const Icon(Icons.chevron_left_rounded),
+            onPressed: _scanReservationQr,
+            icon: const Icon(Icons.qr_code_scanner_rounded),
+            tooltip: 'Escanear QR de sala o equipo',
           ),
-          Expanded(
-            child: Column(
+          IconButton(
+            onPressed: _loadInitial,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(
+              text: 'Nueva reserva',
+              icon: Icon(Icons.add_circle_outline_rounded),
+            ),
+            Tab(text: 'Mis reservas', icon: Icon(Icons.list_alt_rounded)),
+            Tab(
+              text: 'Agenda diaria',
+              icon: Icon(Icons.calendar_view_day_rounded),
+            ),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          RefreshIndicator(
+            onRefresh: _loadInitial,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
               children: [
-                const Text(
-                  'Día consultado',
-                  style: TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 12,
+                const SectionHeader(
+                  title: 'Reserva rápida',
+                  subtitle: 'Selecciona servicio, recurso y horario en 4 pasos',
+                  icon: Icons.calendar_month_rounded,
+                ),
+                if (_activeTarget != null) _buildResourceContextBanner(),
+                if (auth.isAdmin) ...[
+                  _buildAdminQrCard(),
+                  const SizedBox(height: 12),
+                ],
+                _buildApiDiagnosticsCard(),
+                const SizedBox(height: 12),
+                if (auth.canEditModule('reservas'))
+                  _buildNewReservationCard()
+                else
+                  const AppEmptyState(
+                    title: 'Reserva no disponible',
+                    subtitle:
+                        'Este usuario puede consultar reservas, pero no crear nuevas desde la app.',
+                    icon: Icons.lock_outline_rounded,
+                  ),
+              ],
+            ),
+          ),
+          RefreshIndicator(
+            onRefresh: _loadInitial,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+              children: [
+                SectionHeader(
+                  title: 'Mis reservas',
+                  subtitle: '${_reservas.length} registros',
+                  icon: Icons.list_alt_rounded,
+                ),
+                if (_reservasError != null)
+                  _buildReservasNotice(_reservasError!),
+                if (_reservas.isEmpty)
+                  const AppEmptyState(
+                    title: 'Sin reservas',
+                    subtitle: 'No tienes reservas registradas.',
+                    icon: Icons.event_busy_outlined,
+                  )
+                else
+                  ..._reservas.map((r) => _buildReservaCard(r, auth: auth)),
+              ],
+            ),
+          ),
+          RefreshIndicator(
+            onRefresh: _loadInitial,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+              children: [
+                SectionHeader(
+                  title: 'Agenda del día',
+                  subtitle:
+                      '${_agendaReservas.length} reservas visibles el ${_formatAgendaDay(_agendaDay)}',
+                  icon: Icons.calendar_view_day_rounded,
+                ),
+                if (_activeTarget != null) _buildResourceContextBanner(),
+                _buildAgendaDaySelector(),
+                const SizedBox(height: 12),
+                if (_agendaError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      _agendaError!,
+                      style: const TextStyle(
+                        color: AppTheme.textMuted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                if (_agendaReservas.isEmpty)
+                  const AppEmptyState(
+                    title: 'Sin reservas este día',
+                    subtitle:
+                        'No hay reservas disponibles para consultar en la fecha seleccionada.',
+                    icon: Icons.calendar_today_outlined,
+                  )
+                else
+                  _buildAgendaTimeline(auth),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLimitedAccessReservationMode(AuthProvider auth) {
+    return Scaffold(
+      backgroundColor: AppTheme.surface,
+      appBar: AppBar(
+        title: const Text('Reservas'),
+        actions: [
+          IconButton(
+            onPressed: _scanReservationQr,
+            icon: const Icon(Icons.qr_code_scanner_rounded),
+            tooltip: 'Escanear QR de sala o equipo',
+          ),
+          IconButton(
+            onPressed: _loadInitial,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'Mis reservas', icon: Icon(Icons.list_alt_rounded)),
+            Tab(
+              text: 'Agenda diaria',
+              icon: Icon(Icons.calendar_view_day_rounded),
+            ),
+            Tab(text: 'Acceso', icon: Icon(Icons.lock_outline_rounded)),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          RefreshIndicator(
+            onRefresh: _loadInitial,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+              children: [
+                SectionHeader(
+                  title: 'Mis reservas',
+                  subtitle: '${_reservas.length} registros',
+                  icon: Icons.list_alt_rounded,
+                ),
+                if (_reservasError != null)
+                  _buildReservasNotice(_reservasError!),
+                if (_reservas.isEmpty)
+                  const AppEmptyState(
+                    title: 'Sin reservas',
+                    subtitle: 'No tienes reservas registradas.',
+                    icon: Icons.event_busy_outlined,
+                  )
+                else
+                  ..._reservas.map((r) => _buildReservaCard(r, auth: auth)),
+              ],
+            ),
+          ),
+          RefreshIndicator(
+            onRefresh: _loadInitial,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+              children: [
+                SectionHeader(
+                  title: 'Agenda del día',
+                  subtitle:
+                      '${_agendaReservas.length} reservas visibles el ${_formatAgendaDay(_agendaDay)}',
+                  icon: Icons.calendar_view_day_rounded,
+                ),
+                if (_activeTarget != null) _buildResourceContextBanner(),
+                _buildAgendaDaySelector(),
+                const SizedBox(height: 12),
+                if (_agendaError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      _agendaError!,
+                      style: const TextStyle(
+                        color: AppTheme.textMuted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                if (_agendaReservas.isEmpty)
+                  const AppEmptyState(
+                    title: 'Sin reservas este día',
+                    subtitle:
+                        'No hay reservas visibles en la fecha seleccionada.',
+                    icon: Icons.calendar_today_outlined,
+                  )
+                else
+                  _buildAgendaTimeline(auth),
+              ],
+            ),
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 560),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceCard,
+                  borderRadius: AppTheme.radiusMd,
+                  border: Border.all(color: AppTheme.divider),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(
+                          Icons.lock_outline_rounded,
+                          color: AppTheme.primary,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Reservas con acceso limitado',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Este perfil está en modo de consulta dentro de la app. Puede revisar sus reservas y la agenda diaria, pero no crear ni editar nuevas reservas con sus permisos actuales.',
+                      style: TextStyle(color: AppTheme.textSecondary),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceElevated,
+                        borderRadius: AppTheme.radiusSm,
+                        border: Border.all(color: AppTheme.divider),
+                      ),
+                      child: const Text(
+                        'Si este usuario debe poder reservar desde la app, hay que habilitar permisos API para su perfil en el flujo de reservas.',
+                        style: TextStyle(
+                          color: AppTheme.textMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildApiDiagnosticsCard(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResourceContextBanner() {
+    final label = _activeTarget?.resourceLabel ?? _selectedVariantName();
+    final dayLabel = _activeTarget?.day != null
+        ? _formatAgendaDay(_activeTarget!.day!)
+        : _formatAgendaDay(_agendaDay);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.qr_code_2_rounded, color: AppTheme.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    label?.trim().isNotEmpty == true
+                        ? 'Recurso seleccionado: $label'
+                        : 'Recurso seleccionado por QR',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  _formatAgendaDay(_agendaDay),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
+                TextButton(
+                  onPressed: _clearReservationTarget,
+                  child: const Text('Limpiar'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Mostrando disponibilidad y agenda para $dayLabel.',
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdminQrCard() {
+    final variant = _selectedVariantMap();
+    final templateId = _serviceTemplateId;
+    final variantId = _variantId;
+    final variantName = _selectedVariantName();
+    final payload = _buildReservationQrPayload();
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.qr_code_2_rounded, color: AppTheme.primary),
+              SizedBox(width: 8),
+              Text(
+                'QR de recurso',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            variantId == null
+                ? 'Selecciona un microservicio o recurso para generar su QR.'
+                : 'Este QR abrirá la app directamente en el recurso seleccionado y mostrará siempre la disponibilidad del día actual.',
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          ),
+          if (variantId != null) ...[
+            const SizedBox(height: 12),
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppTheme.divider),
+                ),
+                child: Column(
+                  children: [
+                    QrImageView(
+                      data: payload,
+                      size: 220,
+                      backgroundColor: Colors.white,
+                      eyeStyle: const QrEyeStyle(
+                        eyeShape: QrEyeShape.square,
+                        color: AppTheme.textPrimary,
+                      ),
+                      dataModuleStyle: const QrDataModuleStyle(
+                        dataModuleShape: QrDataModuleShape.square,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      variantName ?? 'Recurso',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Servicio ${templateId ?? '-'} · Recurso $variantId',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SelectableText(
+              payload,
+              style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _isExportingQr ? null : _exportCurrentQrPng,
+                    icon: _isExportingQr
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.download_rounded),
+                    label: Text(
+                      _isExportingQr ? 'Exportando...' : 'Exportar PNG',
+                    ),
                   ),
                 ),
               ],
             ),
+          ],
+          if (variant != null &&
+              (variant['display_name'] ?? '').toString().trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            const Text(
+              'Tip: genera el QR después de seleccionar el microservicio exacto en el paso 2.',
+              style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildApiDiagnosticsCard() {
+    final serviceLabel = _services
+        .where((s) => s['id'] == _serviceTemplateId)
+        .map((s) => (s['name'] ?? '').toString())
+        .cast<String?>()
+        .firstWhere(
+          (value) => value != null && value.trim().isNotEmpty,
+          orElse: () => null,
+        );
+    final variantLabel = _activeTarget?.resourceLabel ?? _selectedVariantName();
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.health_and_safety_outlined, color: AppTheme.primary),
+              SizedBox(width: 8),
+              Text(
+                'Diagnóstico API',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ],
           ),
-          IconButton(
-            onPressed: () => _changeAgendaDay(1),
-            icon: const Icon(Icons.chevron_right_rounded),
+          const SizedBox(height: 8),
+          Text(
+            'Comprueba desde la propia app qué partes del flujo de reservas permite este perfil por API.',
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceElevated,
+              borderRadius: AppTheme.radiusSm,
+              border: Border.all(color: AppTheme.divider),
+            ),
+            child: Text(
+              'Día actual: ${_formatAgendaDay(_currentReservationDay())}\n'
+              'Servicio: ${serviceLabel ?? '-'}\n'
+              'Recurso: ${variantLabel ?? '-'}',
+              style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _isRunningApiChecks
+                      ? null
+                      : _runReservationApiDiagnostics,
+                  icon: _isRunningApiChecks
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.playlist_add_check_circle_rounded),
+                  label: Text(
+                    _isRunningApiChecks
+                        ? 'Comprobando...'
+                        : 'Comprobar permisos API',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_apiCheckResults.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ..._apiCheckResults.map(_buildApiCheckRow),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildApiCheckRow(_ReservationApiCheckResult result) {
+    final (icon, color) = switch (result.status) {
+      _ReservationApiCheckStatus.ok => (
+        Icons.check_circle_rounded,
+        AppTheme.success,
+      ),
+      _ReservationApiCheckStatus.limited => (
+        Icons.lock_outline_rounded,
+        AppTheme.warning,
+      ),
+      _ReservationApiCheckStatus.error => (
+        Icons.error_outline_rounded,
+        AppTheme.danger,
+      ),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceElevated,
+          borderRadius: AppTheme.radiusSm,
+          border: Border.all(color: AppTheme.divider),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    result.label,
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    result.message,
+                    style: const TextStyle(
+                      color: AppTheme.textMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _runReservationApiDiagnostics() async {
+    final auth = context.read<AuthProvider>();
+    final today = _currentReservationDay();
+    final startDay = today;
+    final endDay = startDay.add(const Duration(days: 1));
+
+    setState(() {
+      _isRunningApiChecks = true;
+      _apiCheckResults = const [];
+    });
+
+    final checks = <_ReservationApiCheckResult>[
+      await _runApiCheck('Servicios reservables', () async {
+        final rows = await _odoo.searchRead(
+          'product.template',
+          domain: [
+            ['reservable_cic', '=', true],
+            ['detailed_type', '=', 'service'],
+          ],
+          fields: ['name'],
+          limit: 1,
+        );
+        return rows.isEmpty
+            ? 'Sin servicios visibles para este usuario.'
+            : 'Lectura OK del catálogo de servicios.';
+      }),
+      await _runApiCheck('Recursos del servicio', () async {
+        final domain = <dynamic>[
+          ['active', '=', true],
+        ];
+        if (_serviceTemplateId != null) {
+          domain.add(['product_tmpl_id', '=', _serviceTemplateId]);
+        }
+        final rows = await _odoo.searchRead(
+          'product.product',
+          domain: domain,
+          fields: ['display_name'],
+          limit: 1,
+        );
+        return rows.isEmpty
+            ? 'Sin recursos visibles para el servicio seleccionado.'
+            : 'Lectura OK de recursos/microservicios.';
+      }),
+      await _runApiCheck('Tipos de sesión', () async {
+        final domain = <dynamic>[
+          ['active', '=', true],
+        ];
+        if (_serviceTemplateId != null) {
+          domain.add(['servicio_template_id', '=', _serviceTemplateId]);
+        }
+        final rows = await _odoo.searchRead(
+          'reserva.session.type',
+          domain: domain,
+          fields: ['name'],
+          limit: 1,
+        );
+        return rows.isEmpty
+            ? 'No hay tipos de sesión visibles o no aplican a este servicio.'
+            : 'Lectura OK de tipos de sesión.';
+      }),
+      await _runApiCheck('Mis reservas', () async {
+        final rows = await _odoo.searchRead(
+          'reserva.reserva',
+          domain: [
+            ['contacto_id', '=', auth.partnerId],
+          ],
+          fields: ['name'],
+          limit: 1,
+        );
+        return rows.isEmpty
+            ? 'Consulta OK, pero este usuario no tiene reservas propias visibles.'
+            : 'Lectura OK de reservas propias.';
+      }),
+      await _runApiCheck('Agenda diaria', () async {
+        final domain = <dynamic>[
+          ['fecha_inicio', '<', _formatOdooDateTime(endDay)],
+          ['fecha_fin', '>=', _formatOdooDateTime(startDay)],
+          [
+            'estado',
+            'in',
+            ['borrador', 'confirmada', 'facturada'],
+          ],
+        ];
+        if (_agendaVariantFilterId != null) {
+          domain.add(['servicio_id', '=', _agendaVariantFilterId]);
+        }
+        final rows = await _odoo.searchRead(
+          'reserva.reserva',
+          domain: domain,
+          fields: ['name'],
+          limit: 1,
+        );
+        return rows.isEmpty
+            ? 'Consulta OK para la agenda del día, sin reservas visibles hoy.'
+            : 'Lectura OK de agenda diaria.';
+      }),
+      await _runApiCheck('Permiso de creación', () async {
+        final allowed = await _odoo.callMethod(
+          'reserva.reserva',
+          'check_access_rights',
+          args: ['create'],
+          kwargs: const {'raise_exception': false},
+        );
+        if (allowed == true) {
+          return 'El modelo permite crear reservas por API.';
+        }
+        throw Exception('Sin permiso de creación en reserva.reserva.');
+      }),
+      await _runApiCheck('Permiso de edición', () async {
+        final allowed = await _odoo.callMethod(
+          'reserva.reserva',
+          'check_access_rights',
+          args: ['write'],
+          kwargs: const {'raise_exception': false},
+        );
+        if (allowed == true) {
+          return 'El modelo permite editar reservas por API.';
+        }
+        throw Exception('Sin permiso de edición en reserva.reserva.');
+      }),
+    ];
+
+    if (!mounted) return;
+    setState(() {
+      _isRunningApiChecks = false;
+      _apiCheckResults = checks;
+    });
+  }
+
+  Future<_ReservationApiCheckResult> _runApiCheck(
+    String label,
+    Future<String> Function() action,
+  ) async {
+    try {
+      final message = await action();
+      return _ReservationApiCheckResult(
+        label: label,
+        status: _ReservationApiCheckStatus.ok,
+        message: message,
+      );
+    } catch (e) {
+      final limited =
+          OdooService.isAccessError(e) ||
+          e.toString().toLowerCase().contains('sin permiso');
+      return _ReservationApiCheckResult(
+        label: label,
+        status: limited
+            ? _ReservationApiCheckStatus.limited
+            : _ReservationApiCheckStatus.error,
+        message: limited
+            ? 'Acceso limitado: ${OdooService.prettyError(e)}'
+            : OdooService.prettyError(e),
+      );
+    }
+  }
+
+  Widget _buildAgendaDaySelector() {
+    return AppCard(
+      child: Column(
+        children: [
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => _changeAgendaDay(-1),
+                icon: const Icon(Icons.chevron_left_rounded),
+              ),
+              Expanded(
+                child: Column(
+                  children: [
+                    Text(
+                      'Día consultado',
+                      style: TextStyle(
+                        color: AppTheme.textSecondaryFor(context),
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatAgendaDay(_agendaDay),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textPrimaryFor(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () => _changeAgendaDay(1),
+                icon: const Icon(Icons.chevron_right_rounded),
+              ),
+            ],
+          ),
+          if (_variants.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            DropdownButtonFormField<int?>(
+              initialValue: _agendaVariantFilterId,
+              decoration: const InputDecoration(
+                labelText: 'Agenda visible',
+                prefixIcon: Icon(Icons.meeting_room_outlined),
+              ),
+              items: [
+                const DropdownMenuItem<int?>(
+                  value: null,
+                  child: Text('Todos los recursos'),
+                ),
+                ..._variants.map((variant) {
+                  final id = (variant['id'] as num?)?.toInt();
+                  return DropdownMenuItem<int?>(
+                    value: id,
+                    child: Text(
+                      (variant['display_name'] ?? variant['name'] ?? 'Recurso')
+                          .toString(),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }),
+              ],
+              onChanged: (value) async {
+                setState(() {
+                  _agendaVariantFilterId = value;
+                  _activeTarget = null;
+                });
+                await _loadAgendaReservas(day: _agendaDay);
+                if (mounted) setState(() {});
+              },
+            ),
+          ],
+          const SizedBox(height: 8),
+          Text(
+            'Los QR se generan en esta pantalla al seleccionar un microservicio o recurso en la pestaña Nueva.',
+            style: TextStyle(
+              color: AppTheme.textMutedFor(context),
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -692,8 +1390,12 @@ class _ReservasScreenState extends State<ReservasScreen> {
   Widget _buildAgendaTimeline(AuthProvider auth) {
     final sorted = List<Map<String, dynamic>>.from(_agendaReservas)
       ..sort((a, b) {
-        final aDate = _tryParseOdooDateTime(a['fecha_inicio']?.toString() ?? '');
-        final bDate = _tryParseOdooDateTime(b['fecha_inicio']?.toString() ?? '');
+        final aDate = _tryParseOdooDateTime(
+          a['fecha_inicio']?.toString() ?? '',
+        );
+        final bDate = _tryParseOdooDateTime(
+          b['fecha_inicio']?.toString() ?? '',
+        );
         if (aDate == null && bDate == null) return 0;
         if (aDate == null) return 1;
         if (bDate == null) return -1;
@@ -702,7 +1404,9 @@ class _ReservasScreenState extends State<ReservasScreen> {
 
     return Column(
       children: sorted.map((r) {
-        final start = _tryParseOdooDateTime(r['fecha_inicio']?.toString() ?? '');
+        final start = _tryParseOdooDateTime(
+          r['fecha_inicio']?.toString() ?? '',
+        );
         final end = _tryParseOdooDateTime(r['fecha_fin']?.toString() ?? '');
         final servicio = r['servicio_id'] is List
             ? r['servicio_id'][1].toString()
@@ -852,13 +1556,123 @@ class _ReservasScreenState extends State<ReservasScreen> {
     }
   }
 
-  Future<void> _openReservationsPortal() async {
-    final auth = context.read<AuthProvider>();
-    final base =
-        (auth.serverUrl.isNotEmpty ? auth.serverUrl : AppConfig.odooBaseUrl)
-            .trim();
-    final uri = Uri.parse('$base/my/reservas');
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  DateTime _currentReservationDay() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  int _targetTabIndex() {
+    if (_limitedAccessMode) {
+      return 1;
+    }
+    return _activeTarget?.initialTabIndex ?? 0;
+  }
+
+  Widget _buildReservasNotice(String message) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceElevated,
+          borderRadius: AppTheme.radiusSm,
+          border: Border.all(color: AppTheme.divider),
+        ),
+        child: Text(
+          message,
+          style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+        ),
+      ),
+    );
+  }
+
+  String? _selectedVariantName() {
+    for (final variant in _variants) {
+      if (variant['id'] == _variantId) {
+        return variant['display_name']?.toString();
+      }
+    }
+    return null;
+  }
+
+  Map<String, dynamic>? _selectedVariantMap() {
+    for (final variant in _variants) {
+      if (variant['id'] == _variantId) {
+        return variant;
+      }
+    }
+    return null;
+  }
+
+  String _buildReservationQrPayload() {
+    final variantId = _variantId;
+    final templateId = _serviceTemplateId;
+    final label = Uri.encodeComponent(_selectedVariantName() ?? 'Recurso');
+    final buffer = StringBuffer('com.cic.flutter://reservas?tab=agenda');
+    if (variantId != null) {
+      buffer.write('&variantId=$variantId');
+    }
+    if (templateId != null) {
+      buffer.write('&serviceTemplateId=$templateId');
+    }
+    buffer.write('&label=$label');
+    return buffer.toString();
+  }
+
+  Future<void> _exportCurrentQrPng() async {
+    if (_variantId == null) {
+      _showSnack(
+        'Selecciona antes un microservicio para generar el QR.',
+        isError: true,
+      );
+      return;
+    }
+
+    setState(() => _isExportingQr = true);
+    try {
+      final bytes = await _generateQrPngBytes(_buildReservationQrPayload());
+      if (bytes == null || bytes.isEmpty) {
+        throw Exception('No se pudo renderizar el PNG del QR.');
+      }
+
+      final name =
+          'qr_reserva_${AttachmentService.sanitizeFileName(_selectedVariantName() ?? 'recurso')}_${_variantId!}.png';
+      final file = await _attachmentService.writeBytesToDocuments(
+        name: name,
+        bytes: bytes,
+        folderName: 'reservas_qr',
+      );
+      await OpenFilex.open(file.path);
+      _showSnack('QR exportado en PNG: ${file.path}');
+    } catch (e) {
+      _showSnack('No se pudo exportar el QR: $e', isError: true);
+    }
+
+    if (mounted) {
+      setState(() => _isExportingQr = false);
+    }
+  }
+
+  Future<Uint8List?> _generateQrPngBytes(String data) async {
+    final painter = QrPainter(
+      data: data,
+      version: QrVersions.auto,
+      gapless: true,
+      eyeStyle: const QrEyeStyle(
+        eyeShape: QrEyeShape.square,
+        color: AppTheme.textPrimary,
+      ),
+      dataModuleStyle: const QrDataModuleStyle(
+        dataModuleShape: QrDataModuleShape.square,
+        color: AppTheme.textPrimary,
+      ),
+    );
+    final byteData = await painter.toImageData(
+      1600,
+      format: ui.ImageByteFormat.png,
+    );
+    return byteData?.buffer.asUint8List();
   }
 
   Widget _buildNewReservationCard() {

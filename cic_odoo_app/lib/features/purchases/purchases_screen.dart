@@ -1135,24 +1135,21 @@ class _ReceptionTabState extends State<_ReceptionTab> {
     setState(() => _saving = true);
     try {
       final orderId = (order['id'] as num).toInt();
-      final pickings = await _odoo.searchRead(
-        'stock.picking',
-        domain: [
-          ['purchase_id', '=', orderId],
-          [
-            'state',
-            'not in',
-            ['done', 'cancel'],
-          ],
-        ],
-        fields: const ['name', 'move_ids_without_package'],
-        limit: 10,
-      );
+      var pickings = await _findOpenPurchasePickings(orderId);
+      if (pickings.isEmpty) {
+        final state = (order['state'] ?? '').toString();
+        if (state == 'draft' || state == 'sent' || state == 'to approve') {
+          await _odoo.callRecordMethod('purchase.order', [orderId], 'button_confirm');
+          pickings = await _findOpenPurchasePickings(orderId);
+        }
+      }
       final moveIds = <int>{};
+      final pickingIds = <int>{};
       for (final picking in pickings) {
-        final raw = Map<String, dynamic>.from(
-          picking as Map,
-        )['move_ids_without_package'];
+        final map = Map<String, dynamic>.from(picking as Map);
+        final raw = map['move_ids_without_package'];
+        final pickingId = (map['id'] as num?)?.toInt();
+        if (pickingId != null) pickingIds.add(pickingId);
         if (raw is List) {
           moveIds.addAll(raw.whereType<num>().map((e) => e.toInt()));
         }
@@ -1167,19 +1164,24 @@ class _ReceptionTabState extends State<_ReceptionTab> {
         domain: [
           ['id', 'in', moveIds.toList()],
         ],
-        fields: const ['product_id', 'product_uom_qty'],
+        fields: const [
+          'product_id',
+          'product_uom_qty',
+          'purchase_line_id',
+          'state',
+          'picking_id',
+        ],
         limit: 200,
       );
       for (final line in _lines) {
         final lineId = (line['id'] as num?)?.toInt();
-        final productId = _many2OneId(line['product_id']);
-        if (lineId == null || productId == null) continue;
+        if (lineId == null) continue;
         final qty = _parseDecimal(_receivedCtrls[lineId]?.text ?? '0');
         if (qty <= 0) continue;
         Map<String, dynamic>? move;
         for (final rawMove in moves) {
           final candidate = Map<String, dynamic>.from(rawMove as Map);
-          if (_many2OneId(candidate['product_id']) == productId) {
+          if (_many2OneId(candidate['purchase_line_id']) == lineId) {
             move = candidate;
             break;
           }
@@ -1192,9 +1194,20 @@ class _ReceptionTabState extends State<_ReceptionTab> {
           await _odoo.write('stock.move', moveId, {'quantity_done': qty});
         }
       }
+      for (final pickingId in pickingIds) {
+        try {
+          await _odoo.callRecordMethod('stock.picking', [pickingId], 'action_assign');
+        } catch (_) {}
+        final result = await _odoo.callRecordMethod(
+          'stock.picking',
+          [pickingId],
+          'button_validate',
+        );
+        await _processPickingValidationResult(result);
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cantidades de recepción actualizadas.')),
+        const SnackBar(content: Text('Recepción guardada y validada en Odoo.')),
       );
       await _loadOrder();
     } catch (e) {
@@ -1208,6 +1221,34 @@ class _ReceptionTabState extends State<_ReceptionTab> {
       );
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<List<dynamic>> _findOpenPurchasePickings(int orderId) async {
+    return _odoo.searchRead(
+      'stock.picking',
+      domain: [
+        ['move_ids.purchase_line_id.order_id', '=', orderId],
+        ['state', 'not in', ['done', 'cancel']],
+      ],
+      fields: const ['name', 'move_ids_without_package'],
+      limit: 10,
+    );
+  }
+
+  Future<void> _processPickingValidationResult(dynamic result) async {
+    if (result is! Map) return;
+    final resModel = result['res_model']?.toString();
+    final rawResId = result['res_id'];
+    final resId = rawResId is num ? rawResId.toInt() : null;
+    if (resModel == null || resId == null) return;
+
+    if (resModel == 'stock.immediate.transfer') {
+      await _odoo.callRecordMethod(resModel, [resId], 'process');
+      return;
+    }
+    if (resModel == 'stock.backorder.confirmation') {
+      await _odoo.callRecordMethod(resModel, [resId], 'process');
     }
   }
 

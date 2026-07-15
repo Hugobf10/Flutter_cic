@@ -18,6 +18,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
   final OdooService _odoo = OdooService();
   bool _loading = true;
   String? _error;
+  bool _limitedAccessMode = false;
   List<Map<String, dynamic>> _rows = [];
 
   @override
@@ -31,6 +32,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
     setState(() {
       _loading = true;
       _error = null;
+      _limitedAccessMode = false;
     });
     try {
       final rows = await _odoo.searchRead(
@@ -50,6 +52,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
       _rows = rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     } catch (e) {
       _error = OdooService.prettyError(e);
+      _limitedAccessMode = OdooService.isAccessError(e);
+      _rows = [];
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -98,7 +102,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
             Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
-                  : _error != null
+                  : _error != null && !_limitedAccessMode
                   ? AppEmptyState(
                       title: 'Error al cargar formación',
                       subtitle: _error!,
@@ -108,32 +112,76 @@ class _TrainingScreenState extends State<TrainingScreen> {
                       children: [
                         ListView(
                           children: [
-                            _kpi(
-                              'Pendientes',
-                              pending.toString(),
-                              AppTheme.warning,
-                            ),
-                            const SizedBox(height: 8),
-                            _kpi(
-                              'En progreso',
-                              inProgress.toString(),
-                              AppTheme.info,
-                            ),
-                            const SizedBox(height: 8),
-                            _kpi(
-                              'Completadas',
-                              completed.toString(),
-                              AppTheme.success,
-                            ),
+                            if (_limitedAccessMode) ...[
+                              const AppCard(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.lock_outline_rounded,
+                                          color: AppTheme.warning,
+                                        ),
+                                        SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            'Formación con acceso limitado',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              color: AppTheme.textPrimary,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 10),
+                                    Text(
+                                      'Este perfil no puede consultar el historial completo de formaciones por API con sus permisos actuales.',
+                                      style: TextStyle(
+                                        color: AppTheme.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ] else ...[
+                              _kpi(
+                                'Pendientes',
+                                pending.toString(),
+                                AppTheme.warning,
+                              ),
+                              const SizedBox(height: 8),
+                              _kpi(
+                                'En progreso',
+                                inProgress.toString(),
+                                AppTheme.info,
+                              ),
+                              const SizedBox(height: 8),
+                              _kpi(
+                                'Completadas',
+                                completed.toString(),
+                                AppTheme.success,
+                              ),
+                            ],
                             const SizedBox(height: 12),
-                            const AppCard(
+                            AppCard(
                               child: Text(
-                                'Registra formación externa y adjunta certificados desde el botón +.',
+                                _limitedAccessMode
+                                    ? 'La app sigue disponible en modo limitado. Si este perfil debe consultar el historial o certificados, hay que habilitar permisos API de formación en Odoo.'
+                                    : 'Registra formación externa y adjunta certificados desde el botón +.',
                               ),
                             ),
                           ],
                         ),
-                        _rows.isEmpty
+                        _limitedAccessMode
+                            ? const AppEmptyState(
+                                title: 'Historial no disponible',
+                                subtitle:
+                                    'Este perfil no puede cargar asistencias de formación por API con sus permisos actuales.',
+                                icon: Icons.lock_outline_rounded,
+                              )
+                            : _rows.isEmpty
                             ? const AppEmptyState(
                                 title: 'Sin historial',
                                 subtitle:
