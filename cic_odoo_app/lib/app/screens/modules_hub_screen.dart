@@ -42,12 +42,12 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              gradient: AppTheme.cardGradient,
+              gradient: AppTheme.cardGradientFor(context),
               borderRadius: AppTheme.radiusLg,
-              border: Border.all(color: AppTheme.divider),
+              border: Border.all(color: AppTheme.dividerFor(context)),
               boxShadow: AppTheme.softShadow,
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -55,13 +55,13 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.textPrimaryFor(context),
                   ),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Text(
                   'Busca rápido y abre solo lo que realmente usa este perfil.',
-                  style: TextStyle(color: AppTheme.textSecondary),
+                  style: TextStyle(color: AppTheme.textSecondaryFor(context)),
                 ),
               ],
             ),
@@ -78,8 +78,8 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
             alignment: Alignment.centerLeft,
             child: Text(
               '${modules.length} módulos disponibles',
-              style: const TextStyle(
-                color: AppTheme.textMuted,
+              style: TextStyle(
+                color: AppTheme.textMutedFor(context),
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),

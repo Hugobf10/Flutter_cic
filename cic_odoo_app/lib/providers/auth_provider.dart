@@ -32,6 +32,7 @@ class AuthProvider extends ChangeNotifier {
   String get database => _database;
   bool get isAuthenticated => _state == AuthState.authenticated;
   bool get isPortalUser => _userProfile['share'] == true;
+  bool get isPortalLikeUser => isPortalUser || portalCalidadHabilitado;
   bool get isInternalUser => isAuthenticated && !isPortalUser;
   bool get accesoIntranet => _partnerProfile['acceso_intranet'] == true;
   bool get accesoCalidad => _partnerProfile['acceso_calidad'] == true;
@@ -54,7 +55,7 @@ class AuthProvider extends ChangeNotifier {
 
   bool get hasIntranetAccess =>
       isAdmin || (accesoIntranet && accesoCalidad && portalCalidadHabilitado);
-  bool get hasPortalAppAccess => isPortalUser;
+  bool get hasPortalAppAccess => isAuthenticated && isPortalLikeUser;
   bool get hasAppAccess => isAdmin || hasIntranetAccess || hasPortalAppAccess;
 
   Map<String, bool> get portalPermissions => {
@@ -94,8 +95,9 @@ class AuthProvider extends ChangeNotifier {
     if (permissionField != null) {
       return _partnerProfile[permissionField] == true;
     }
-    if (isPortalUser) {
+    if (hasPortalAppAccess && !hasIntranetAccess) {
       switch (moduleKey) {
+        case 'reservas':
         case 'suggestions':
           return hasPortalAppAccess;
         default:
@@ -148,7 +150,7 @@ class AuthProvider extends ChangeNotifier {
     };
     if (!permissionMap.containsKey(moduleKey)) return false;
 
-    if (isPortalUser) {
+    if (hasPortalAppAccess && !hasIntranetAccess) {
       switch (moduleKey) {
         case 'dashboard':
         case 'payroll':
@@ -296,7 +298,9 @@ class AuthProvider extends ChangeNotifier {
         fields: const ['share'],
       );
     } catch (_) {
-      _userProfile = const {};
+      // Los usuarios portal pueden autenticarse por JSON-RPC pero no siempre
+      // pueden leer res.users. En ese caso deben seguir entrando al portal app.
+      _userProfile = const {'share': true};
     }
   }
 

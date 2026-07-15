@@ -440,17 +440,28 @@ class _ReservasScreenState extends State<ReservasScreen>
     setState(() => _isCreating = true);
     try {
       final partnerId = context.read<AuthProvider>().partnerId;
-      await _odoo.create('reserva.reserva', {
+      final values = {
         'servicio_id': _variantId,
         'contacto_id': partnerId,
         'fecha_inicio': _formatOdooDateTime(_start!),
         'fecha_fin': _formatOdooDateTime(_end!),
         'motivo': _motivoCtrl.text.trim(),
         if (_sessionTypeId != null) 'session_type_id': _sessionTypeId,
-      });
+      };
+      try {
+        await _odoo.callMethod(
+          'reserva.reserva',
+          'cic_mobile_create_reservation',
+          args: [values],
+        );
+      } catch (e) {
+        if (!OdooService.isAccessError(e)) rethrow;
+        await _odoo.create('reserva.reserva', values);
+      }
 
       _motivoCtrl.clear();
       await _loadMisReservas();
+      await _loadAgendaReservas(day: _agendaDay);
       _showSnack('Reserva creada correctamente.');
       if (mounted) setState(() {});
     } catch (e) {
@@ -465,8 +476,18 @@ class _ReservasScreenState extends State<ReservasScreen>
 
   Future<void> _confirmarReserva(int id) async {
     try {
-      await _odoo.callRecordMethod('reserva.reserva', [id], 'action_confirmar');
+      try {
+        await _odoo.callRecordMethod('reserva.reserva', [
+          id,
+        ], 'cic_mobile_confirm_reservation');
+      } catch (e) {
+        if (!OdooService.isAccessError(e)) rethrow;
+        await _odoo.callRecordMethod('reserva.reserva', [
+          id,
+        ], 'action_confirmar');
+      }
       await _loadMisReservas();
+      await _loadAgendaReservas(day: _agendaDay);
       if (mounted) setState(() {});
       _showSnack('Reserva confirmada.');
     } catch (e) {
@@ -543,9 +564,9 @@ class _ReservasScreenState extends State<ReservasScreen>
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: AppTheme.surface,
-        body: Padding(padding: EdgeInsets.all(16), child: ShimmerList()),
+      return Scaffold(
+        backgroundColor: AppTheme.surfaceFor(context),
+        body: const Padding(padding: EdgeInsets.all(16), child: ShimmerList()),
       );
     }
 
@@ -554,14 +575,14 @@ class _ReservasScreenState extends State<ReservasScreen>
         return _buildLimitedAccessReservationMode(auth);
       }
       return Scaffold(
-        backgroundColor: AppTheme.surface,
+        backgroundColor: AppTheme.surfaceFor(context),
         appBar: AppBar(title: const Text('Reservas')),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Text(
               _error!,
-              style: const TextStyle(color: AppTheme.textMuted),
+              style: TextStyle(color: AppTheme.textMutedFor(context)),
             ),
           ),
         ),
@@ -569,7 +590,7 @@ class _ReservasScreenState extends State<ReservasScreen>
     }
 
     return Scaffold(
-      backgroundColor: AppTheme.surface,
+      backgroundColor: AppTheme.surfaceFor(context),
       appBar: AppBar(
         title: const Text('Reservas'),
         actions: [
@@ -612,10 +633,8 @@ class _ReservasScreenState extends State<ReservasScreen>
                   icon: Icons.calendar_month_rounded,
                 ),
                 if (_activeTarget != null) _buildResourceContextBanner(),
-                if (auth.isAdmin) ...[
-                  _buildAdminQrCard(),
-                  const SizedBox(height: 12),
-                ],
+                _buildAdminQrCard(),
+                const SizedBox(height: 12),
                 _buildApiDiagnosticsCard(),
                 const SizedBox(height: 12),
                 if (auth.canEditModule('reservas'))
@@ -672,8 +691,8 @@ class _ReservasScreenState extends State<ReservasScreen>
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Text(
                       _agendaError!,
-                      style: const TextStyle(
-                        color: AppTheme.textMuted,
+                      style: TextStyle(
+                        color: AppTheme.textMutedFor(context),
                         fontSize: 12,
                       ),
                     ),
@@ -697,7 +716,7 @@ class _ReservasScreenState extends State<ReservasScreen>
 
   Widget _buildLimitedAccessReservationMode(AuthProvider auth) {
     return Scaffold(
-      backgroundColor: AppTheme.surface,
+      backgroundColor: AppTheme.surfaceFor(context),
       appBar: AppBar(
         title: const Text('Reservas'),
         actions: [
@@ -768,8 +787,8 @@ class _ReservasScreenState extends State<ReservasScreen>
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Text(
                       _agendaError!,
-                      style: const TextStyle(
-                        color: AppTheme.textMuted,
+                      style: TextStyle(
+                        color: AppTheme.textMutedFor(context),
                         fontSize: 12,
                       ),
                     ),
@@ -793,9 +812,9 @@ class _ReservasScreenState extends State<ReservasScreen>
                 constraints: const BoxConstraints(maxWidth: 560),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.surfaceCard,
+                  color: AppTheme.cardFor(context),
                   borderRadius: AppTheme.radiusMd,
-                  border: Border.all(color: AppTheme.divider),
+                  border: Border.all(color: AppTheme.dividerFor(context)),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -818,23 +837,25 @@ class _ReservasScreenState extends State<ReservasScreen>
                       ],
                     ),
                     const SizedBox(height: 10),
-                    const Text(
+                    Text(
                       'Este perfil está en modo de consulta dentro de la app. Puede revisar sus reservas y la agenda diaria, pero no crear ni editar nuevas reservas con sus permisos actuales.',
-                      style: TextStyle(color: AppTheme.textSecondary),
+                      style: TextStyle(
+                        color: AppTheme.textSecondaryFor(context),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppTheme.surfaceElevated,
+                        color: AppTheme.elevatedFor(context),
                         borderRadius: AppTheme.radiusSm,
-                        border: Border.all(color: AppTheme.divider),
+                        border: Border.all(color: AppTheme.dividerFor(context)),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Si este usuario debe poder reservar desde la app, hay que habilitar permisos API para su perfil en el flujo de reservas.',
                         style: TextStyle(
-                          color: AppTheme.textMuted,
+                          color: AppTheme.textMutedFor(context),
                           fontSize: 12,
                         ),
                       ),
