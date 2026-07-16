@@ -7,6 +7,7 @@ import '../../features/forms/dynamic_form.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
+import '../../services/odoo_values.dart';
 import '../../theme/app_theme.dart';
 
 class ChemicalsScreen extends StatefulWidget {
@@ -49,9 +50,9 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
         order: 'fecha_caducidad asc, id desc',
         limit: 160,
       );
-      _rows = rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      _rows = rows.whereType<Map>().map(Map<String, dynamic>.from).toList();
     } catch (e) {
-      _error = e.toString();
+      _error = OdooService.prettyError(e);
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -86,14 +87,25 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
               final y = date?.year.toString().padLeft(4, '0');
               final m = date?.month.toString().padLeft(2, '0');
               final d = date?.day.toString().padLeft(2, '0');
-              await _odoo.create('calidad.quimico', {
-                'name': values['name'],
-                'codigo': values['codigo'],
-                'tipo': (values['tipo']?.toString().trim().isEmpty ?? true)
-                    ? 'otro'
-                    : values['tipo'],
+              final name = values['name']?.toString().trim() ?? '';
+              if (name.isEmpty) {
+                throw const FormatException(
+                  'El nombre del químico es obligatorio.',
+                );
+              }
+              final code = values['codigo']?.toString().trim() ?? '';
+              final type = values['tipo']?.toString().trim() ?? '';
+              final unitId = OdooValues.many2oneId(
+                context.read<AuthProvider>().partnerProfile['unidad_id'],
+              );
+              final payload = <String, dynamic>{
+                'name': name,
+                if (code.isNotEmpty) 'codigo': code,
+                if (type.isNotEmpty) 'tipo': type,
                 if (date != null) 'fecha_caducidad': '$y-$m-$d',
-              });
+              };
+              if (unitId != null) payload['unidad_id'] = unitId;
+              await _odoo.create('calidad.quimico', payload);
             },
           ),
         );
@@ -139,9 +151,7 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
               separatorBuilder: (_, i) => const SizedBox(height: 8),
               itemBuilder: (_, i) {
                 final it = _rows[i];
-                final unidad = it['unidad_id'] is List
-                    ? it['unidad_id'][1].toString()
-                    : '';
+                final unidad = OdooValues.many2oneLabel(it['unidad_id']);
                 return Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -159,15 +169,15 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                       Text(
-                        'Tipo: ${it['tipo'] ?? '-'} · Peligroso: ${it['es_peligroso'] == true ? 'Sí' : 'No'}',
+                        'Tipo: ${OdooValues.string(it['tipo'], fallback: '-')} · Peligroso: ${OdooValues.boolValue(it['es_peligroso']) ? 'Sí' : 'No'}',
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppTheme.textSecondary,
                         ),
                       ),
-                      if ((it['fecha_caducidad'] ?? '').toString().isNotEmpty)
+                      if (OdooValues.string(it['fecha_caducidad']).isNotEmpty)
                         Text(
-                          'Caducidad: ${it['fecha_caducidad']}',
+                          'Caducidad: ${OdooValues.string(it['fecha_caducidad'])}',
                           style: const TextStyle(
                             fontSize: 12,
                             color: AppTheme.textMuted,
@@ -227,10 +237,14 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
-            Text('Código: ${(it['codigo'] ?? '-')}'),
-            Text('Tipo: ${(it['tipo'] ?? '-')}'),
-            Text('Peligroso: ${it['es_peligroso'] == true ? 'Sí' : 'No'}'),
-            Text('Caducidad: ${(it['fecha_caducidad'] ?? '-')}'),
+            Text('Código: ${OdooValues.string(it['codigo'], fallback: '-')}'),
+            Text('Tipo: ${OdooValues.string(it['tipo'], fallback: '-')}'),
+            Text(
+              'Peligroso: ${OdooValues.boolValue(it['es_peligroso']) ? 'Sí' : 'No'}',
+            ),
+            Text(
+              'Caducidad: ${OdooValues.string(it['fecha_caducidad'], fallback: '-')}',
+            ),
           ],
         ),
       ),
@@ -239,10 +253,9 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
 
   Future<void> _openSafetySheet(Map<String, dynamic> it) async {
     try {
-      final ficha = it['ficha_seguridad_attachment_id'];
-      final int? attachmentId = ficha is List && ficha.isNotEmpty
-          ? ficha.first as int
-          : (ficha is int ? ficha : null);
+      final attachmentId = OdooValues.many2oneId(
+        it['ficha_seguridad_attachment_id'],
+      );
       if (attachmentId == null) {
         throw Exception('No hay fichas de seguridad adjuntas.');
       }

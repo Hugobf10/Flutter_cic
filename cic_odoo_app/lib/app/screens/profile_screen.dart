@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
+import '../../services/odoo_values.dart';
 import '../../theme/app_theme.dart';
 import '../providers/app_state_provider.dart';
 import '../screens/document_viewer_screen.dart';
@@ -48,22 +49,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _error = null;
     });
     try {
-      _partner = await _odoo.read(
-        'res.partner',
-        auth.partnerId,
-        fields: const [
-          'name',
-          'email',
-          'phone',
-          'mobile',
-          'function',
-          'comment',
-          'unidad_id',
-          'cv_attachment_id',
-          'cv_attachment_name',
-          'image_1920',
-        ],
-      );
+      const fields = <String>[
+        'name',
+        'email',
+        'phone',
+        'mobile',
+        'function',
+        'comment',
+        'unidad_id',
+        'cv_attachment_id',
+        'cv_attachment_name',
+        'image_1920',
+      ];
+      try {
+        _partner = await _odoo.read(
+          'res.partner',
+          auth.partnerId,
+          fields: fields,
+        );
+      } catch (_) {
+        final profile = <String, dynamic>{};
+        for (final field in fields) {
+          try {
+            profile.addAll(
+              await _odoo.read('res.partner', auth.partnerId, fields: [field]),
+            );
+          } catch (_) {
+            // Un campo opcional ausente no debe ocultar el resto del perfil.
+          }
+        }
+        _partner = profile;
+      }
     } catch (e) {
       _error = OdooService.prettyError(e);
     }
@@ -82,7 +98,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       title: 'Mi perfil',
       actions: [
         IconButton(
-          onPressed: _loading
+          onPressed: _loading || !auth.canEditModule('profile')
               ? null
               : () async {
                   final saved = await Navigator.of(context).push<bool>(
@@ -175,9 +191,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildCvCard() {
     final cvRef = _partner['cv_attachment_id'];
-    final cvId = (cvRef is List && cvRef.isNotEmpty)
-        ? (cvRef.first as num).toInt()
-        : null;
+    final cvId = OdooValues.many2oneId(cvRef);
     final cvName = (_partner['cv_attachment_name'] ?? 'CV').toString();
     return AppCard(
       child: Row(

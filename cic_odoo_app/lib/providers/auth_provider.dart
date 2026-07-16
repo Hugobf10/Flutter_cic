@@ -4,6 +4,7 @@ import '../auth/core/auth_models.dart';
 import '../auth/services/auth_service.dart';
 import '../config/app_config.dart';
 import '../services/odoo_service.dart';
+import '../services/odoo_values.dart';
 
 enum AuthState { initial, loading, authenticated, unauthenticated, error }
 
@@ -19,21 +20,25 @@ class AuthProvider extends ChangeNotifier {
   String _database = '';
   Map<String, dynamic> _partnerProfile = const {};
   Map<String, dynamic> _userProfile = const {};
+  final Map<String, bool> _modelAccess = <String, bool>{};
 
   AuthState get state => _state;
   String? get errorMessage => _errorMessage;
-  String get userName => _odoo.userInfo?['name'] ?? '';
-  String get userLogin => _odoo.userInfo?['username'] ?? '';
-  int get userId => _odoo.userInfo?['uid'] ?? 0;
-  int get partnerId => _odoo.userInfo?['partner_id'] is List
-      ? (_odoo.userInfo!['partner_id'] as List).first as int
-      : (_odoo.userInfo?['partner_id'] ?? 0) as int;
+  String get userName => OdooValues.string(_odoo.userInfo?['name']);
+  String get userLogin => OdooValues.string(_odoo.userInfo?['username']);
+  int get userId => OdooValues.intValue(_odoo.userInfo?['uid']) ?? 0;
+  int get partnerId =>
+      OdooValues.many2oneId(_odoo.userInfo?['partner_id']) ?? 0;
   String get serverUrl => _serverUrl;
   String get database => _database;
   bool get isAuthenticated => _state == AuthState.authenticated;
-  bool get isPortalUser => _userProfile['share'] == true;
+  bool get isPortalUser =>
+      _userProfile['share'] == true && _userProfile['public'] != true;
   bool get isPortalLikeUser => isPortalUser || portalCalidadHabilitado;
-  bool get isInternalUser => isAuthenticated && !isPortalUser;
+  bool get isInternalUser =>
+      isAuthenticated && _userProfile['internal'] == true;
+  Map<String, dynamic> get partnerProfile =>
+      Map<String, dynamic>.unmodifiable(_partnerProfile);
   bool get accesoIntranet => _partnerProfile['acceso_intranet'] == true;
   bool get accesoCalidad => _partnerProfile['acceso_calidad'] == true;
   bool get portalCalidadHabilitado =>
@@ -49,8 +54,7 @@ class AuthProvider extends ChangeNotifier {
 
   bool get isAdmin {
     final login = userLogin.toLowerCase();
-    final name = userName.toLowerCase();
-    return login == 'admin' || name.contains('admin');
+    return login == 'admin' || _odoo.sessionInfo['is_admin'] == true;
   }
 
   bool get hasIntranetAccess =>
@@ -59,24 +63,28 @@ class AuthProvider extends ChangeNotifier {
   bool get hasAppAccess => isAdmin || hasIntranetAccess || hasPortalAppAccess;
 
   Map<String, bool> get portalPermissions => {
-    'Incidencias': _partnerProfile['permiso_incidencias_ver'] == true,
-    'Formación': _partnerProfile['permiso_formacion_ver'] == true,
-    'Documentos': _partnerProfile['permiso_documentos_ver'] == true,
-    'Salud': _partnerProfile['permiso_salud_ver'] == true,
-    'Comunicaciones': _partnerProfile['permiso_comunicaciones_ver'] == true,
-    'Nóminas': true,
-    'Reservas': true,
-    'Sugerencias': true,
-    'Proveedores': _partnerProfile['permiso_proveedores_ver'] == true,
-    'Normativa': _partnerProfile['permiso_normativa_ver'] == true,
-    'Equipos': _partnerProfile['permiso_equipos_ver'] == true,
-    'Químicos': _partnerProfile['permiso_quimicos_ver'] == true,
+    'Incidencias': canViewModule('incidents'),
+    'Formación': canViewModule('training'),
+    'Documentos': canViewModule('documents'),
+    'Salud': canViewModule('health'),
+    'Comunicaciones': canViewModule('communications'),
+    'Nóminas': canViewModule('payroll'),
+    'Reservas': canViewModule('reservas'),
+    'Sugerencias': canViewModule('suggestions'),
+    'Proveedores': canViewModule('suppliers'),
+    'Normativa': canViewModule('normative'),
+    'Equipos': canViewModule('equipment'),
+    'Químicos': canViewModule('chemicals'),
   };
   int get enabledPortalPermissions =>
       portalPermissions.values.where((e) => e).length;
 
   bool canEditModule(String moduleKey) {
     if (isAdmin) return true;
+    final modelWriteAccess = _modelAccess['$moduleKey.write'];
+    if (modelWriteAccess == false) return false;
+    final modelCreateAccess = _modelAccess['$moduleKey.create'];
+    if (modelCreateAccess == false) return false;
     const editPermissionMap = {
       'incidents': 'permiso_incidencias_editar',
       'training': 'permiso_formacion_editar',
@@ -96,13 +104,7 @@ class AuthProvider extends ChangeNotifier {
       return _partnerProfile[permissionField] == true;
     }
     if (hasPortalAppAccess && !hasIntranetAccess) {
-      switch (moduleKey) {
-        case 'reservas':
-        case 'suggestions':
-          return hasPortalAppAccess;
-        default:
-          return false;
-      }
+      return modelWriteAccess == true && modelCreateAccess == true;
     }
     switch (moduleKey) {
       case 'reservas':
@@ -112,6 +114,7 @@ class AuthProvider extends ChangeNotifier {
       case 'purchases':
       case 'suggestions':
       case 'recruitment':
+      case 'profile':
         return true;
       default:
         return false;
@@ -120,6 +123,8 @@ class AuthProvider extends ChangeNotifier {
 
   bool canViewModule(String moduleKey) {
     if (isAdmin) return true;
+    final modelReadAccess = _modelAccess[moduleKey];
+    if (modelReadAccess == false) return false;
     const permissionMap = {
       'dashboard': null,
       'quality': null,
@@ -147,6 +152,7 @@ class AuthProvider extends ChangeNotifier {
       'purchases': null,
       'maintenance': null,
       'recruitment': null,
+      'profile': null,
     };
     if (!permissionMap.containsKey(moduleKey)) return false;
 
@@ -154,9 +160,9 @@ class AuthProvider extends ChangeNotifier {
       switch (moduleKey) {
         case 'dashboard':
         case 'payroll':
-          return hasPortalAppAccess;
+          return modelReadAccess == true;
         case 'portal':
-          return false;
+          return hasPortalAppAccess;
         case 'quality':
           return canViewModule('incidents') ||
               canViewModule('training') ||
@@ -166,13 +172,13 @@ class AuthProvider extends ChangeNotifier {
               canViewModule('goals');
         case 'reservas':
         case 'planning':
-          return hasPortalAppAccess;
+          return modelReadAccess == true;
         case 'training':
         case 'elearning':
         case 'suggestions':
         case 'documents':
         case 'goals':
-          return hasPortalAppAccess;
+          return modelReadAccess == true;
         case 'incidents':
         case 'action_plans':
         case 'health':
@@ -183,9 +189,10 @@ class AuthProvider extends ChangeNotifier {
         case 'chemicals':
           final permissionField = permissionMap[moduleKey];
           return permissionField != null &&
-              _partnerProfile[permissionField] == true;
+              _partnerProfile[permissionField] == true &&
+              modelReadAccess == true;
         default:
-          return false;
+          return modelReadAccess == true;
       }
     }
 
@@ -205,9 +212,11 @@ class AuthProvider extends ChangeNotifier {
     if (success) {
       await _loadUserProfile();
       await _loadPartnerProfile();
+      await _loadModelAccess();
     } else {
       _userProfile = const {};
       _partnerProfile = const {};
+      _modelAccess.clear();
     }
     _state = success ? AuthState.authenticated : AuthState.unauthenticated;
     notifyListeners();
@@ -249,6 +258,7 @@ class AuthProvider extends ChangeNotifier {
     if (result.success) {
       await _loadUserProfile();
       await _loadPartnerProfile();
+      await _loadModelAccess();
       _state = AuthState.authenticated;
       _errorMessage = null;
     } else {
@@ -278,6 +288,7 @@ class AuthProvider extends ChangeNotifier {
     } catch (_) {}
     _userProfile = const {};
     _partnerProfile = const {};
+    _modelAccess.clear();
     _state = AuthState.unauthenticated;
     _errorMessage = null;
     notifyListeners();
@@ -287,21 +298,33 @@ class AuthProvider extends ChangeNotifier {
   Future<AuthUser?> loadCurrentUser() => _authService.loadCurrentUser();
 
   Future<void> _loadUserProfile() async {
-    if (userId <= 0) {
-      _userProfile = const {};
-      return;
+    final info = _odoo.sessionInfo;
+    final isPublic = OdooService.isPublicSession(info);
+    var isInternal = OdooService.sessionIsInternal(info);
+
+    // Odoo's session_info is authoritative for a normal Odoo 17 session.
+    // Only use res.users as a compatibility fallback for custom controllers.
+    if (isInternal == null && userId > 0) {
+      try {
+        final profile = await _odoo.read(
+          'res.users',
+          userId,
+          fields: const ['share'],
+        );
+        isInternal = !OdooValues.boolValue(profile['share']);
+      } catch (e) {
+        // A denied res.users read must never turn an internal user into a
+        // portal user. An Odoo portal session has user_companies=false, so it
+        // is classified above without this fallback.
+        isInternal = false;
+      }
     }
-    try {
-      _userProfile = await _odoo.read(
-        'res.users',
-        userId,
-        fields: const ['share'],
-      );
-    } catch (_) {
-      // Los usuarios portal pueden autenticarse por JSON-RPC pero no siempre
-      // pueden leer res.users. En ese caso deben seguir entrando al portal app.
-      _userProfile = const {'share': true};
-    }
+
+    _userProfile = {
+      'share': !(isInternal ?? false) && !isPublic,
+      'internal': isInternal ?? false,
+      'public': isPublic,
+    };
   }
 
   Future<void> _loadPartnerProfile() async {
@@ -309,40 +332,137 @@ class AuthProvider extends ChangeNotifier {
       _partnerProfile = const {};
       return;
     }
+    const standardFields = <String>[
+      'name',
+      'email',
+      'phone',
+      'mobile',
+      'function',
+      'comment',
+      'unidad_id',
+      'image_128',
+      'image_1920',
+    ];
+    const customFields = <String>[
+      'acceso_intranet',
+      'acceso_calidad',
+      'portal_calidad_habilitado',
+      'permiso_incidencias_ver',
+      'permiso_formacion_ver',
+      'permiso_documentos_ver',
+      'permiso_salud_ver',
+      'permiso_comunicaciones_ver',
+      'permiso_proveedores_ver',
+      'permiso_normativa_ver',
+      'permiso_equipos_ver',
+      'permiso_quimicos_ver',
+      'permiso_objetivos_ver',
+      'permiso_incidencias_editar',
+      'permiso_formacion_editar',
+      'permiso_documentos_editar',
+      'permiso_salud_editar',
+      'permiso_comunicaciones_editar',
+      'permiso_proveedores_editar',
+      'permiso_normativa_editar',
+      'permiso_equipos_editar',
+      'permiso_quimicos_editar',
+      'permiso_objetivos_editar',
+    ];
     try {
       _partnerProfile = await _odoo.read(
         'res.partner',
         partnerId,
-        fields: const [
-          'unidad_id',
-          'image_128',
-          'acceso_intranet',
-          'acceso_calidad',
-          'portal_calidad_habilitado',
-          'permiso_incidencias_ver',
-          'permiso_formacion_ver',
-          'permiso_documentos_ver',
-          'permiso_salud_ver',
-          'permiso_comunicaciones_ver',
-          'permiso_proveedores_ver',
-          'permiso_normativa_ver',
-          'permiso_equipos_ver',
-          'permiso_quimicos_ver',
-          'permiso_objetivos_ver',
-          'permiso_incidencias_editar',
-          'permiso_formacion_editar',
-          'permiso_documentos_editar',
-          'permiso_salud_editar',
-          'permiso_comunicaciones_editar',
-          'permiso_proveedores_editar',
-          'permiso_normativa_editar',
-          'permiso_equipos_editar',
-          'permiso_quimicos_editar',
-          'permiso_objetivos_editar',
-        ],
+        fields: [...standardFields, ...customFields],
       );
     } catch (_) {
-      _partnerProfile = const {};
+      final profile = <String, dynamic>{};
+      try {
+        profile.addAll(
+          await _odoo.read('res.partner', partnerId, fields: standardFields),
+        );
+      } catch (_) {}
+      for (final field in customFields) {
+        try {
+          profile.addAll(
+            await _odoo.read('res.partner', partnerId, fields: [field]),
+          );
+        } catch (_) {}
+      }
+      _partnerProfile = profile;
     }
+  }
+
+  Future<void> _loadModelAccess() async {
+    const models = <String, String>{
+      'dashboard': 'calidad.dashboard.service',
+      'quality': 'calidad.incidencia',
+      'incidents': 'calidad.incidencia',
+      'training': 'calidad.formacion',
+      'elearning': 'calidad.formacion',
+      'documents': 'calidad.documento',
+      'payroll': 'payroll.document',
+      'goals': 'calidad.objetivo',
+      'action_plans': 'calidad.plan.accion',
+      'reservas': 'reserva.reserva',
+      'planning': 'reserva.reserva',
+      'health': 'calidad.salud.reconocimiento',
+      'normative': 'calidad.normativa',
+      'equipment': 'calidad.equipo',
+      'chemicals': 'calidad.quimico',
+      'suggestions': 'calidad.comunicacion',
+      'communications': 'calidad.comunicacion',
+      'suppliers': 'calidad.proveedor.unidad',
+      'purchases': 'purchase.order',
+      'maintenance': 'maintenance.request',
+      'recruitment': 'hr.applicant',
+      'profile': 'res.partner',
+    };
+    final results = await Future.wait(
+      models.entries.map((entry) async {
+        try {
+          final candidates = entry.key == 'payroll'
+              ? const ['payroll.document', 'hr.payslip']
+              : [entry.value];
+          Future<bool> anyAllowed(String operation) async {
+            final values = await Future.wait(
+              candidates.map((model) async {
+                try {
+                  return await _odoo.checkAccessRights(model, operation);
+                } catch (_) {
+                  return false;
+                }
+              }),
+            );
+            return values.any((allowed) => allowed);
+          }
+
+          final canRead = await anyAllowed('read');
+          final canWrite = await anyAllowed('write');
+          final canCreate = await anyAllowed('create');
+          return MapEntry(entry.key, <String, bool>{
+            'read': canRead,
+            'write': canWrite,
+            'create': canCreate,
+          });
+        } catch (_) {
+          return MapEntry(entry.key, <String, bool>{
+            'read': false,
+            'write': false,
+            'create': false,
+          });
+        }
+      }),
+    );
+    _modelAccess
+      ..clear()
+      ..addEntries(
+        results.expand(
+          (entry) => [
+            MapEntry(entry.key, entry.value['read'] == true),
+            MapEntry('${entry.key}.write', entry.value['write'] == true),
+            MapEntry('${entry.key}.create', entry.value['create'] == true),
+          ],
+        ),
+      );
   }
 }

@@ -5,6 +5,7 @@ import '../../app/screens/profile_screen.dart';
 import '../../app/ui/app_components.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
+import '../../services/odoo_values.dart';
 import '../../theme/app_theme.dart';
 import '../action_plans/action_plans_screen.dart';
 import '../goals/goals_screen.dart';
@@ -47,41 +48,56 @@ class _PortalScreenState extends State<PortalScreen> {
     });
 
     try {
-      _partner = await _odoo.read(
-        'res.partner',
-        auth.partnerId,
-        fields: const [
-          'name',
-          'email',
-          'phone',
-          'mobile',
-          'function',
-          'unidad_id',
-          'acceso_intranet',
-          'acceso_calidad',
-          'portal_calidad_habilitado',
-          'permiso_incidencias_ver',
-          'permiso_incidencias_editar',
-          'permiso_documentos_ver',
-          'permiso_documentos_editar',
-          'permiso_formacion_ver',
-          'permiso_formacion_editar',
-          'permiso_objetivos_ver',
-          'permiso_objetivos_editar',
-          'permiso_salud_ver',
-          'permiso_salud_editar',
-          'permiso_comunicaciones_ver',
-          'permiso_comunicaciones_editar',
-          'permiso_proveedores_ver',
-          'permiso_proveedores_editar',
-          'permiso_normativa_ver',
-          'permiso_normativa_editar',
-          'permiso_equipos_ver',
-          'permiso_equipos_editar',
-          'permiso_quimicos_ver',
-          'permiso_quimicos_editar',
-        ],
-      );
+      const fields = <String>[
+        'name',
+        'email',
+        'phone',
+        'mobile',
+        'function',
+        'unidad_id',
+        'acceso_intranet',
+        'acceso_calidad',
+        'portal_calidad_habilitado',
+        'permiso_incidencias_ver',
+        'permiso_incidencias_editar',
+        'permiso_documentos_ver',
+        'permiso_documentos_editar',
+        'permiso_formacion_ver',
+        'permiso_formacion_editar',
+        'permiso_objetivos_ver',
+        'permiso_objetivos_editar',
+        'permiso_salud_ver',
+        'permiso_salud_editar',
+        'permiso_comunicaciones_ver',
+        'permiso_comunicaciones_editar',
+        'permiso_proveedores_ver',
+        'permiso_proveedores_editar',
+        'permiso_normativa_ver',
+        'permiso_normativa_editar',
+        'permiso_equipos_ver',
+        'permiso_equipos_editar',
+        'permiso_quimicos_ver',
+        'permiso_quimicos_editar',
+      ];
+      try {
+        _partner = await _odoo.read(
+          'res.partner',
+          auth.partnerId,
+          fields: fields,
+        );
+      } catch (_) {
+        final profile = <String, dynamic>{};
+        for (final field in fields) {
+          try {
+            profile.addAll(
+              await _odoo.read('res.partner', auth.partnerId, fields: [field]),
+            );
+          } catch (_) {
+            // Los campos personalizados pueden no existir en todas las bases.
+          }
+        }
+        _partner = profile;
+      }
     } catch (e) {
       _error = OdooService.prettyError(e);
     }
@@ -317,6 +333,42 @@ class _PortalScreenState extends State<PortalScreen> {
           icon: Icons.science_outlined,
           color: AppTheme.success,
         ),
+      if (auth.canViewModule('planning'))
+        _moduleAction(
+          auth: auth,
+          moduleKey: 'planning',
+          title: 'Agenda',
+          subtitle: 'Consulta la planificación y tus reservas.',
+          icon: Icons.event_note_rounded,
+          color: AppTheme.accent,
+        ),
+      if (auth.canViewModule('purchases'))
+        _moduleAction(
+          auth: auth,
+          moduleKey: 'purchases',
+          title: 'Compras',
+          subtitle: 'Pedidos y operaciones habilitadas para tu cuenta.',
+          icon: Icons.shopping_cart_checkout_rounded,
+          color: AppTheme.info,
+        ),
+      if (auth.canViewModule('maintenance'))
+        _moduleAction(
+          auth: auth,
+          moduleKey: 'maintenance',
+          title: 'Mantenimiento',
+          subtitle: 'Solicitudes y equipos visibles para tu unidad.',
+          icon: Icons.build_circle_outlined,
+          color: AppTheme.warning,
+        ),
+      if (auth.canViewModule('recruitment'))
+        _moduleAction(
+          auth: auth,
+          moduleKey: 'recruitment',
+          title: 'Oportunidades',
+          subtitle: 'Procesos de selección disponibles para tu perfil.',
+          icon: Icons.person_search_rounded,
+          color: AppTheme.primary,
+        ),
     ];
 
     return actions;
@@ -409,9 +461,10 @@ class _PortalHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = (partner['name'] ?? auth.userName).toString();
     final email = (partner['email'] ?? auth.userLogin).toString();
-    final unidad = partner['unidad_id'] is List
-        ? partner['unidad_id'][1].toString()
-        : auth.unidadNombre;
+    final unidad = OdooValues.many2oneLabel(
+      partner['unidad_id'],
+      fallback: auth.unidadNombre,
+    );
 
     return AppCard(
       padding: const EdgeInsets.all(18),

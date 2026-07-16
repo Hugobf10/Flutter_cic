@@ -4,6 +4,7 @@ import '../../app/screens/document_viewer_screen.dart';
 import '../../app/ui/app_components.dart';
 import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
+import '../../services/odoo_values.dart';
 
 class PayrollScreen extends StatefulWidget {
   const PayrollScreen({super.key});
@@ -39,21 +40,48 @@ class _PayrollScreenState extends State<PayrollScreen> {
       _error = null;
     });
     try {
-      final rows = await _odoo.searchRead(
-        'payroll.document',
-        fields: const [
-          'name',
-          'document_type',
-          'month',
-          'month_label',
-          'year',
-          'attachment_id',
-          'imported_at',
-        ],
-        order: 'year desc, month desc, id desc',
-        limit: 200,
-      );
-      _rows = rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      List<dynamic> rows;
+      try {
+        rows = await _odoo.searchRead(
+          'payroll.document',
+          fields: const [
+            'name',
+            'document_type',
+            'month',
+            'month_label',
+            'year',
+            'attachment_id',
+            'imported_at',
+          ],
+          order: 'year desc, month desc, id desc',
+          limit: 200,
+        );
+      } catch (e) {
+        if (!OdooService.isMethodUnavailable(e)) rethrow;
+        final payslips = await _odoo.searchRead(
+          'hr.payslip',
+          fields: const ['name', 'number', 'date_from', 'date_to', 'state'],
+          order: 'date_from desc, id desc',
+          limit: 200,
+        );
+        rows = payslips.map((raw) {
+          final row = OdooValues.map(raw);
+          final date = OdooValues.dateTime(row['date_from']);
+          return <String, dynamic>{
+            'id': row['id'],
+            'name': OdooValues.string(
+              row['name'],
+              fallback: OdooValues.string(row['number'], fallback: 'Nómina'),
+            ),
+            'month_label': date == null
+                ? ''
+                : date.month.toString().padLeft(2, '0'),
+            'year': date?.year ?? '',
+            'imported_at': row['date_to'],
+          };
+        }).toList();
+      }
+      _rows = rows.whereType<Map>().map(Map<String, dynamic>.from).toList();
     } catch (e) {
       _error = OdooService.prettyError(e);
     }
@@ -68,12 +96,16 @@ class _PayrollScreenState extends State<PayrollScreen> {
       final name = (row['name'] ?? '').toString().toLowerCase();
       final year = (row['year'] ?? '').toString().toLowerCase();
       final month = (row['month_label'] ?? '').toString().toLowerCase();
-      return name.contains(query) || year.contains(query) || month.contains(query);
+      return name.contains(query) ||
+          year.contains(query) ||
+          month.contains(query);
     }).toList();
 
     return AppScaffold(
       title: 'Nóminas',
-      actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded))],
+      actions: [
+        IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+      ],
       child: Column(
         children: [
           AppSearchBar(
@@ -112,17 +144,20 @@ class _PayrollScreenState extends State<PayrollScreen> {
         final month = (row['month_label'] ?? row['month'] ?? '-').toString();
         final year = (row['year'] ?? '-').toString();
         final importedAt = (row['imported_at'] ?? '').toString();
-        final subtitle = '$month/$year · ${importedAt.isEmpty ? "sin fecha" : importedAt}';
-        final attachmentRef = row['attachment_id'];
-        final attachmentId =
-            (attachmentRef is List && attachmentRef.isNotEmpty) ? (attachmentRef.first as num).toInt() : null;
+        final subtitle =
+            '$month/$year · ${importedAt.isEmpty ? "sin fecha" : importedAt}';
+        final attachmentId = OdooValues.many2oneId(row['attachment_id']);
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: AppPdfCard(
             title: title,
             subtitle: subtitle,
-            onDownload: attachmentId == null ? () {} : () => _cacheOnly(attachmentId, title),
-            onPreview: attachmentId == null ? null : () => _open(attachmentId, title),
+            onDownload: attachmentId == null
+                ? () {}
+                : () => _cacheOnly(attachmentId, title),
+            onPreview: attachmentId == null
+                ? null
+                : () => _open(attachmentId, title),
           ),
         );
       },
@@ -147,7 +182,9 @@ class _PayrollScreenState extends State<PayrollScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo abrir: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo abrir: $e')));
     }
   }
 
@@ -163,7 +200,9 @@ class _PayrollScreenState extends State<PayrollScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo descargar: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo descargar: $e')));
     }
   }
 }

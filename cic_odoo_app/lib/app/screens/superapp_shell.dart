@@ -54,6 +54,7 @@ class _SuperAppShellState extends State<SuperAppShell> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
     final unread = context.watch<AppStateProvider>().unreadNotifications;
     final pendingReservation = context
         .watch<AppStateProvider>()
@@ -111,7 +112,9 @@ class _SuperAppShellState extends State<SuperAppShell> {
             children: [
               Container(
                 width: 248,
-                decoration: const BoxDecoration(gradient: AppTheme.heroGradient),
+                decoration: const BoxDecoration(
+                  gradient: AppTheme.heroGradient,
+                ),
                 child: Column(
                   children: [
                     const SizedBox(height: 24),
@@ -138,17 +141,18 @@ class _SuperAppShellState extends State<SuperAppShell> {
                         ),
                       );
                     }),
-                    ListTile(
-                      leading: const Icon(Icons.calendar_month_rounded),
-                      title: const Text('Reservas'),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const ReservasScreen(),
-                          ),
-                        );
-                      },
-                    ),
+                    if (auth.canViewModule('reservas'))
+                      ListTile(
+                        leading: const Icon(Icons.calendar_month_rounded),
+                        title: const Text('Reservas'),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const ReservasScreen(),
+                            ),
+                          );
+                        },
+                      ),
                     const Spacer(),
                     Padding(
                       padding: const EdgeInsets.all(16),
@@ -169,6 +173,10 @@ class _SuperAppShellState extends State<SuperAppShell> {
 
   Future<void> _openPendingReservation(ReservationEntryTarget target) async {
     if (!mounted || _openingPendingReservation) return;
+    if (!context.read<AuthProvider>().canViewModule('reservas')) {
+      context.read<AppStateProvider>().consumePendingReservationTarget();
+      return;
+    }
     _openingPendingReservation = true;
     final consumed = context
         .read<AppStateProvider>()
@@ -340,10 +348,7 @@ class _SuperAppShellState extends State<SuperAppShell> {
                 const SizedBox(height: 2),
                 const Text(
                   'Espacio de trabajo',
-                  style: TextStyle(
-                    color: AppTheme.textMuted,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
                 ),
               ],
             ),

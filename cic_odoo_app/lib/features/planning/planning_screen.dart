@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
+import '../../services/odoo_values.dart';
 import '../../theme/app_theme.dart';
 
 class PlanningScreen extends StatefulWidget {
@@ -28,8 +31,14 @@ class _PlanningScreenState extends State<PlanningScreen> {
       _error = null;
     });
     try {
+      final auth = context.read<AuthProvider>();
+      final domain = <dynamic>[];
+      if (auth.isPortalUser && auth.partnerId > 0) {
+        domain.add(['contacto_id', '=', auth.partnerId]);
+      }
       final rows = await _odoo.searchRead(
         'reserva.reserva',
+        domain: domain,
         fields: [
           'servicio_id',
           'fecha_inicio',
@@ -42,7 +51,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
       );
       _items = rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     } catch (e) {
-      _error = e.toString();
+      _error = OdooService.prettyError(e);
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -78,12 +87,14 @@ class _PlanningScreenState extends State<PlanningScreen> {
               separatorBuilder: (_, index) => const SizedBox(height: 8),
               itemBuilder: (_, i) {
                 final it = _items[i];
-                final servicio = it['servicio_id'] is List
-                    ? it['servicio_id'][1].toString()
-                    : 'Servicio';
-                final contacto = it['contacto_id'] is List
-                    ? it['contacto_id'][1].toString()
-                    : 'Usuario';
+                final servicio = OdooValues.many2oneLabel(
+                  it['servicio_id'],
+                  fallback: 'Servicio',
+                );
+                final contacto = OdooValues.many2oneLabel(
+                  it['contacto_id'],
+                  fallback: 'Usuario',
+                );
                 return Container(
                   decoration: BoxDecoration(
                     color: AppTheme.cardFor(context),
@@ -119,12 +130,14 @@ class _PlanningScreenState extends State<PlanningScreen> {
   }
 
   void _openReservationDetail(Map<String, dynamic> item) {
-    final servicio = item['servicio_id'] is List
-        ? item['servicio_id'][1].toString()
-        : 'Servicio';
-    final contacto = item['contacto_id'] is List
-        ? item['contacto_id'][1].toString()
-        : 'Usuario';
+    final servicio = OdooValues.many2oneLabel(
+      item['servicio_id'],
+      fallback: 'Servicio',
+    );
+    final contacto = OdooValues.many2oneLabel(
+      item['contacto_id'],
+      fallback: 'Usuario',
+    );
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,

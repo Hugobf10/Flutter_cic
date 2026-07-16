@@ -5,12 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../app/ui/app_components.dart';
 import '../../features/purchases/barcode_scanner_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
+import '../../services/odoo_values.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/shimmer_loading.dart';
@@ -126,10 +128,15 @@ class _ReservasScreenState extends State<ReservasScreen>
           .toList();
       if (_services.isNotEmpty) {
         final desiredTemplateId =
-            _activeTarget?.serviceTemplateId ?? (_services.first['id'] as int);
-        _serviceTemplateId = _services.any((s) => s['id'] == desiredTemplateId)
+            _activeTarget?.serviceTemplateId ??
+            OdooValues.intValue(_services.first['id']);
+        _serviceTemplateId =
+            desiredTemplateId != null &&
+                _services.any(
+                  (s) => OdooValues.intValue(s['id']) == desiredTemplateId,
+                )
             ? desiredTemplateId
-            : _services.first['id'] as int;
+            : OdooValues.intValue(_services.first['id']);
         await _loadServiceOptions(preferredVariantId: _activeTarget?.variantId);
       }
       await _loadAgendaReservas(day: _agendaDay);
@@ -172,10 +179,7 @@ class _ReservasScreenState extends State<ReservasScreen>
       );
       if (rows.isEmpty) return;
       final variant = Map<String, dynamic>.from(rows.first as Map);
-      final templateRef = variant['product_tmpl_id'];
-      final templateId = templateRef is List && templateRef.isNotEmpty
-          ? templateRef.first as int
-          : null;
+      final templateId = OdooValues.many2oneId(variant['product_tmpl_id']);
       _activeTarget = target.copyWith(
         serviceTemplateId: templateId,
         resourceLabel:
@@ -223,9 +227,11 @@ class _ReservasScreenState extends State<ReservasScreen>
         _variants.any((v) => v['id'] == preferredVariantId);
     _variantId = hasPreferredVariant
         ? preferredVariantId
-        : (_variants.isNotEmpty ? _variants.first['id'] as int : null);
+        : (_variants.isNotEmpty
+              ? OdooValues.intValue(_variants.first['id'])
+              : null);
     _sessionTypeId = _sessionTypes.isNotEmpty
-        ? _sessionTypes.first['id'] as int
+        ? OdooValues.intValue(_sessionTypes.first['id'])
         : null;
     _agendaVariantFilterId ??= hasPreferredVariant ? preferredVariantId : null;
     await _loadAvailability();
@@ -455,7 +461,7 @@ class _ReservasScreenState extends State<ReservasScreen>
           args: [values],
         );
       } catch (e) {
-        if (!OdooService.isAccessError(e)) rethrow;
+        if (!OdooService.isMethodUnavailable(e)) rethrow;
         await _odoo.create('reserva.reserva', values);
       }
 
@@ -481,7 +487,7 @@ class _ReservasScreenState extends State<ReservasScreen>
           id,
         ], 'cic_mobile_confirm_reservation');
       } catch (e) {
-        if (!OdooService.isAccessError(e)) rethrow;
+        if (!OdooService.isMethodUnavailable(e)) rethrow;
         await _odoo.callRecordMethod('reserva.reserva', [
           id,
         ], 'action_confirmar');
@@ -1010,6 +1016,14 @@ class _ReservasScreenState extends State<ReservasScreen>
                     ),
                   ),
                 ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _isExportingQr ? null : _shareCurrentQrPng,
+                    icon: const Icon(Icons.share_rounded),
+                    label: const Text('Compartir'),
+                  ),
+                ),
               ],
             ),
           ],
@@ -1429,13 +1443,17 @@ class _ReservasScreenState extends State<ReservasScreen>
           r['fecha_inicio']?.toString() ?? '',
         );
         final end = _tryParseOdooDateTime(r['fecha_fin']?.toString() ?? '');
-        final servicio = r['servicio_id'] is List
-            ? r['servicio_id'][1].toString()
-            : 'Servicio';
-        final contacto = r['contacto_id'] is List
-            ? r['contacto_id'][1].toString()
-            : 'Sin contacto';
-        final estado = (r['estado'] ?? '').toString();
+        final servicio = OdooValues.many2oneLabel(
+          r['servicio_id'],
+          fallback: 'Servicio',
+        );
+        final contacto = auth.isPortalUser
+            ? 'Reserva ocupada'
+            : OdooValues.many2oneLabel(
+                r['contacto_id'],
+                fallback: 'Sin contacto',
+              );
+        final estado = OdooValues.string(r['estado']);
         final color = _estadoColor(estado);
         return Padding(
           padding: const EdgeInsets.only(bottom: 10),
@@ -1504,17 +1522,19 @@ class _ReservasScreenState extends State<ReservasScreen>
                           fontSize: 12,
                         ),
                       ),
-                      if ((r['session_type_id'] is List)) ...[
+                      if (OdooValues.many2oneId(r['session_type_id']) !=
+                          null) ...[
                         const SizedBox(height: 4),
                         Text(
-                          'Tipo: ${r['session_type_id'][1]}',
+                          'Tipo: ${OdooValues.many2oneLabel(r['session_type_id'], fallback: 'Sesión')}',
                           style: const TextStyle(
                             color: AppTheme.textMuted,
                             fontSize: 12,
                           ),
                         ),
                       ],
-                      if ((r['motivo'] ?? '').toString().trim().isNotEmpty) ...[
+                      if (!auth.isPortalUser &&
+                          (r['motivo'] ?? '').toString().trim().isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Text(
                           (r['motivo'] ?? '').toString(),
@@ -1610,8 +1630,9 @@ class _ReservasScreenState extends State<ReservasScreen>
 
   String? _selectedVariantName() {
     for (final variant in _variants) {
-      if (variant['id'] == _variantId) {
-        return variant['display_name']?.toString();
+      if (OdooValues.intValue(variant['id']) == _variantId) {
+        final name = OdooValues.string(variant['display_name']);
+        return name.isEmpty ? null : name;
       }
     }
     return null;
@@ -1619,7 +1640,7 @@ class _ReservasScreenState extends State<ReservasScreen>
 
   Map<String, dynamic>? _selectedVariantMap() {
     for (final variant in _variants) {
-      if (variant['id'] == _variantId) {
+      if (OdooValues.intValue(variant['id']) == _variantId) {
         return variant;
       }
     }
@@ -1667,11 +1688,52 @@ class _ReservasScreenState extends State<ReservasScreen>
       await OpenFilex.open(file.path);
       _showSnack('QR exportado en PNG: ${file.path}');
     } catch (e) {
-      _showSnack('No se pudo exportar el QR: $e', isError: true);
+      _showSnack(
+        'No se pudo exportar el QR: ${OdooService.prettyError(e)}',
+        isError: true,
+      );
     }
 
     if (mounted) {
       setState(() => _isExportingQr = false);
+    }
+  }
+
+  Future<void> _shareCurrentQrPng() async {
+    if (_variantId == null) {
+      _showSnack(
+        'Selecciona antes un microservicio para generar el QR.',
+        isError: true,
+      );
+      return;
+    }
+    setState(() => _isExportingQr = true);
+    try {
+      final bytes = await _generateQrPngBytes(_buildReservationQrPayload());
+      if (bytes == null || bytes.isEmpty) {
+        throw Exception('No se pudo renderizar el PNG del QR.');
+      }
+      final safeName = AttachmentService.sanitizeFileName(
+        _selectedVariantName() ?? 'recurso',
+      );
+      await Share.shareXFiles(
+        [
+          XFile.fromData(
+            bytes,
+            name: 'qr_reserva_$safeName.png',
+            mimeType: 'image/png',
+          ),
+        ],
+        subject: 'QR de reserva ${_selectedVariantName() ?? 'recurso'}',
+        fileNameOverrides: ['qr_reserva_$safeName.png'],
+      );
+    } catch (e) {
+      _showSnack(
+        'No se pudo compartir el QR: ${OdooService.prettyError(e)}',
+        isError: true,
+      );
+    } finally {
+      if (mounted) setState(() => _isExportingQr = false);
     }
   }
 
