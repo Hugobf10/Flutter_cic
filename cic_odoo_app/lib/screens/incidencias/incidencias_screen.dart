@@ -5,6 +5,7 @@ import '../../features/incidents/incidence_detail_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/data_provider.dart';
 import '../../services/odoo_service.dart';
+import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/shimmer_loading.dart';
@@ -20,6 +21,7 @@ class IncidenciasScreen extends StatefulWidget {
 class _IncidenciasScreenState extends State<IncidenciasScreen> {
   final DataProvider _provider = DataProvider();
   final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
   String _filtroEstado = 'todas';
 
   static const _fields = [
@@ -131,7 +133,7 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
               final y = date?.year.toString().padLeft(4, '0');
               final m = date?.month.toString().padLeft(2, '0');
               final d = date?.day.toString().padLeft(2, '0');
-              await _odoo.create('calidad.incidencia', {
+              final payload = <String, dynamic>{
                 'name': values['name'],
                 'tipo': values['tipo'],
                 'categoria': values['categoria'],
@@ -139,7 +141,12 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
                 'descripcion': values['descripcion'],
                 'partner_id': partnerId,
                 if (date != null) 'fecha': '$y-$m-$d',
-              });
+              };
+              if (_odoo.isPortalSession) {
+                await _portalApi.action('incident_create', values: payload);
+              } else {
+                await _odoo.create('calidad.incidencia', payload);
+              }
             },
           ),
         );

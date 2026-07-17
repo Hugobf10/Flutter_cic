@@ -6,6 +6,7 @@ import '../../features/workflow/workflow_widgets.dart';
 import '../../features/forms/dynamic_form.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
+import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 
 class CommunicationsScreen extends StatefulWidget {
@@ -17,6 +18,7 @@ class CommunicationsScreen extends StatefulWidget {
 
 class _CommunicationsScreenState extends State<CommunicationsScreen> {
   final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
   bool _loading = true;
   String? _error;
   List<Map<String, dynamic>> _rows = [];
@@ -42,19 +44,21 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
     });
 
     try {
-      final rows = await _odoo.searchRead(
-        'calidad.comunicacion',
-        fields: [
-          'name',
-          'tipo',
-          'fecha',
-          'estado',
-          'partner_id',
-          'descripcion',
-        ],
-        order: 'fecha desc, id desc',
-        limit: 80,
-      );
+      final rows = _odoo.isPortalSession
+          ? await _portalApi.section('communications', limit: 80)
+          : await _odoo.searchRead(
+              'calidad.comunicacion',
+              fields: [
+                'name',
+                'tipo',
+                'fecha',
+                'estado',
+                'partner_id',
+                'descripcion',
+              ],
+              order: 'fecha desc, id desc',
+              limit: 80,
+            );
       _rows = rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     } catch (e) {
       _error = e.toString();

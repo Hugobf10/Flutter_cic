@@ -13,6 +13,7 @@ import '../providers/app_state_provider.dart';
 import '../screens/document_viewer_screen.dart';
 import '../ui/app_components.dart';
 import 'edit_profile_screen.dart';
+import '../../services/portal_api_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -23,6 +24,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
   final AttachmentService _attachments = AttachmentService();
 
   bool _loading = true;
@@ -49,6 +51,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _error = null;
     });
     try {
+      if (_odoo.isPortalSession) {
+        final rows = await _portalApi.section('profile', limit: 1);
+        final first = rows.isEmpty ? const <String, dynamic>{} : rows.first;
+        _partner = OdooValues.map(first['partner']);
+        if (_partner.isEmpty) {
+          throw StateError('El servidor no devolvió el perfil de la intranet.');
+        }
+        if (mounted) setState(() => _loading = false);
+        return;
+      }
       const fields = <String>[
         'name',
         'email',

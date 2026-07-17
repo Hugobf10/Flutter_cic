@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'app_permission_service.dart';
 import 'odoo_service.dart';
+import 'portal_api_service.dart';
 
 class LocalDocument {
   const LocalDocument({
@@ -38,6 +39,7 @@ class AttachmentService {
   AttachmentService({OdooService? odoo}) : _odoo = odoo ?? OdooService();
 
   final OdooService _odoo;
+  final PortalApiService _portalApi = PortalApiService();
 
   Future<PickedUploadFile?> pickAnyFile() async {
     final result = await FilePicker.platform.pickFiles(withData: true);
@@ -74,13 +76,21 @@ class AttachmentService {
   Future<LocalDocument> fetchAttachmentToCache({
     required int attachmentId,
     required String defaultName,
+    String? portalSection,
+    int? portalRecordId,
   }) async {
     await AppPermissionService.requestDownloads();
-    final data = await _odoo.read(
-      'ir.attachment',
-      attachmentId,
-      fields: const ['name', 'datas', 'mimetype'],
-    );
+    final data =
+        portalSection != null && portalRecordId != null && _odoo.isPortalSession
+        ? await _portalApi.attachment(
+            section: portalSection,
+            recordId: portalRecordId,
+          )
+        : await _odoo.read(
+            'ir.attachment',
+            attachmentId,
+            fields: const ['name', 'datas', 'mimetype'],
+          );
     final name = (data['name'] ?? defaultName).toString();
     final mime = (data['mimetype'] ?? _inferMimeType(name)).toString();
     final raw = (data['datas'] ?? '').toString();
@@ -136,6 +146,22 @@ class AttachmentService {
     await AppPermissionService.requestDownloads();
     final cleanName = sanitizeFileName(name);
     final baseDir = await getApplicationDocumentsDirectory();
+    final targetDir = folderName == null || folderName.trim().isEmpty
+        ? baseDir
+        : Directory('${baseDir.path}/${sanitizeFileName(folderName)}');
+    await targetDir.create(recursive: true);
+    final file = File('${targetDir.path}/$cleanName');
+    await file.writeAsBytes(bytes, flush: true);
+    return file;
+  }
+
+  Future<File> writeBytesToTemporary({
+    required String name,
+    required Uint8List bytes,
+    String? folderName,
+  }) async {
+    final cleanName = sanitizeFileName(name);
+    final baseDir = await getTemporaryDirectory();
     final targetDir = folderName == null || folderName.trim().isEmpty
         ? baseDir
         : Directory('${baseDir.path}/${sanitizeFileName(folderName)}');

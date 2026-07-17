@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../screens/reservas/reservation_entry_target.dart';
 import '../../services/odoo_service.dart';
+import '../../services/portal_api_service.dart';
 import '../core/module_registry.dart';
 import '../models/app_module.dart';
 import '../models/app_notification.dart';
 
 class AppStateProvider extends ChangeNotifier {
   final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
 
   ThemeMode _themeMode = ThemeMode.light;
   bool _loadingAcl = false;
@@ -27,6 +29,8 @@ class AppStateProvider extends ChangeNotifier {
 
   List<AppModule> get availableModules {
     return ModuleRegistry.all.where((m) {
+      // Purchases is a backend workflow and is never part of the portal intranet.
+      if (_odoo.isPortalSession && m.key == 'purchases') return false;
       if (m.requiredPermission == null) return true;
       return _grantedPermissions.contains(m.requiredPermission);
     }).toList();
@@ -60,6 +64,24 @@ class AppStateProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      if (_odoo.isPortalSession) {
+        final bootstrap = await _portalApi.bootstrap();
+        final capabilities = bootstrap['capabilities'];
+        final granted = <String>{'portal.view'};
+        if (capabilities is Map) {
+          for (final entry in capabilities.entries) {
+            if (entry.value is Map && entry.value['view'] == true) {
+              granted.add('${entry.key}.view');
+            }
+          }
+        }
+        _grantedPermissions
+          ..clear()
+          ..addAll(granted);
+        _loadingAcl = false;
+        notifyListeners();
+        return;
+      }
       final dynamic acl = await _odoo.callMethod(
         'calidad.security.service',
         'get_mobile_acl',
@@ -92,6 +114,35 @@ class AppStateProvider extends ChangeNotifier {
     notifyListeners();
 
     final items = <AppNotification>[];
+
+    if (_odoo.isPortalSession) {
+      for (final entry in const [
+        ('incidents', 'Incidencia', 'incidents'),
+        ('communications', 'Comunicación', 'communications'),
+      ]) {
+        try {
+          final rows = await _portalApi.section(entry.$1, limit: 5);
+          for (final row in rows) {
+            items.add(
+              AppNotification(
+                id: (row['id'] as num?)?.toInt() ?? 0,
+                title: row['name']?.toString() ?? entry.$2,
+                subtitle: row['tipo']?.toString() ?? entry.$2,
+                level: entry.$3 == 'incidents' ? 'high' : 'medium',
+                createdAtLabel: row['fecha']?.toString() ?? 'Ahora',
+                moduleKey: entry.$3,
+              ),
+            );
+          }
+        } catch (_) {
+          // A section disabled by the portal capability simply has no feed.
+        }
+      }
+      _notifications = items;
+      _loadingNotifications = false;
+      notifyListeners();
+      return;
+    }
 
     try {
       final incidentRows = await _odoo.searchRead(

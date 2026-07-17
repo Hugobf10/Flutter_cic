@@ -10,6 +10,7 @@ import '../../screens/home/home_screen.dart';
 import '../../screens/reservas/reservation_entry_target.dart';
 import '../../screens/incidencias/incidencias_screen.dart';
 import '../../screens/reservas/reservas_screen.dart';
+import '../../features/portal/portal_screen.dart';
 import '../../theme/app_theme.dart';
 import '../providers/app_state_provider.dart';
 import '../ui/app_components.dart';
@@ -66,13 +67,22 @@ class _SuperAppShellState extends State<SuperAppShell> {
       });
     }
 
+    final pages = auth.isPortalOnlyUser
+        ? const [
+            PortalScreen(),
+            ModulesHubScreen(),
+            NotificationsScreen(),
+            ProfileScreen(),
+          ]
+        : _pages;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final desktop = constraints.maxWidth >= 1024;
 
         if (!desktop) {
           return Scaffold(
-            body: IndexedStack(index: _index, children: _pages),
+            body: IndexedStack(index: _index, children: pages),
             floatingActionButton: FloatingActionButton(
               onPressed: _openQuickActions,
               backgroundColor: AppTheme.primaryDark,
@@ -162,7 +172,7 @@ class _SuperAppShellState extends State<SuperAppShell> {
                 ),
               ),
               Expanded(
-                child: IndexedStack(index: _index, children: _pages),
+                child: IndexedStack(index: _index, children: pages),
               ),
             ],
           ),

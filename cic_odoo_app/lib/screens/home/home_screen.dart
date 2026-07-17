@@ -50,24 +50,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<List<_WordPressPost>> _loadNews() async {
     final uri = Uri.tryParse(AppConfig.wordpressApiUrl);
-    if (uri == null) return const [];
+    if (uri == null) return const [_WordPressPost.mock];
     try {
       final response = await http
           .get(uri)
           .timeout(const Duration(seconds: AppConfig.httpTimeoutSeconds));
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        return const [];
+        return const [_WordPressPost.mock];
       }
       final decoded = jsonDecode(response.body);
-      if (decoded is! List) return const [];
-      return decoded
+      if (decoded is! List) return const [_WordPressPost.mock];
+      final posts = decoded
           .whereType<Map>()
           .map((raw) => _WordPressPost.fromJson(Map<String, dynamic>.from(raw)))
           .where((post) => post.title.isNotEmpty)
-          .take(5)
           .toList();
+      return [_WordPressPost.mock, ...posts].take(5).toList();
     } catch (_) {
-      return const [];
+      return const [_WordPressPost.mock];
     }
   }
 
@@ -432,7 +432,7 @@ class _NewsSection extends StatelessWidget {
               )
             else
               SizedBox(
-                height: 138,
+                height: 184,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: posts.length,
@@ -442,15 +442,24 @@ class _NewsSection extends StatelessWidget {
                     return SizedBox(
                       width: 260,
                       child: AppCard(
-                        onTap: post.link == null
-                            ? null
-                            : () => launchUrl(
-                                post.link!,
-                                mode: LaunchMode.externalApplication,
-                              ),
+                        onTap: () => _openNews(context, post),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            if (post.imageUrl != null) ...[
+                              ClipRRect(
+                                borderRadius: AppTheme.radiusSm,
+                                child: Image.network(
+                                  post.imageUrl.toString(),
+                                  height: 62,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) =>
+                                      const SizedBox.shrink(),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                            ],
                             Text(
                               post.title,
                               maxLines: 2,
@@ -463,10 +472,19 @@ class _NewsSection extends StatelessWidget {
                             const SizedBox(height: 8),
                             Text(
                               post.excerpt,
-                              maxLines: 3,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: AppTheme.textSecondaryFor(context),
+                                fontSize: 12,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              'Leer más',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w700,
                                 fontSize: 12,
                               ),
                             ),
@@ -482,18 +500,79 @@ class _NewsSection extends StatelessWidget {
       },
     );
   }
+
+  void _openNews(BuildContext context, _WordPressPost post) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (post.imageUrl != null) ...[
+                ClipRRect(
+                  borderRadius: AppTheme.radiusMd,
+                  child: Image.network(
+                    post.imageUrl.toString(),
+                    width: double.infinity,
+                    height: 190,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              Text(post.title, style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 12),
+              Text(
+                post.content.isEmpty ? post.excerpt : post.content,
+                style: TextStyle(color: AppTheme.textSecondaryFor(context)),
+              ),
+              if (post.link != null) ...[
+                const SizedBox(height: 18),
+                AppButton.primary(
+                  label: 'Abrir noticia completa',
+                  icon: Icons.open_in_new_rounded,
+                  onPressed: () => launchUrl(
+                    post.link!,
+                    mode: LaunchMode.externalApplication,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _WordPressPost {
   const _WordPressPost({
     required this.title,
     required this.excerpt,
+    required this.content,
     required this.link,
+    required this.imageUrl,
   });
 
   final String title;
   final String excerpt;
+  final String content;
   final Uri? link;
+  final Uri? imageUrl;
+
+  static const mock = _WordPressPost(
+    title: 'Nueva intranet móvil del CIC',
+    excerpt:
+        'Consulta tus documentos, reservas, formación y comunicaciones desde la aplicación.',
+    content:
+        'La nueva intranet móvil reúne en un solo lugar la información y las gestiones disponibles para cada usuario.',
+    link: null,
+    imageUrl: null,
+  );
 
   factory _WordPressPost.fromJson(Map<String, dynamic> json) {
     return _WordPressPost(
@@ -501,8 +580,20 @@ class _WordPressPost {
       excerpt: _cleanHtml(
         (json['excerpt'] as Map?)?['rendered']?.toString() ?? '',
       ),
+      content: _cleanHtml(
+        (json['content'] as Map?)?['rendered']?.toString() ?? '',
+      ),
       link: Uri.tryParse((json['link'] ?? '').toString()),
+      imageUrl: _featuredImageUrl(json),
     );
+  }
+
+  static Uri? _featuredImageUrl(Map<String, dynamic> json) {
+    final embedded = json['_embedded'];
+    if (embedded is! Map) return null;
+    final media = embedded['wp:featuredmedia'];
+    if (media is! List || media.isEmpty || media.first is! Map) return null;
+    return Uri.tryParse((media.first as Map)['source_url']?.toString() ?? '');
   }
 
   static String _cleanHtml(String value) {

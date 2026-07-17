@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../app/ui/app_components.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
+import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 
 class GoalsScreen extends StatefulWidget {
@@ -15,6 +16,7 @@ class GoalsScreen extends StatefulWidget {
 
 class _GoalsScreenState extends State<GoalsScreen> {
   final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
   bool _loading = true;
   String? _error;
   List<Map<String, dynamic>> _rows = [];
@@ -32,26 +34,28 @@ class _GoalsScreenState extends State<GoalsScreen> {
       _error = null;
     });
     try {
-      final rows = await _odoo.searchRead(
-        'calidad.objetivo',
-        domain: [
-          '|',
-          ['responsable_id', '=', auth.partnerId],
-          ['partner_id', '=', auth.partnerId],
-        ],
-        fields: const [
-          'name',
-          'tipo',
-          'estado',
-          'avance',
-          'anio',
-          'fecha_fin',
-          'responsable_id',
-          'descripcion',
-        ],
-        order: 'anio desc, fecha_fin asc, id desc',
-        limit: 200,
-      );
+      final rows = _odoo.isPortalSession
+          ? await _portalApi.section('goals', limit: 200)
+          : await _odoo.searchRead(
+              'calidad.objetivo',
+              domain: [
+                '|',
+                ['responsable_id', '=', auth.partnerId],
+                ['partner_id', '=', auth.partnerId],
+              ],
+              fields: const [
+                'name',
+                'tipo',
+                'estado',
+                'avance',
+                'anio',
+                'fecha_fin',
+                'responsable_id',
+                'descripcion',
+              ],
+              order: 'anio desc, fecha_fin asc, id desc',
+              limit: 200,
+            );
       _rows = rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     } catch (e) {
       _error = OdooService.prettyError(e);
@@ -129,14 +133,19 @@ class _GoalsScreenState extends State<GoalsScreen> {
                 onPressed: () async {
                   if (nameCtrl.text.trim().isEmpty) return;
                   final auth = context.read<AuthProvider>();
-                  await _odoo.create('calidad.objetivo', {
+                  final values = <String, dynamic>{
                     'name': nameCtrl.text.trim(),
                     'descripcion': descCtrl.text.trim(),
                     'tipo': tipo,
                     'estado': estado,
                     'anio': year,
                     'responsable_id': auth.partnerId,
-                  });
+                  };
+                  if (_odoo.isPortalSession) {
+                    await _portalApi.action('goal_create', values: values);
+                  } else {
+                    await _odoo.create('calidad.objetivo', values);
+                  }
                   if (ctx.mounted) Navigator.of(ctx).pop(true);
                 },
               ),

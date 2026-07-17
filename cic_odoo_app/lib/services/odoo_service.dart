@@ -8,6 +8,16 @@ import '../config/app_config.dart';
 import 'app_logger.dart';
 import 'odoo_values.dart';
 
+class OdooControllerUnavailableException implements Exception {
+  OdooControllerUnavailableException(this.path, this.details);
+
+  final String path;
+  final String details;
+
+  @override
+  String toString() => 'Controlador Odoo no disponible: $path ($details)';
+}
+
 /// Servicio singleton que encapsula toda la comunicación con Odoo 17 vía JSON-RPC.
 class OdooService {
   OdooService._internal();
@@ -31,6 +41,8 @@ class OdooService {
   OdooSession? get session => _session;
   Map<String, dynamic>? get userInfo => _userInfo;
   Map<String, dynamic> get sessionInfo => _userInfo ?? const {};
+  bool get isPortalSession =>
+      !isPublicSession(sessionInfo) && sessionIsInternal(sessionInfo) == false;
   String get baseUrl => _client.baseURL;
   String? get lastAuthError => _lastAuthError;
 
@@ -54,14 +66,32 @@ class OdooService {
   }
 
   static String prettyError(Object? error) {
+    if (error is OdooControllerUnavailableException) {
+      return 'El servidor Odoo no tiene instalada o actualizada la intranet móvil. Actualiza el módulo de portal y vuelve a intentarlo.';
+    }
     final raw = error?.toString() ?? '';
     if (isAccessError(error)) {
       return 'Tu usuario no tiene permisos para esta acción en Odoo.';
     }
-    final firstLine = raw.split('\n').first.trim();
+    final serverMessage = _odooServerMessage(error);
+    final firstLine = (serverMessage ?? raw).split('\n').first.trim();
     if (firstLine.isEmpty) return 'Se produjo un error inesperado.';
     if (firstLine.length > 180) return '${firstLine.substring(0, 180)}...';
     return firstLine;
+  }
+
+  static String? _odooServerMessage(Object? error) {
+    if (error is! OdooException) return null;
+    final errorData = OdooValues.map(error.error);
+    final data = OdooValues.map(errorData['data']);
+    final message = OdooValues.string(data['message']);
+    if (message.isNotEmpty && message != 'Odoo Server Error') return message;
+    final arguments = data['arguments'];
+    if (arguments is List && arguments.isNotEmpty) {
+      final argument = OdooValues.string(arguments.first);
+      if (argument.isNotEmpty) return argument;
+    }
+    return null;
   }
 
   static String prettyAuthError(Object? error) {
@@ -487,6 +517,27 @@ class OdooService {
         _buildKwParams(model, method, args: [ids, ...args], kwargs: kwargs),
       ),
     );
+  }
+
+  /// Calls an authenticated Odoo controller. This is used for the mobile
+  /// intranet endpoints, never as a generic ORM escape hatch.
+  Future<dynamic> callController(
+    String path, {
+    Map<String, dynamic> params = const {},
+  }) async {
+    _ensureInit();
+    try {
+      return await _withRetry(() => _client.callRPC(path, 'call', params));
+    } on FormatException catch (error, stackTrace) {
+      AppLogger.error(
+        'Respuesta no JSON de controlador Odoo',
+        error: error,
+        stackTrace: stackTrace,
+        data: {'path': path},
+        scope: 'odoo.controller',
+      );
+      throw OdooControllerUnavailableException(path, error.message);
+    }
   }
 
   /// Llama al dashboard de calidad.

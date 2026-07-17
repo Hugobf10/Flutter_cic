@@ -7,6 +7,7 @@ import '../../features/workflow/workflow_stage.dart';
 import '../../features/workflow/workflow_widgets.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
+import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 
 class SuppliersScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class SuppliersScreen extends StatefulWidget {
 
 class _SuppliersScreenState extends State<SuppliersScreen> {
   final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
   bool _loading = true;
   String? _error;
   List<Map<String, dynamic>> _rows = [];
@@ -40,20 +42,22 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
     });
 
     try {
-      final rows = await _odoo.searchRead(
-        'calidad.proveedor.unidad',
-        fields: [
-          'partner_id',
-          'estado',
-          'fecha_homologacion',
-          'fecha_desestimacion',
-          'motivo_homologacion',
-          'motivo_desestimacion',
-          'observaciones',
-        ],
-        order: 'id desc',
-        limit: 80,
-      );
+      final rows = _odoo.isPortalSession
+          ? await _portalApi.section('suppliers', limit: 80)
+          : await _odoo.searchRead(
+              'calidad.proveedor.unidad',
+              fields: [
+                'partner_id',
+                'estado',
+                'fecha_homologacion',
+                'fecha_desestimacion',
+                'motivo_homologacion',
+                'motivo_desestimacion',
+                'observaciones',
+              ],
+              order: 'id desc',
+              limit: 80,
+            );
       _rows = rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     } catch (e) {
       _error = e.toString();
@@ -158,13 +162,18 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
               final y = date?.year.toString().padLeft(4, '0');
               final m = date?.month.toString().padLeft(2, '0');
               final d = date?.day.toString().padLeft(2, '0');
-              await _odoo.create('calidad.proveedor.unidad', {
+              final payload = <String, dynamic>{
                 'partner_id': values['partner_id'],
                 'estado': 'homologado',
                 if (date != null) 'fecha_homologacion': '$y-$m-$d',
                 'motivo_homologacion': values['motivo_homologacion'],
                 'observaciones': values['observaciones'],
-              });
+              };
+              if (_odoo.isPortalSession) {
+                await _portalApi.action('supplier_create', values: payload);
+              } else {
+                await _odoo.create('calidad.proveedor.unidad', payload);
+              }
             },
           ),
         );

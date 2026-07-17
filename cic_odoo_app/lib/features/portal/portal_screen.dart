@@ -4,8 +4,9 @@ import 'package:provider/provider.dart';
 import '../../app/screens/profile_screen.dart';
 import '../../app/ui/app_components.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/odoo_service.dart';
 import '../../services/odoo_values.dart';
+import '../../services/odoo_service.dart';
+import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 import '../action_plans/action_plans_screen.dart';
 import '../goals/goals_screen.dart';
@@ -20,7 +21,7 @@ class PortalScreen extends StatefulWidget {
 }
 
 class _PortalScreenState extends State<PortalScreen> {
-  final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
 
   bool _loading = true;
   String? _error;
@@ -33,71 +34,14 @@ class _PortalScreenState extends State<PortalScreen> {
   }
 
   Future<void> _load() async {
-    final auth = context.read<AuthProvider>();
-    if (auth.partnerId <= 0) {
-      setState(() {
-        _loading = false;
-        _error = 'No se pudo localizar el perfil del usuario actual.';
-      });
-      return;
-    }
-
     setState(() {
       _loading = true;
       _error = null;
     });
 
     try {
-      const fields = <String>[
-        'name',
-        'email',
-        'phone',
-        'mobile',
-        'function',
-        'unidad_id',
-        'acceso_intranet',
-        'acceso_calidad',
-        'portal_calidad_habilitado',
-        'permiso_incidencias_ver',
-        'permiso_incidencias_editar',
-        'permiso_documentos_ver',
-        'permiso_documentos_editar',
-        'permiso_formacion_ver',
-        'permiso_formacion_editar',
-        'permiso_objetivos_ver',
-        'permiso_objetivos_editar',
-        'permiso_salud_ver',
-        'permiso_salud_editar',
-        'permiso_comunicaciones_ver',
-        'permiso_comunicaciones_editar',
-        'permiso_proveedores_ver',
-        'permiso_proveedores_editar',
-        'permiso_normativa_ver',
-        'permiso_normativa_editar',
-        'permiso_equipos_ver',
-        'permiso_equipos_editar',
-        'permiso_quimicos_ver',
-        'permiso_quimicos_editar',
-      ];
-      try {
-        _partner = await _odoo.read(
-          'res.partner',
-          auth.partnerId,
-          fields: fields,
-        );
-      } catch (_) {
-        final profile = <String, dynamic>{};
-        for (final field in fields) {
-          try {
-            profile.addAll(
-              await _odoo.read('res.partner', auth.partnerId, fields: [field]),
-            );
-          } catch (_) {
-            // Los campos personalizados pueden no existir en todas las bases.
-          }
-        }
-        _partner = profile;
-      }
+      final bootstrap = await _portalApi.bootstrap();
+      _partner = OdooValues.map(bootstrap['partner']);
     } catch (e) {
       _error = OdooService.prettyError(e);
     }
@@ -128,6 +72,8 @@ class _PortalScreenState extends State<PortalScreen> {
           : ListView(
               children: [
                 _PortalHero(partner: _partner, auth: auth),
+                const SizedBox(height: 20),
+                const _PortalMockNews(),
                 const SizedBox(height: 20),
                 AppSectionHeader(
                   title: 'Accesos rápidos',
@@ -209,6 +155,33 @@ class _PortalScreenState extends State<PortalScreen> {
               context,
             ).push(MaterialPageRoute(builder: (_) => const PayrollScreen()));
           },
+        ),
+      if (auth.canViewModule('security'))
+        _moduleAction(
+          auth: auth,
+          moduleKey: 'security',
+          title: 'Seguridad',
+          subtitle: 'Consulta tus permisos efectivos en la intranet.',
+          icon: Icons.shield_outlined,
+          color: AppTheme.success,
+        ),
+      if (auth.canViewModule('information'))
+        _moduleAction(
+          auth: auth,
+          moduleKey: 'information',
+          title: 'Información entregada',
+          subtitle: 'Documentos y registros entregados a tu cuenta.',
+          icon: Icons.inventory_2_outlined,
+          color: AppTheme.info,
+        ),
+      if (auth.canViewModule('publications'))
+        _moduleAction(
+          auth: auth,
+          moduleKey: 'publications',
+          title: 'Publicaciones',
+          subtitle: 'Tus publicaciones y las funciones habilitadas.',
+          icon: Icons.article_outlined,
+          color: AppTheme.primary,
         ),
       if (auth.canViewModule('reservas'))
         _moduleAction(
@@ -342,12 +315,12 @@ class _PortalScreenState extends State<PortalScreen> {
           icon: Icons.event_note_rounded,
           color: AppTheme.accent,
         ),
-      if (auth.canViewModule('purchases'))
+      if (auth.isInternalUser && auth.canViewModule('purchases'))
         _moduleAction(
           auth: auth,
           moduleKey: 'purchases',
           title: 'Compras',
-          subtitle: 'Pedidos y operaciones habilitadas para tu cuenta.',
+          subtitle: 'Pedidos y operaciones internas autorizadas.',
           icon: Icons.shopping_cart_checkout_rounded,
           color: AppTheme.info,
         ),
@@ -448,6 +421,94 @@ class _PortalScreenState extends State<PortalScreen> {
             auth.canEditModule('suppliers'),
       ),
     ];
+  }
+}
+
+class _PortalMockNews extends StatelessWidget {
+  const _PortalMockNews();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppSectionHeader(
+          title: 'Noticias',
+          subtitle: 'Actualidad del CIC',
+        ),
+        AppCard(
+          onTap: () => _openNews(context),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withValues(alpha: 0.12),
+                  borderRadius: AppTheme.radiusSm,
+                ),
+                child: const Icon(
+                  Icons.campaign_outlined,
+                  color: AppTheme.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Nueva intranet móvil del CIC',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      'Consulta tus documentos, reservas, formación y comunicaciones desde la aplicación.',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _openNews(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Nueva intranet móvil del CIC',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'La nueva intranet móvil reúne en un solo lugar la información y las gestiones disponibles para cada usuario.',
+                style: TextStyle(color: AppTheme.textSecondaryFor(context)),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Esta noticia es una demostración de cómo se mostrarán los comunicados, novedades y avisos importantes dentro de la aplicación.',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

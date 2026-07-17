@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../app/ui/app_components.dart';
 import '../../services/odoo_service.dart';
+import '../../services/odoo_values.dart';
+import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 
 class RecruitmentScreen extends StatefulWidget {
@@ -13,6 +15,7 @@ class RecruitmentScreen extends StatefulWidget {
 
 class _RecruitmentScreenState extends State<RecruitmentScreen> {
   final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
   bool _loading = true;
   String? _error;
   List<Map<String, dynamic>> _jobs = [];
@@ -30,6 +33,13 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
       _error = null;
     });
     try {
+      if (_odoo.isPortalSession) {
+        final payload = await _portalApi.sectionPayload('recruitment');
+        _jobs = _mapRows(payload['jobs']);
+        _applicants = _mapRows(payload['applicants']);
+        if (mounted) setState(() => _loading = false);
+        return;
+      }
       final jobs = await _odoo.searchRead(
         'hr.job',
         fields: const [
@@ -65,6 +75,35 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
   }
 
   Future<void> _rateCandidate(int id, String currentPriority) async {
+    if (_odoo.isPortalSession) {
+      final current = double.tryParse(currentPriority) ?? 0;
+      final next = current >= 25 ? 0 : (current + 5);
+      final applicant = _applicants.firstWhere(
+        (item) => (item['id'] as num?)?.toInt() == id,
+        orElse: () => const <String, dynamic>{},
+      );
+      final jobId = OdooValues.many2oneId(applicant['job_id']);
+      if (jobId == null) return;
+      try {
+        await _portalApi.action(
+          'recruitment_rate',
+          values: {
+            'job_id': jobId,
+            'applicant_id': id,
+            'cic_puntuacion_entrevista': next,
+          },
+        );
+        await _load();
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No se pudo evaluar: ${OdooService.prettyError(e)}'),
+          ),
+        );
+      }
+      return;
+    }
     final next = currentPriority == '0'
         ? '1'
         : currentPriority == '1'
@@ -81,6 +120,14 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text('No se pudo evaluar: $e')));
     }
+  }
+
+  List<Map<String, dynamic>> _mapRows(dynamic raw) {
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map>()
+        .map((row) => OdooValues.map(row))
+        .toList(growable: false);
   }
 
   @override

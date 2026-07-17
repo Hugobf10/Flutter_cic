@@ -5,6 +5,7 @@ import '../../app/ui/app_components.dart';
 import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
 import '../../services/odoo_values.dart';
+import '../../services/portal_api_service.dart';
 
 class PayrollScreen extends StatefulWidget {
   const PayrollScreen({super.key});
@@ -15,6 +16,7 @@ class PayrollScreen extends StatefulWidget {
 
 class _PayrollScreenState extends State<PayrollScreen> {
   final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
   final AttachmentService _attachments = AttachmentService();
   final TextEditingController _searchCtrl = TextEditingController();
 
@@ -41,45 +43,49 @@ class _PayrollScreenState extends State<PayrollScreen> {
     });
     try {
       List<dynamic> rows;
-      try {
-        rows = await _odoo.searchRead(
-          'payroll.document',
-          fields: const [
-            'name',
-            'document_type',
-            'month',
-            'month_label',
-            'year',
-            'attachment_id',
-            'imported_at',
-          ],
-          order: 'year desc, month desc, id desc',
-          limit: 200,
-        );
-      } catch (e) {
-        if (!OdooService.isMethodUnavailable(e)) rethrow;
-        final payslips = await _odoo.searchRead(
-          'hr.payslip',
-          fields: const ['name', 'number', 'date_from', 'date_to', 'state'],
-          order: 'date_from desc, id desc',
-          limit: 200,
-        );
-        rows = payslips.map((raw) {
-          final row = OdooValues.map(raw);
-          final date = OdooValues.dateTime(row['date_from']);
-          return <String, dynamic>{
-            'id': row['id'],
-            'name': OdooValues.string(
-              row['name'],
-              fallback: OdooValues.string(row['number'], fallback: 'Nómina'),
-            ),
-            'month_label': date == null
-                ? ''
-                : date.month.toString().padLeft(2, '0'),
-            'year': date?.year ?? '',
-            'imported_at': row['date_to'],
-          };
-        }).toList();
+      if (_odoo.isPortalSession) {
+        rows = await _portalApi.section('payroll', limit: 200);
+      } else {
+        try {
+          rows = await _odoo.searchRead(
+            'payroll.document',
+            fields: const [
+              'name',
+              'document_type',
+              'month',
+              'month_label',
+              'year',
+              'attachment_id',
+              'imported_at',
+            ],
+            order: 'year desc, month desc, id desc',
+            limit: 200,
+          );
+        } catch (e) {
+          if (!OdooService.isMethodUnavailable(e)) rethrow;
+          final payslips = await _odoo.searchRead(
+            'hr.payslip',
+            fields: const ['name', 'number', 'date_from', 'date_to', 'state'],
+            order: 'date_from desc, id desc',
+            limit: 200,
+          );
+          rows = payslips.map((raw) {
+            final row = OdooValues.map(raw);
+            final date = OdooValues.dateTime(row['date_from']);
+            return <String, dynamic>{
+              'id': row['id'],
+              'name': OdooValues.string(
+                row['name'],
+                fallback: OdooValues.string(row['number'], fallback: 'Nómina'),
+              ),
+              'month_label': date == null
+                  ? ''
+                  : date.month.toString().padLeft(2, '0'),
+              'year': date?.year ?? '',
+              'imported_at': row['date_to'],
+            };
+          }).toList();
+        }
       }
       _rows = rows.whereType<Map>().map(Map<String, dynamic>.from).toList();
     } catch (e) {
@@ -169,6 +175,15 @@ class _PayrollScreenState extends State<PayrollScreen> {
       final local = await _attachments.fetchAttachmentToCache(
         attachmentId: attachmentId,
         defaultName: defaultName,
+        portalSection: 'payroll',
+        portalRecordId:
+            _rows.firstWhere(
+                  (row) =>
+                      OdooValues.many2oneId(row['attachment_id']) ==
+                      attachmentId,
+                  orElse: () => const <String, dynamic>{},
+                )['id']
+                as int?,
       );
       if (!mounted) return;
       Navigator.of(context).push(
@@ -190,9 +205,15 @@ class _PayrollScreenState extends State<PayrollScreen> {
 
   Future<void> _cacheOnly(int attachmentId, String defaultName) async {
     try {
+      final row = _rows.firstWhere(
+        (item) => OdooValues.many2oneId(item['attachment_id']) == attachmentId,
+        orElse: () => const <String, dynamic>{},
+      );
       final local = await _attachments.fetchAttachmentToCache(
         attachmentId: attachmentId,
         defaultName: defaultName,
+        portalSection: 'payroll',
+        portalRecordId: OdooValues.intValue(row['id']),
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../services/attachment_service.dart';
 import '../../services/app_permission_service.dart';
 import '../../services/odoo_service.dart';
+import '../../services/portal_api_service.dart';
 import '../ui/app_components.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -19,6 +20,7 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
   final AttachmentService _attachments = AttachmentService();
   final ImagePicker _imagePicker = ImagePicker();
 
@@ -105,17 +107,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
-      await _odoo.write('res.partner', _partnerId, {
-        'name': _nameCtrl.text.trim(),
-        'email': _emailCtrl.text.trim(),
-        'phone': _phoneCtrl.text.trim(),
-        'mobile': _mobileCtrl.text.trim(),
-        'function': _positionCtrl.text.trim(),
-        'comment': _notesCtrl.text.trim(),
-        if (_avatarData != null) 'image_1920': _avatarData,
-        if (_cvData != null) 'cv_attachment_name': _cvName ?? 'CV.pdf',
-        if (_cvData != null) 'cv_attachment_data': _cvData,
-      });
+      if (_odoo.isPortalSession) {
+        await _portalApi.action(
+          'profile_update',
+          values: {
+            'email': _emailCtrl.text.trim(),
+            'phone': _phoneCtrl.text.trim(),
+            'mobile': _mobileCtrl.text.trim(),
+            if (_cvData != null) 'cv_data': _cvData,
+            if (_cvName != null) 'cv_name': _cvName,
+          },
+        );
+      } else {
+        await _odoo.write('res.partner', _partnerId, {
+          'name': _nameCtrl.text.trim(),
+          'email': _emailCtrl.text.trim(),
+          'phone': _phoneCtrl.text.trim(),
+          'mobile': _mobileCtrl.text.trim(),
+          'function': _positionCtrl.text.trim(),
+          'comment': _notesCtrl.text.trim(),
+          if (_avatarData != null) 'image_1920': _avatarData,
+          if (_cvData != null) 'cv_attachment_name': _cvName ?? 'CV.pdf',
+          if (_cvData != null) 'cv_attachment_data': _cvData,
+        });
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

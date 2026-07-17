@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../app/ui/app_components.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
+import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 import 'register_external_training_screen.dart';
 
@@ -16,6 +17,7 @@ class TrainingScreen extends StatefulWidget {
 
 class _TrainingScreenState extends State<TrainingScreen> {
   final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
   bool _loading = true;
   String? _error;
   bool _limitedAccessMode = false;
@@ -35,20 +37,22 @@ class _TrainingScreenState extends State<TrainingScreen> {
       _limitedAccessMode = false;
     });
     try {
-      final rows = await _odoo.searchRead(
-        'calidad.formacion.asistencia',
-        domain: [
-          ['partner_id', '=', auth.partnerId],
-        ],
-        fields: const [
-          'formacion_id',
-          'estado',
-          'fecha_realizacion',
-          'certificado_attachment_id',
-        ],
-        order: 'fecha_realizacion desc, id desc',
-        limit: 200,
-      );
+      final rows = _odoo.isPortalSession
+          ? await _portalApi.section('training', limit: 200)
+          : await _odoo.searchRead(
+              'calidad.formacion.asistencia',
+              domain: [
+                ['partner_id', '=', auth.partnerId],
+              ],
+              fields: const [
+                'formacion_id',
+                'estado',
+                'fecha_realizacion',
+                'certificado_attachment_id',
+              ],
+              order: 'fecha_realizacion desc, id desc',
+              limit: 200,
+            );
       _rows = rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     } catch (e) {
       _error = OdooService.prettyError(e);

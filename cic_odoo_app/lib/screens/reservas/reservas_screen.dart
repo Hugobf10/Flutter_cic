@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -11,8 +12,10 @@ import '../../app/ui/app_components.dart';
 import '../../features/purchases/barcode_scanner_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/attachment_service.dart';
+import '../../services/app_logger.dart';
 import '../../services/odoo_service.dart';
 import '../../services/odoo_values.dart';
+import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/shimmer_loading.dart';
@@ -44,6 +47,7 @@ enum _ReservationApiCheckStatus { ok, limited, error }
 class _ReservasScreenState extends State<ReservasScreen>
     with SingleTickerProviderStateMixin {
   final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
   final TextEditingController _motivoCtrl = TextEditingController();
   final AttachmentService _attachmentService = AttachmentService();
   late final TabController _tabController;
@@ -113,16 +117,18 @@ class _ReservasScreenState extends State<ReservasScreen>
     await _loadMisReservas();
     try {
       await _hydrateTargetContext();
-      final services = await _odoo.searchRead(
-        'product.template',
-        domain: [
-          ['reservable_cic', '=', true],
-          ['detailed_type', '=', 'service'],
-        ],
-        fields: ['name'],
-        order: 'name',
-        limit: 200,
-      );
+      final services = _odoo.isPortalSession
+          ? await _portalApi.section('reservation_services', limit: 200)
+          : await _odoo.searchRead(
+              'product.template',
+              domain: [
+                ['reservable_cic', '=', true],
+                ['detailed_type', '=', 'service'],
+              ],
+              fields: ['name'],
+              order: 'name',
+              limit: 200,
+            );
       _services = services
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList();
@@ -194,27 +200,39 @@ class _ReservasScreenState extends State<ReservasScreen>
   Future<void> _loadServiceOptions({int? preferredVariantId}) async {
     if (_serviceTemplateId == null) return;
 
-    final variants = await _odoo.searchRead(
-      'product.product',
-      domain: [
-        ['product_tmpl_id', '=', _serviceTemplateId],
-        ['active', '=', true],
-      ],
-      fields: ['display_name', 'lst_price'],
-      order: 'display_name',
-      limit: 200,
-    );
+    final variants = _odoo.isPortalSession
+        ? await _portalApi.section(
+            'reservation_variants',
+            params: {'service_template_id': _serviceTemplateId},
+            limit: 200,
+          )
+        : await _odoo.searchRead(
+            'product.product',
+            domain: [
+              ['product_tmpl_id', '=', _serviceTemplateId],
+              ['active', '=', true],
+            ],
+            fields: ['display_name', 'lst_price'],
+            order: 'display_name',
+            limit: 200,
+          );
 
-    final sessionTypes = await _odoo.searchRead(
-      'reserva.session.type',
-      domain: [
-        ['servicio_template_id', '=', _serviceTemplateId],
-        ['active', '=', true],
-      ],
-      fields: ['name', 'sequence'],
-      order: 'sequence, name',
-      limit: 100,
-    );
+    final sessionTypes = _odoo.isPortalSession
+        ? await _portalApi.section(
+            'reservation_session_types',
+            params: {'service_template_id': _serviceTemplateId},
+            limit: 100,
+          )
+        : await _odoo.searchRead(
+            'reserva.session.type',
+            domain: [
+              ['servicio_template_id', '=', _serviceTemplateId],
+              ['active', '=', true],
+            ],
+            fields: ['name', 'sequence'],
+            order: 'sequence, name',
+            limit: 100,
+          );
 
     _variants = variants
         .map((e) => Map<String, dynamic>.from(e as Map))
@@ -249,22 +267,38 @@ class _ReservasScreenState extends State<ReservasScreen>
     final endDay = startDay.add(const Duration(days: 1));
     setState(() => _isLoadingAvailability = true);
     try {
-      final rows = await _odoo.searchRead(
-        'reserva.reserva',
-        domain: [
-          ['servicio_id', '=', _variantId],
-          [
-            'estado',
-            'in',
-            ['borrador', 'confirmada', 'facturada'],
-          ],
-          ['fecha_inicio', '<', _formatOdooDateTime(endDay)],
-          ['fecha_fin', '>', _formatOdooDateTime(startDay)],
-        ],
-        fields: ['fecha_inicio', 'fecha_fin'],
-        order: 'fecha_inicio asc',
-        limit: 400,
-      );
+      final rows = _odoo.isPortalSession
+          ? ((await _portalApi.section('reservas', limit: 400)).where((row) {
+              if (OdooValues.many2oneId(row['servicio_id']) != _variantId) {
+                return false;
+              }
+              final start = _tryParseOdooDateTime(
+                row['fecha_inicio']?.toString() ?? '',
+              );
+              final end = _tryParseOdooDateTime(
+                row['fecha_fin']?.toString() ?? '',
+              );
+              return start != null &&
+                  end != null &&
+                  start.isBefore(endDay) &&
+                  end.isAfter(startDay);
+            }).toList())
+          : await _odoo.searchRead(
+              'reserva.reserva',
+              domain: [
+                ['servicio_id', '=', _variantId],
+                [
+                  'estado',
+                  'in',
+                  ['borrador', 'confirmada', 'facturada'],
+                ],
+                ['fecha_inicio', '<', _formatOdooDateTime(endDay)],
+                ['fecha_fin', '>', _formatOdooDateTime(startDay)],
+              ],
+              fields: ['fecha_inicio', 'fecha_fin'],
+              order: 'fecha_inicio asc',
+              limit: 400,
+            );
 
       _busyRanges = rows
           .map((e) {
@@ -296,27 +330,29 @@ class _ReservasScreenState extends State<ReservasScreen>
     final partnerId = auth.partnerId;
 
     try {
-      final result = await _odoo.searchRead(
-        'reserva.reserva',
-        domain: [
-          ['contacto_id', '=', partnerId],
-        ],
-        fields: [
-          'name',
-          'servicio_id',
-          'session_type_id',
-          'fecha_inicio',
-          'fecha_fin',
-          'duracion',
-          'importe_total',
-          'estado',
-          'motivo',
-          'sale_order_id',
-          'contacto_id',
-        ],
-        order: 'fecha_inicio desc',
-        limit: 200,
-      );
+      final result = _odoo.isPortalSession
+          ? await _portalApi.section('reservas', limit: 200)
+          : await _odoo.searchRead(
+              'reserva.reserva',
+              domain: [
+                ['contacto_id', '=', partnerId],
+              ],
+              fields: [
+                'name',
+                'servicio_id',
+                'session_type_id',
+                'fecha_inicio',
+                'fecha_fin',
+                'duracion',
+                'importe_total',
+                'estado',
+                'motivo',
+                'sale_order_id',
+                'contacto_id',
+              ],
+              order: 'fecha_inicio desc',
+              limit: 200,
+            );
 
       _reservas = result
           .map((e) => Map<String, dynamic>.from(e as Map))
@@ -346,24 +382,42 @@ class _ReservasScreenState extends State<ReservasScreen>
       if (_agendaVariantFilterId != null) {
         domain.add(['servicio_id', '=', _agendaVariantFilterId]);
       }
-      final result = await _odoo.searchRead(
-        'reserva.reserva',
-        domain: domain,
-        fields: [
-          'name',
-          'servicio_id',
-          'session_type_id',
-          'fecha_inicio',
-          'fecha_fin',
-          'duracion',
-          'importe_total',
-          'estado',
-          'motivo',
-          'contacto_id',
-        ],
-        order: 'fecha_inicio asc',
-        limit: 400,
-      );
+      final result = _odoo.isPortalSession
+          ? (await _portalApi.section('reservas', limit: 400)).where((row) {
+              final start = _tryParseOdooDateTime(
+                row['fecha_inicio']?.toString() ?? '',
+              );
+              final end = _tryParseOdooDateTime(
+                row['fecha_fin']?.toString() ?? '',
+              );
+              final variantMatches =
+                  _agendaVariantFilterId == null ||
+                  OdooValues.many2oneId(row['servicio_id']) ==
+                      _agendaVariantFilterId;
+              return variantMatches &&
+                  start != null &&
+                  end != null &&
+                  start.isBefore(endDay) &&
+                  end.isAfter(startDay);
+            }).toList()
+          : await _odoo.searchRead(
+              'reserva.reserva',
+              domain: domain,
+              fields: [
+                'name',
+                'servicio_id',
+                'session_type_id',
+                'fecha_inicio',
+                'fecha_fin',
+                'duracion',
+                'importe_total',
+                'estado',
+                'motivo',
+                'contacto_id',
+              ],
+              order: 'fecha_inicio asc',
+              limit: 400,
+            );
       _agendaReservas = result
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList();
@@ -454,15 +508,19 @@ class _ReservasScreenState extends State<ReservasScreen>
         'motivo': _motivoCtrl.text.trim(),
         if (_sessionTypeId != null) 'session_type_id': _sessionTypeId,
       };
-      try {
-        await _odoo.callMethod(
-          'reserva.reserva',
-          'cic_mobile_create_reservation',
-          args: [values],
-        );
-      } catch (e) {
-        if (!OdooService.isMethodUnavailable(e)) rethrow;
-        await _odoo.create('reserva.reserva', values);
+      if (_odoo.isPortalSession) {
+        await _portalApi.action('reservation_create', values: values);
+      } else {
+        try {
+          await _odoo.callMethod(
+            'reserva.reserva',
+            'cic_mobile_create_reservation',
+            args: [values],
+          );
+        } catch (e) {
+          if (!OdooService.isMethodUnavailable(e)) rethrow;
+          await _odoo.create('reserva.reserva', values);
+        }
       }
 
       _motivoCtrl.clear();
@@ -482,15 +540,19 @@ class _ReservasScreenState extends State<ReservasScreen>
 
   Future<void> _confirmarReserva(int id) async {
     try {
-      try {
-        await _odoo.callRecordMethod('reserva.reserva', [
-          id,
-        ], 'cic_mobile_confirm_reservation');
-      } catch (e) {
-        if (!OdooService.isMethodUnavailable(e)) rethrow;
-        await _odoo.callRecordMethod('reserva.reserva', [
-          id,
-        ], 'action_confirmar');
+      if (_odoo.isPortalSession) {
+        await _portalApi.action('reservation_confirm', recordId: id);
+      } else {
+        try {
+          await _odoo.callRecordMethod('reserva.reserva', [
+            id,
+          ], 'cic_mobile_confirm_reservation');
+        } catch (e) {
+          if (!OdooService.isMethodUnavailable(e)) rethrow;
+          await _odoo.callRecordMethod('reserva.reserva', [
+            id,
+          ], 'action_confirmar');
+        }
       }
       await _loadMisReservas();
       await _loadAgendaReservas(day: _agendaDay);
@@ -1709,6 +1771,17 @@ class _ReservasScreenState extends State<ReservasScreen>
     }
     setState(() => _isExportingQr = true);
     try {
+      final box = context.findRenderObject();
+      final shareOrigin = box is RenderBox
+          ? box.localToGlobal(Offset.zero) & box.size
+          : Rect.fromCenter(
+              center: Offset(
+                MediaQuery.sizeOf(context).width / 2,
+                MediaQuery.sizeOf(context).height / 2,
+              ),
+              width: 1,
+              height: 1,
+            );
       final bytes = await _generateQrPngBytes(_buildReservationQrPayload());
       if (bytes == null || bytes.isEmpty) {
         throw Exception('No se pudo renderizar el PNG del QR.');
@@ -1716,18 +1789,33 @@ class _ReservasScreenState extends State<ReservasScreen>
       final safeName = AttachmentService.sanitizeFileName(
         _selectedVariantName() ?? 'recurso',
       );
-      await Share.shareXFiles(
-        [
-          XFile.fromData(
-            bytes,
-            name: 'qr_reserva_$safeName.png',
-            mimeType: 'image/png',
-          ),
-        ],
-        subject: 'QR de reserva ${_selectedVariantName() ?? 'recurso'}',
-        fileNameOverrides: ['qr_reserva_$safeName.png'],
+      final fileName = 'qr_reserva_$safeName.png';
+      final file = await _attachmentService.writeBytesToTemporary(
+        name: fileName,
+        bytes: bytes,
+        folderName: 'reservas_qr',
       );
-    } catch (e) {
+      if (!await file.exists()) {
+        throw Exception('No se pudo guardar el fichero temporal del QR.');
+      }
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'image/png', name: fileName)],
+        subject: 'QR de reserva ${_selectedVariantName() ?? 'recurso'}',
+        fileNameOverrides: [fileName],
+        sharePositionOrigin: shareOrigin,
+      );
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Error compartiendo QR de reserva',
+        error: e,
+        stackTrace: stackTrace,
+        data: {
+          'variantId': _variantId,
+          'serviceTemplateId': _serviceTemplateId,
+          'platform': Platform.operatingSystem,
+        },
+        scope: 'reservas.qr',
+      );
       _showSnack(
         'No se pudo compartir el QR: ${OdooService.prettyError(e)}',
         isError: true,

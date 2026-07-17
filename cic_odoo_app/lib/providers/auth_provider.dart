@@ -5,6 +5,7 @@ import '../auth/services/auth_service.dart';
 import '../config/app_config.dart';
 import '../services/odoo_service.dart';
 import '../services/odoo_values.dart';
+import '../services/portal_api_service.dart';
 
 enum AuthState { initial, loading, authenticated, unauthenticated, error }
 
@@ -13,6 +14,7 @@ enum AuthState { initial, loading, authenticated, unauthenticated, error }
 class AuthProvider extends ChangeNotifier {
   final OdooService _odoo = OdooService();
   final OdooAuthService _authService = OdooAuthService();
+  final PortalApiService _portalApi = PortalApiService();
 
   AuthState _state = AuthState.initial;
   String? _errorMessage;
@@ -21,6 +23,7 @@ class AuthProvider extends ChangeNotifier {
   Map<String, dynamic> _partnerProfile = const {};
   Map<String, dynamic> _userProfile = const {};
   final Map<String, bool> _modelAccess = <String, bool>{};
+  Map<String, Map<String, bool>> _portalCapabilities = const {};
 
   AuthState get state => _state;
   String? get errorMessage => _errorMessage;
@@ -37,6 +40,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isPortalLikeUser => isPortalUser || portalCalidadHabilitado;
   bool get isInternalUser =>
       isAuthenticated && _userProfile['internal'] == true;
+  bool get isPortalOnlyUser => hasPortalAppAccess && !isInternalUser;
   Map<String, dynamic> get partnerProfile =>
       Map<String, dynamic>.unmodifiable(_partnerProfile);
   bool get accesoIntranet => _partnerProfile['acceso_intranet'] == true;
@@ -60,7 +64,10 @@ class AuthProvider extends ChangeNotifier {
   bool get hasIntranetAccess =>
       isAdmin || (accesoIntranet && accesoCalidad && portalCalidadHabilitado);
   bool get hasPortalAppAccess => isAuthenticated && isPortalLikeUser;
-  bool get hasAppAccess => isAdmin || hasIntranetAccess || hasPortalAppAccess;
+  bool get hasAppAccess =>
+      isAdmin || isInternalUser || hasIntranetAccess || hasPortalAppAccess;
+  Map<String, Map<String, bool>> get portalCapabilities =>
+      Map<String, Map<String, bool>>.unmodifiable(_portalCapabilities);
 
   Map<String, bool> get portalPermissions => {
     'Incidencias': canViewModule('incidents'),
@@ -81,6 +88,9 @@ class AuthProvider extends ChangeNotifier {
 
   bool canEditModule(String moduleKey) {
     if (isAdmin) return true;
+    if (isPortalOnlyUser) {
+      return _portalCapabilities[moduleKey]?['edit'] == true;
+    }
     final modelWriteAccess = _modelAccess['$moduleKey.write'];
     if (modelWriteAccess == false) return false;
     final modelCreateAccess = _modelAccess['$moduleKey.create'];
@@ -103,7 +113,7 @@ class AuthProvider extends ChangeNotifier {
     if (permissionField != null) {
       return _partnerProfile[permissionField] == true;
     }
-    if (hasPortalAppAccess && !hasIntranetAccess) {
+    if (isPortalOnlyUser) {
       return modelWriteAccess == true && modelCreateAccess == true;
     }
     switch (moduleKey) {
@@ -111,11 +121,15 @@ class AuthProvider extends ChangeNotifier {
       case 'goals':
       case 'planning':
       case 'action_plans':
-      case 'purchases':
       case 'suggestions':
-      case 'recruitment':
       case 'profile':
         return true;
+      case 'purchases':
+      case 'recruitment':
+      case 'maintenance':
+        return isInternalUser &&
+            modelWriteAccess != false &&
+            modelCreateAccess != false;
       default:
         return false;
     }
@@ -123,6 +137,22 @@ class AuthProvider extends ChangeNotifier {
 
   bool canViewModule(String moduleKey) {
     if (isAdmin) return true;
+    if (isPortalOnlyUser) {
+      if (moduleKey == 'purchases' ||
+          moduleKey == 'maintenance' ||
+          moduleKey == 'users' ||
+          moduleKey == 'roles' ||
+          moduleKey == 'permissions' ||
+          moduleKey == 'organization') {
+        return false;
+      }
+      if (moduleKey == 'portal') return true;
+      if (moduleKey == 'quality') {
+        return _portalCapabilities.values.any((value) => value['view'] == true);
+      }
+      if (moduleKey == 'planning') moduleKey = 'reservas';
+      return _portalCapabilities[moduleKey]?['view'] == true;
+    }
     final modelReadAccess = _modelAccess[moduleKey];
     if (modelReadAccess == false) return false;
     const permissionMap = {
@@ -145,6 +175,9 @@ class AuthProvider extends ChangeNotifier {
       'chemicals': 'permiso_quimicos_ver',
       'suggestions': null,
       'portal': null,
+      'security': null,
+      'information': null,
+      'publications': null,
       'permissions': null,
       'users': null,
       'roles': null,
@@ -156,7 +189,7 @@ class AuthProvider extends ChangeNotifier {
     };
     if (!permissionMap.containsKey(moduleKey)) return false;
 
-    if (hasPortalAppAccess && !hasIntranetAccess) {
+    if (isPortalOnlyUser) {
       switch (moduleKey) {
         case 'dashboard':
         case 'payroll':
@@ -191,7 +224,24 @@ class AuthProvider extends ChangeNotifier {
           return permissionField != null &&
               _partnerProfile[permissionField] == true &&
               modelReadAccess == true;
+        case 'purchases':
+        case 'maintenance':
+        case 'recruitment':
+        case 'permissions':
+        case 'users':
+        case 'roles':
+        case 'organization':
+          return false;
         default:
+          return modelReadAccess == true;
+      }
+    }
+
+    if (isInternalUser) {
+      switch (moduleKey) {
+        case 'purchases':
+        case 'maintenance':
+        case 'recruitment':
           return modelReadAccess == true;
       }
     }
@@ -212,10 +262,12 @@ class AuthProvider extends ChangeNotifier {
     if (success) {
       await _loadUserProfile();
       await _loadPartnerProfile();
+      await _loadPortalCapabilities();
       await _loadModelAccess();
     } else {
       _userProfile = const {};
       _partnerProfile = const {};
+      _portalCapabilities = const {};
       _modelAccess.clear();
     }
     _state = success ? AuthState.authenticated : AuthState.unauthenticated;
@@ -258,12 +310,14 @@ class AuthProvider extends ChangeNotifier {
     if (result.success) {
       await _loadUserProfile();
       await _loadPartnerProfile();
+      await _loadPortalCapabilities();
       await _loadModelAccess();
       _state = AuthState.authenticated;
       _errorMessage = null;
     } else {
       _userProfile = const {};
       _partnerProfile = const {};
+      _portalCapabilities = const {};
       _state = AuthState.error;
       final rawError = (result.errorMessage ?? '').toLowerCase();
       final isLikelyCors =
@@ -288,6 +342,7 @@ class AuthProvider extends ChangeNotifier {
     } catch (_) {}
     _userProfile = const {};
     _partnerProfile = const {};
+    _portalCapabilities = const {};
     _modelAccess.clear();
     _state = AuthState.unauthenticated;
     _errorMessage = null;
@@ -393,6 +448,12 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _loadModelAccess() async {
+    // Portal capabilities are exposed by the same restricted controller that
+    // renders /my/calidad. Do not replace them with backend ACL probes.
+    if (_userProfile['internal'] != true) {
+      _modelAccess.clear();
+      return;
+    }
     const models = <String, String>{
       'dashboard': 'calidad.dashboard.service',
       'quality': 'calidad.incidencia',
@@ -464,5 +525,36 @@ class AuthProvider extends ChangeNotifier {
           ],
         ),
       );
+  }
+
+  Future<void> _loadPortalCapabilities() async {
+    _portalCapabilities = const {};
+    if (_userProfile['public'] == true) return;
+    try {
+      final bootstrap = await _portalApi.bootstrap();
+      final raw = bootstrap['capabilities'];
+      if (raw is Map) {
+        _portalCapabilities = raw.map((key, value) {
+          final map = OdooValues.map(value);
+          return MapEntry(key.toString(), <String, bool>{
+            'view': OdooValues.boolValue(map['view']),
+            'edit': OdooValues.boolValue(map['edit']),
+          });
+        });
+      }
+      final partner = OdooValues.map(bootstrap['partner']);
+      if (partner.isNotEmpty) {
+        _partnerProfile = {..._partnerProfile, ...partner};
+      }
+    } catch (error, stackTrace) {
+      // A missing/unupgraded Odoo module must not manufacture portal access.
+      // It is logged with the technical error and the UI remains recoverable.
+      _portalCapabilities = const {};
+      if (isPortalUser) {
+        _errorMessage =
+            'La intranet móvil no está disponible en este servidor. Actualiza el módulo de portal.';
+      }
+      debugPrint('Portal bootstrap failed: $error\n$stackTrace');
+    }
   }
 }

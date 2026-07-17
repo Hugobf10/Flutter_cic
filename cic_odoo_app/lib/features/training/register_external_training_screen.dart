@@ -5,16 +5,20 @@ import '../../app/ui/app_components.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
+import '../../services/portal_api_service.dart';
 
 class RegisterExternalTrainingScreen extends StatefulWidget {
   const RegisterExternalTrainingScreen({super.key});
 
   @override
-  State<RegisterExternalTrainingScreen> createState() => _RegisterExternalTrainingScreenState();
+  State<RegisterExternalTrainingScreen> createState() =>
+      _RegisterExternalTrainingScreenState();
 }
 
-class _RegisterExternalTrainingScreenState extends State<RegisterExternalTrainingScreen> {
+class _RegisterExternalTrainingScreenState
+    extends State<RegisterExternalTrainingScreen> {
   final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
   final AttachmentService _attachments = AttachmentService();
 
   final _titleCtrl = TextEditingController();
@@ -41,25 +45,50 @@ class _RegisterExternalTrainingScreenState extends State<RegisterExternalTrainin
   Future<void> _save() async {
     final auth = context.read<AuthProvider>();
     if (_titleCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Indica el nombre de la formación.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Indica el nombre de la formación.')),
+      );
       return;
     }
     setState(() => _saving = true);
     try {
+      if (_odoo.isPortalSession) {
+        await _portalApi.action(
+          'training_create',
+          values: {
+            'name': _titleCtrl.text.trim(),
+            'entidad': _entityCtrl.text.trim(),
+            if (_endDate != null) 'fecha_realizacion': _formatDate(_endDate!),
+            'duracion': double.tryParse(_hoursCtrl.text.trim()) ?? 0,
+            if (_pickedCertificate != null) ...{
+              'certificate_data': _pickedCertificate!.base64Data,
+              'certificate_name': _pickedCertificate!.name,
+            },
+          },
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Formación registrada correctamente.')),
+        );
+        Navigator.of(context).pop(true);
+        return;
+      }
       final trainingId = await _odoo.create('calidad.formacion', {
         'name': _titleCtrl.text.trim(),
         'origen': 'externa',
         'tipo': 'externa',
         'tipo_formacion': 'externa',
         if (_endDate != null) 'fecha_fin': _formatDate(_endDate!),
-        if (_entityCtrl.text.trim().isNotEmpty) 'descripcion': 'Entidad: ${_entityCtrl.text.trim()}',
+        if (_entityCtrl.text.trim().isNotEmpty)
+          'descripcion': 'Entidad: ${_entityCtrl.text.trim()}',
       });
 
       final attendanceId = await _odoo.create('calidad.formacion.asistencia', {
         'formacion_id': trainingId,
         'partner_id': auth.partnerId,
         'estado': 'realizado',
-        if (_hoursCtrl.text.trim().isNotEmpty) 'horas_realizadas': double.tryParse(_hoursCtrl.text.trim()) ?? 0,
+        if (_hoursCtrl.text.trim().isNotEmpty)
+          'horas_realizadas': double.tryParse(_hoursCtrl.text.trim()) ?? 0,
       });
 
       if (_pickedCertificate != null) {
@@ -70,11 +99,15 @@ class _RegisterExternalTrainingScreenState extends State<RegisterExternalTrainin
       }
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Formación registrada correctamente.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Formación registrada correctamente.')),
+      );
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo registrar: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo registrar: $e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -93,9 +126,17 @@ class _RegisterExternalTrainingScreenState extends State<RegisterExternalTrainin
       title: 'Registrar formación externa',
       child: ListView(
         children: [
-          AppInput(controller: _titleCtrl, labelText: 'Nombre de la formación', prefixIcon: Icons.school_outlined),
+          AppInput(
+            controller: _titleCtrl,
+            labelText: 'Nombre de la formación',
+            prefixIcon: Icons.school_outlined,
+          ),
           const SizedBox(height: 10),
-          AppInput(controller: _entityCtrl, labelText: 'Entidad / centro', prefixIcon: Icons.business_outlined),
+          AppInput(
+            controller: _entityCtrl,
+            labelText: 'Entidad / centro',
+            prefixIcon: Icons.business_outlined,
+          ),
           const SizedBox(height: 10),
           AppCard(
             child: Row(
@@ -104,7 +145,9 @@ class _RegisterExternalTrainingScreenState extends State<RegisterExternalTrainin
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    _endDate == null ? 'Fecha de finalización' : _formatDate(_endDate!),
+                    _endDate == null
+                        ? 'Fecha de finalización'
+                        : _formatDate(_endDate!),
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -127,7 +170,11 @@ class _RegisterExternalTrainingScreenState extends State<RegisterExternalTrainin
             ),
           ),
           const SizedBox(height: 10),
-          AppInput(controller: _hoursCtrl, labelText: 'Horas', prefixIcon: Icons.schedule_rounded),
+          AppInput(
+            controller: _hoursCtrl,
+            labelText: 'Horas',
+            prefixIcon: Icons.schedule_rounded,
+          ),
           const SizedBox(height: 12),
           AppCard(
             child: Row(
@@ -140,7 +187,10 @@ class _RegisterExternalTrainingScreenState extends State<RegisterExternalTrainin
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
-                TextButton(onPressed: _saving ? null : _pickCertificate, child: const Text('Subir')),
+                TextButton(
+                  onPressed: _saving ? null : _pickCertificate,
+                  child: const Text('Subir'),
+                ),
               ],
             ),
           ),
@@ -156,4 +206,3 @@ class _RegisterExternalTrainingScreenState extends State<RegisterExternalTrainin
     );
   }
 }
-

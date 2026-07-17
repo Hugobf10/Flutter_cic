@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../features/forms/dynamic_form.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
+import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 
 class SuggestionsScreen extends StatefulWidget {
@@ -15,6 +16,7 @@ class SuggestionsScreen extends StatefulWidget {
 
 class _SuggestionsScreenState extends State<SuggestionsScreen> {
   final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
   bool _loading = true;
   String? _error;
   List<Map<String, dynamic>> _rows = [];
@@ -32,6 +34,11 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
       _error = null;
     });
     try {
+      if (_odoo.isPortalSession) {
+        _rows = await _portalApi.section('suggestions');
+        if (mounted) setState(() => _loading = false);
+        return;
+      }
       final domain = <dynamic>[
         ['tipo', '=', 'sugerencia'],
       ];
@@ -78,11 +85,21 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
               ),
             ],
             onSubmit: (values) async {
-              await _odoo.create('calidad.comunicacion', {
-                'name': values['name'],
-                'tipo': 'sugerencia',
-                'descripcion': values['descripcion'],
-              });
+              if (_odoo.isPortalSession) {
+                await _portalApi.action(
+                  'suggestion_create',
+                  values: {
+                    'name': values['name'],
+                    'descripcion': values['descripcion'],
+                  },
+                );
+              } else {
+                await _odoo.create('calidad.comunicacion', {
+                  'name': values['name'],
+                  'tipo': 'sugerencia',
+                  'descripcion': values['descripcion'],
+                });
+              }
             },
           ),
         );

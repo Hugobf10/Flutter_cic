@@ -11,6 +11,7 @@ import '../../features/normativa/normativa_screen.dart';
 import '../../features/payroll/payroll_screen.dart';
 import '../../features/permissions/permissions_center_screen.dart';
 import '../../features/portal/portal_screen.dart';
+import '../../features/portal/portal_section_screen.dart';
 import '../../features/purchases/purchases_screen.dart';
 import '../../features/suggestions/suggestions_screen.dart';
 import '../../features/suppliers/suppliers_screen.dart';
@@ -18,10 +19,12 @@ import '../../features/training/training_screen.dart';
 import '../../features/quality/quality_center_screen.dart';
 import '../../features/recruitment/recruitment_screen.dart';
 import '../../features/goals/goals_screen.dart';
+import '../../features/action_plans/action_plans_screen.dart';
 import '../../screens/documentos/documentos_screen.dart';
 import '../../screens/home/home_screen.dart';
 import '../../screens/incidencias/incidencias_screen.dart';
 import '../../screens/reservas/reservas_screen.dart';
+import '../screens/profile_screen.dart';
 
 class ModuleRouter {
   static Widget build(String moduleKey, String title) {
@@ -32,6 +35,12 @@ class ModuleRouter {
         return const IncidenciasScreen();
       case 'documents':
         return const DocumentosScreen();
+      case 'profile':
+        return const ProfileScreen();
+      case 'security':
+      case 'information':
+      case 'publications':
+        return PortalSectionScreen(section: moduleKey, title: title);
       case 'quality':
         return const QualityCenterScreen();
       case 'training':
@@ -43,6 +52,8 @@ class ModuleRouter {
         return const ReservasScreen();
       case 'goals':
         return const GoalsScreen();
+      case 'action_plans':
+        return const ActionPlansScreen();
       case 'payroll':
         return const PayrollScreen();
       case 'health':

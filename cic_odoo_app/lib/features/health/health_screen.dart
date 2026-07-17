@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../app/ui/app_components.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
+import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 
 class HealthScreen extends StatefulWidget {
@@ -15,6 +16,7 @@ class HealthScreen extends StatefulWidget {
 
 class _HealthScreenState extends State<HealthScreen> {
   final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
   bool _loading = true;
   String? _error;
   List<Map<String, dynamic>> _rows = [];
@@ -31,19 +33,21 @@ class _HealthScreenState extends State<HealthScreen> {
       _error = null;
     });
     try {
-      final rows = await _odoo.searchRead(
-        'calidad.salud.reconocimiento',
-        fields: const [
-          'name',
-          'fecha_prevista',
-          'fecha_realizacion',
-          'estado',
-          'observaciones',
-          'recomendaciones',
-        ],
-        order: 'fecha_prevista desc, id desc',
-        limit: 120,
-      );
+      final rows = _odoo.isPortalSession
+          ? await _portalApi.section('health', limit: 120)
+          : await _odoo.searchRead(
+              'calidad.salud.reconocimiento',
+              fields: const [
+                'name',
+                'fecha_prevista',
+                'fecha_realizacion',
+                'estado',
+                'observaciones',
+                'recomendaciones',
+              ],
+              order: 'fecha_prevista desc, id desc',
+              limit: 120,
+            );
       _rows = rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     } catch (e) {
       _error = OdooService.prettyError(e);

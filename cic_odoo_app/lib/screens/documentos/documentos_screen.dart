@@ -158,11 +158,15 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
   Future<void> _previewDocument(int? id) async {
     if (id == null) return;
     try {
-      final attachment = await _resolveDocumentAttachmentId(id);
+      final attachment = _odoo.isPortalSession
+          ? 0
+          : await _resolveDocumentAttachmentId(id);
       if (attachment == null) throw Exception('Documento sin versión adjunta.');
       final file = await _attachments.fetchAttachmentToCache(
         attachmentId: attachment,
         defaultName: 'documento_$id.pdf',
+        portalSection: 'documents',
+        portalRecordId: id,
       );
       if (!mounted) return;
       Navigator.of(context).push(
@@ -189,11 +193,15 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
   Future<void> _downloadDocument(int? id) async {
     if (id == null) return;
     try {
-      final attachment = await _resolveDocumentAttachmentId(id);
+      final attachment = _odoo.isPortalSession
+          ? 0
+          : await _resolveDocumentAttachmentId(id);
       if (attachment == null) throw Exception('Documento sin versión adjunta.');
       final file = await _attachments.fetchAttachmentToCache(
         attachmentId: attachment,
         defaultName: 'documento_$id.pdf',
+        portalSection: 'documents',
+        portalRecordId: id,
       );
       if (!mounted) return;
       await Share.shareXFiles([

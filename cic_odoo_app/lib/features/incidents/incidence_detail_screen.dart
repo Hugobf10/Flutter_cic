@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../features/forms/dynamic_form.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
+import '../../services/odoo_values.dart';
+import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 
 class IncidenceDetailScreen extends StatefulWidget {
@@ -17,6 +19,7 @@ class IncidenceDetailScreen extends StatefulWidget {
 
 class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
   final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
   bool _loading = true;
   Map<String, dynamic>? _record;
   String? _error;
@@ -33,31 +36,45 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
       _error = null;
     });
     try {
-      _record = await _odoo.read(
-        'calidad.incidencia',
-        widget.id,
-        fields: [
-          'name',
-          'descripcion',
-          'tipo',
-          'categoria',
-          'subtipo',
-          'fecha',
-          'estado',
-          'avance',
-          'analisis',
-          'tratamiento',
-          'requiere_accion_correctiva',
-        ],
-      );
+      if (_odoo.isPortalSession) {
+        final rows = await _portalApi.section(
+          'incidents',
+          recordId: widget.id,
+          limit: 1,
+        );
+        if (rows.isEmpty) throw StateError('La incidencia no está disponible.');
+        _record = rows.first;
+      } else {
+        _record = await _odoo.read(
+          'calidad.incidencia',
+          widget.id,
+          fields: [
+            'name',
+            'descripcion',
+            'tipo',
+            'categoria',
+            'subtipo',
+            'fecha',
+            'estado',
+            'avance',
+            'analisis',
+            'tratamiento',
+            'requiere_accion_correctiva',
+          ],
+        );
+      }
     } catch (e) {
-      _error = e.toString();
+      _error = OdooService.prettyError(e);
     }
     if (mounted) setState(() => _loading = false);
   }
 
   Future<void> _edit() async {
     if (_record == null) return;
+    if (_odoo.isPortalSession) {
+      await _createCorrectiveAction();
+      return;
+    }
     final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -175,6 +192,48 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
     if (created == true) await _load();
   }
 
+  Future<void> _createCorrectiveAction() async {
+    final created = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          16,
+          8,
+          16,
+          16 + MediaQuery.of(ctx).viewInsets.bottom,
+        ),
+        child: DynamicForm(
+          submitLabel: 'Crear acción correctiva',
+          fields: const [
+            DynamicFieldConfig(key: 'name', label: 'Título', required: true),
+            DynamicFieldConfig(
+              key: 'descripcion',
+              label: 'Descripción',
+              type: DynamicFieldType.multiline,
+              maxLines: 4,
+            ),
+          ],
+          onSubmit: (values) async {
+            await _portalApi.action(
+              'corrective_action_create',
+              values: {
+                'incidence_id': widget.id,
+                'name': values['name'],
+                'descripcion': values['descripcion'],
+                'responsable_id': context.read<AuthProvider>().partnerId,
+                'estado': 'pendiente',
+                'eficacia': 'pendiente',
+              },
+            );
+          },
+        ),
+      ),
+    );
+    if (created == true) await _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -190,7 +249,10 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
 
     final r = _record!;
     final estado = (r['estado'] ?? '').toString();
-    final avance = (r['avance'] as num?)?.toDouble() ?? 0;
+    final avance = OdooValues.number(r['avance']);
+    final correctiveActions = r['corrective_actions'] is List
+        ? r['corrective_actions'] as List
+        : const [];
 
     return Scaffold(
       appBar: AppBar(
@@ -242,6 +304,23 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
               ),
             ),
           ),
+          if (correctiveActions.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            Text(
+              'Acciones correctivas',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            ...correctiveActions.whereType<Map>().map(
+              (action) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(OdooValues.string(action['name'])),
+                subtitle: Text(
+                  'Estado: ${OdooValues.string(action['estado'], fallback: 'pendiente')}',
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

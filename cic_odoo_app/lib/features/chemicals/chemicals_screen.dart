@@ -8,6 +8,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
 import '../../services/odoo_values.dart';
+import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 
 class ChemicalsScreen extends StatefulWidget {
@@ -19,6 +20,7 @@ class ChemicalsScreen extends StatefulWidget {
 
 class _ChemicalsScreenState extends State<ChemicalsScreen> {
   final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
   final AttachmentService _attachments = AttachmentService();
   bool _loading = true;
   String? _error;
@@ -36,20 +38,22 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
       _error = null;
     });
     try {
-      final rows = await _odoo.searchRead(
-        'calidad.quimico',
-        fields: const [
-          'name',
-          'tipo',
-          'codigo',
-          'fecha_caducidad',
-          'es_peligroso',
-          'unidad_id',
-          'ficha_seguridad_attachment_id',
-        ],
-        order: 'fecha_caducidad asc, id desc',
-        limit: 160,
-      );
+      final rows = _odoo.isPortalSession
+          ? await _portalApi.section('chemicals', limit: 160)
+          : await _odoo.searchRead(
+              'calidad.quimico',
+              fields: const [
+                'name',
+                'tipo',
+                'codigo',
+                'fecha_caducidad',
+                'es_peligroso',
+                'unidad_id',
+                'ficha_seguridad_attachment_id',
+              ],
+              order: 'fecha_caducidad asc, id desc',
+              limit: 160,
+            );
       _rows = rows.whereType<Map>().map(Map<String, dynamic>.from).toList();
     } catch (e) {
       _error = OdooService.prettyError(e);
@@ -105,7 +109,11 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
                 if (date != null) 'fecha_caducidad': '$y-$m-$d',
               };
               if (unitId != null) payload['unidad_id'] = unitId;
-              await _odoo.create('calidad.quimico', payload);
+              if (_odoo.isPortalSession) {
+                await _portalApi.action('chemical_create', values: payload);
+              } else {
+                await _odoo.create('calidad.quimico', payload);
+              }
             },
           ),
         );

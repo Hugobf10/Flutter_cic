@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../app/ui/app_components.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
+import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 
 class ActionPlansScreen extends StatefulWidget {
@@ -15,6 +16,7 @@ class ActionPlansScreen extends StatefulWidget {
 
 class _ActionPlansScreenState extends State<ActionPlansScreen> {
   final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
   bool _loading = true;
   String? _error;
   List<Map<String, dynamic>> _rows = [];
@@ -33,30 +35,34 @@ class _ActionPlansScreenState extends State<ActionPlansScreen> {
       _error = null;
     });
     try {
-      final goals = await _odoo.searchRead(
-        'calidad.objetivo',
-        domain: [
-          '|',
-          ['responsable_id', '=', auth.partnerId],
-          ['partner_id', '=', auth.partnerId],
-        ],
-        fields: const ['name'],
-        order: 'id desc',
-        limit: 200,
-      );
-      final rows = await _odoo.searchRead(
-        'calidad.plan.accion',
-        fields: const [
-          'name',
-          'descripcion',
-          'estado',
-          'objetivo_id',
-          'fecha_fin',
-          'responsable_id',
-        ],
-        order: 'fecha_fin asc, id desc',
-        limit: 200,
-      );
+      final goals = _odoo.isPortalSession
+          ? await _portalApi.section('goals', limit: 200)
+          : await _odoo.searchRead(
+              'calidad.objetivo',
+              domain: [
+                '|',
+                ['responsable_id', '=', auth.partnerId],
+                ['partner_id', '=', auth.partnerId],
+              ],
+              fields: const ['name'],
+              order: 'id desc',
+              limit: 200,
+            );
+      final rows = _odoo.isPortalSession
+          ? await _portalApi.section('action_plans', limit: 200)
+          : await _odoo.searchRead(
+              'calidad.plan.accion',
+              fields: const [
+                'name',
+                'descripcion',
+                'estado',
+                'objetivo_id',
+                'fecha_fin',
+                'responsable_id',
+              ],
+              order: 'fecha_fin asc, id desc',
+              limit: 200,
+            );
       _goals = goals.map((e) => Map<String, dynamic>.from(e as Map)).toList();
       _rows = rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     } catch (e) {
@@ -146,13 +152,21 @@ class _ActionPlansScreenState extends State<ActionPlansScreen> {
                 onPressed: () async {
                   if (nameCtrl.text.trim().isEmpty) return;
                   final auth = context.read<AuthProvider>();
-                  await _odoo.create('calidad.plan.accion', {
+                  final values = <String, dynamic>{
                     'name': nameCtrl.text.trim(),
                     'descripcion': descCtrl.text.trim(),
                     'estado': estado,
                     'objetivo_id': goalId,
                     'responsable_id': auth.partnerId,
-                  });
+                  };
+                  if (_odoo.isPortalSession) {
+                    await _portalApi.action(
+                      'action_plan_create',
+                      values: values,
+                    );
+                  } else {
+                    await _odoo.create('calidad.plan.accion', values);
+                  }
                   if (ctx.mounted) Navigator.of(ctx).pop(true);
                 },
               ),
@@ -174,7 +188,15 @@ class _ActionPlansScreenState extends State<ActionPlansScreen> {
         ? 'realizado'
         : 'pendiente';
     try {
-      await _odoo.write('calidad.plan.accion', id, {'estado': next});
+      if (_odoo.isPortalSession) {
+        await _portalApi.action(
+          'action_plan_update',
+          recordId: id,
+          values: {'estado': next},
+        );
+      } else {
+        await _odoo.write('calidad.plan.accion', id, {'estado': next});
+      }
       _load();
     } catch (e) {
       if (!mounted) return;
