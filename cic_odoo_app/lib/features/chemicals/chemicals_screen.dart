@@ -46,8 +46,17 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
                 'name',
                 'tipo',
                 'codigo',
+                'referencia',
+                'descripcion',
+                'almacenamiento',
                 'fecha_caducidad',
+                'unidades',
+                'a_punto_agotarse',
                 'es_peligroso',
+                'categoria_peligro',
+                'peligrosidad',
+                'frases_h',
+                'frases_p',
                 'unidad_id',
                 'ficha_seguridad_attachment_id',
               ],
@@ -250,13 +259,93 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
             Text(
               'Peligroso: ${OdooValues.boolValue(it['es_peligroso']) ? 'Sí' : 'No'}',
             ),
-            Text(
-              'Caducidad: ${OdooValues.string(it['fecha_caducidad'], fallback: '-')}',
-            ),
+            Text('Caducidad: ${OdooValues.string(it['fecha_caducidad'], fallback: '-')}'),
+            if (context.read<AuthProvider>().canEditModule('chemicals')) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _openEdit(it);
+                  },
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('Editar químico'),
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  DateTime? _dateValue(dynamic value) {
+    final text = value?.toString() ?? '';
+    return text.isEmpty ? null : DateTime.tryParse(text);
+  }
+
+  String _datePayload(dynamic value) {
+    if (value is! DateTime) return '';
+    return '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _openEdit(Map<String, dynamic> chemical) async {
+    final id = (chemical['id'] as num?)?.toInt();
+    if (id == null) return;
+    final edited = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + MediaQuery.of(ctx).viewInsets.bottom),
+        child: SingleChildScrollView(
+          child: DynamicForm(
+            submitLabel: 'Guardar químico',
+            fields: [
+              DynamicFieldConfig(key: 'name', label: 'Nombre', required: true, initialValue: chemical['name']),
+              DynamicFieldConfig(key: 'codigo', label: 'Código', initialValue: chemical['codigo']),
+              DynamicFieldConfig(key: 'referencia', label: 'Referencia', initialValue: chemical['referencia']),
+              DynamicFieldConfig(key: 'tipo', label: 'Tipo', type: DynamicFieldType.select, initialValue: chemical['tipo'] ?? 'reactivo', options: const [DynamicFieldOption(value: 'reactivo', label: 'Reactivo'), DynamicFieldOption(value: 'producto', label: 'Producto'), DynamicFieldOption(value: 'otro', label: 'Otro')]),
+              DynamicFieldConfig(key: 'descripcion', label: 'Descripción', type: DynamicFieldType.multiline, maxLines: 3, initialValue: chemical['descripcion']),
+              DynamicFieldConfig(key: 'almacenamiento', label: 'Almacenamiento', type: DynamicFieldType.multiline, maxLines: 2, initialValue: chemical['almacenamiento']),
+              DynamicFieldConfig(key: 'fecha_caducidad', label: 'Fecha de caducidad', type: DynamicFieldType.date, initialValue: _dateValue(chemical['fecha_caducidad'])),
+              DynamicFieldConfig(key: 'unidades', label: 'Unidades', initialValue: chemical['unidades']),
+              DynamicFieldConfig(key: 'a_punto_agotarse', label: 'A punto de agotarse', type: DynamicFieldType.select, initialValue: OdooValues.boolValue(chemical['a_punto_agotarse']), options: const [DynamicFieldOption(value: false, label: 'No'), DynamicFieldOption(value: true, label: 'Sí')]),
+              DynamicFieldConfig(key: 'es_peligroso', label: 'Peligroso', type: DynamicFieldType.select, initialValue: OdooValues.boolValue(chemical['es_peligroso']), options: const [DynamicFieldOption(value: false, label: 'No'), DynamicFieldOption(value: true, label: 'Sí')]),
+              DynamicFieldConfig(key: 'categoria_peligro', label: 'Categoría de peligro', type: DynamicFieldType.select, initialValue: chemical['categoria_peligro'], options: const [DynamicFieldOption(value: 'explosivo', label: 'Explosivo'), DynamicFieldOption(value: 'inflamable', label: 'Inflamable'), DynamicFieldOption(value: 'toxico', label: 'Tóxico'), DynamicFieldOption(value: 'corrosivo', label: 'Corrosivo'), DynamicFieldOption(value: 'peligro_ambiental', label: 'Ambiental'), DynamicFieldOption(value: 'otro', label: 'Otro')]),
+              DynamicFieldConfig(key: 'peligrosidad', label: 'Peligrosidad', type: DynamicFieldType.multiline, maxLines: 2, initialValue: chemical['peligrosidad']),
+              DynamicFieldConfig(key: 'frases_h', label: 'Frases H', initialValue: chemical['frases_h']),
+              DynamicFieldConfig(key: 'frases_p', label: 'Frases P', initialValue: chemical['frases_p']),
+            ],
+            onSubmit: (values) async {
+              final payload = <String, dynamic>{
+                'name': values['name'],
+                'codigo': values['codigo'],
+                'referencia': values['referencia'],
+                'tipo': values['tipo'],
+                'descripcion': values['descripcion'],
+                'almacenamiento': values['almacenamiento'],
+                'unidades': double.tryParse(values['unidades'].toString().replaceAll(',', '.')) ?? 0,
+                'a_punto_agotarse': values['a_punto_agotarse'],
+                'es_peligroso': values['es_peligroso'],
+                'categoria_peligro': values['categoria_peligro'],
+                'peligrosidad': values['peligrosidad'],
+                'frases_h': values['frases_h'],
+                'frases_p': values['frases_p'],
+                if (_datePayload(values['fecha_caducidad']).isNotEmpty) 'fecha_caducidad': _datePayload(values['fecha_caducidad']),
+              };
+              if (_odoo.isPortalSession) {
+                await _portalApi.action('chemical_update', recordId: id, values: payload);
+              } else {
+                await _odoo.write('calidad.quimico', id, payload);
+              }
+            },
+          ),
+        ),
+      ),
+    );
+    if (edited == true) _load();
   }
 
   Future<void> _openSafetySheet(Map<String, dynamic> it) async {

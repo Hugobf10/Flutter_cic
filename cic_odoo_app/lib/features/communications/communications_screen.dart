@@ -9,6 +9,8 @@ import '../../services/odoo_service.dart';
 import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 
+enum _CommunicationFilter { all, communications, suggestions }
+
 class CommunicationsScreen extends StatefulWidget {
   const CommunicationsScreen({super.key});
 
@@ -22,6 +24,7 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
   bool _loading = true;
   String? _error;
   List<Map<String, dynamic>> _rows = [];
+  _CommunicationFilter _filter = _CommunicationFilter.all;
 
   static const _stages = [
     WorkflowStage(key: 'recibida', label: 'Recibida'),
@@ -44,21 +47,39 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
     });
 
     try {
-      final rows = _odoo.isPortalSession
-          ? await _portalApi.section('communications', limit: 80)
-          : await _odoo.searchRead(
-              'calidad.comunicacion',
-              fields: [
-                'name',
-                'tipo',
-                'fecha',
-                'estado',
-                'partner_id',
-                'descripcion',
-              ],
-              order: 'fecha desc, id desc',
-              limit: 80,
-            );
+      final List<Map<String, dynamic>> rows;
+      if (_odoo.isPortalSession) {
+        // Communications and suggestions are two views of the same Odoo
+        // model. Load both restricted portal sections and merge them here.
+        final merged = <Map<String, dynamic>>[];
+        try {
+          merged.addAll(await _portalApi.section('communications', limit: 80));
+        } catch (_) {}
+        try {
+          merged.addAll(await _portalApi.section('suggestions', limit: 80));
+        } catch (_) {}
+        final seenIds = <int>{};
+        rows = merged.where((row) {
+          final id = (row['id'] as num?)?.toInt();
+          return id == null || seenIds.add(id);
+        }).toList();
+      } else {
+        rows = (await _odoo.searchRead(
+          'calidad.comunicacion',
+          fields: [
+            'name',
+            'tipo',
+            'fecha',
+            'estado',
+            'partner_id',
+            'descripcion',
+          ],
+          order: 'fecha desc, id desc',
+          limit: 80,
+        ))
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      }
       _rows = rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     } catch (e) {
       _error = e.toString();
@@ -133,13 +154,24 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
               final y = date?.year.toString().padLeft(4, '0');
               final m = date?.month.toString().padLeft(2, '0');
               final d = date?.day.toString().padLeft(2, '0');
-              await _odoo.create('calidad.comunicacion', {
+              final payload = <String, dynamic>{
                 'name': values['name'],
                 'tipo': values['tipo'],
                 'descripcion': values['descripcion'],
                 'partner_id': partnerId,
                 if (date != null) 'fecha': '$y-$m-$d',
-              });
+              };
+              if (_odoo.isPortalSession && values['tipo'] == 'sugerencia') {
+                await _portalApi.action(
+                  'suggestion_create',
+                  values: {
+                    'name': values['name'],
+                    'descripcion': values['descripcion'],
+                  },
+                );
+              } else {
+                await _odoo.create('calidad.comunicacion', payload);
+              }
             },
           ),
         );
@@ -154,6 +186,14 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final visibleRows = _rows.where((row) {
+      final type = row['tipo']?.toString().toLowerCase();
+      return switch (_filter) {
+        _CommunicationFilter.all => true,
+        _CommunicationFilter.communications => type != 'sugerencia',
+        _CommunicationFilter.suggestions => type == 'sugerencia',
+      };
+    }).toList();
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -177,19 +217,56 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                 child: Text(_error!),
               ),
             )
-          : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 100),
-              itemCount: _rows.length,
-              separatorBuilder: (_, index) => const SizedBox(height: 10),
-              itemBuilder: (_, i) {
-                final row = _rows[i];
-                return _CommunicationCard(
-                  row: row,
-                  stages: _stages,
-                  onAction: _runAction,
-                  canEdit: auth.canEditModule('communications'),
-                );
-              },
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 2),
+                  child: Wrap(
+                    spacing: 8,
+                    children: [
+                      ChoiceChip(
+                        label: const Text('Todas'),
+                        selected: _filter == _CommunicationFilter.all,
+                        onSelected: (_) => setState(
+                          () => _filter = _CommunicationFilter.all,
+                        ),
+                      ),
+                      ChoiceChip(
+                        label: const Text('Comunicaciones'),
+                        selected:
+                            _filter == _CommunicationFilter.communications,
+                        onSelected: (_) => setState(
+                          () => _filter = _CommunicationFilter.communications,
+                        ),
+                      ),
+                      ChoiceChip(
+                        label: const Text('Sugerencias'),
+                        selected:
+                            _filter == _CommunicationFilter.suggestions,
+                        onSelected: (_) => setState(
+                          () => _filter = _CommunicationFilter.suggestions,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                    itemCount: visibleRows.length,
+                    separatorBuilder: (_, index) => const SizedBox(height: 10),
+                    itemBuilder: (_, i) {
+                      final row = visibleRows[i];
+                      return _CommunicationCard(
+                        row: row,
+                        stages: _stages,
+                        onAction: _runAction,
+                        canEdit: auth.canEditModule('communications'),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
     );
   }

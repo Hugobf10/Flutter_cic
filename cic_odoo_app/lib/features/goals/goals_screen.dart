@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/ui/app_components.dart';
+import '../../features/forms/dynamic_form.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
 import '../../services/portal_api_service.dart';
@@ -49,9 +50,14 @@ class _GoalsScreenState extends State<GoalsScreen> {
                 'estado',
                 'avance',
                 'anio',
+                'indicador',
+                'valor_objetivo',
+                'valor_real',
                 'fecha_fin',
+                'fecha_inicio',
                 'responsable_id',
                 'descripcion',
+                'observaciones',
               ],
               order: 'anio desc, fecha_fin asc, id desc',
               limit: 200,
@@ -158,6 +164,79 @@ class _GoalsScreenState extends State<GoalsScreen> {
     nameCtrl.dispose();
     descCtrl.dispose();
     if (ok == true) _load();
+  }
+
+  DateTime? _dateValue(dynamic value) {
+    if (value is DateTime) return value;
+    final text = value?.toString() ?? '';
+    return text.isEmpty ? null : DateTime.tryParse(text);
+  }
+
+  String _datePayload(dynamic value) {
+    if (value is! DateTime) return '';
+    return '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _editGoal(Map<String, dynamic> goal) async {
+    final id = (goal['id'] as num?)?.toInt();
+    if (id == null) return;
+    final edited = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + MediaQuery.of(ctx).viewInsets.bottom),
+        child: SingleChildScrollView(
+          child: DynamicForm(
+            submitLabel: 'Guardar objetivo',
+            fields: [
+              DynamicFieldConfig(key: 'name', label: 'Nombre', required: true, initialValue: goal['name']),
+              DynamicFieldConfig(key: 'descripcion', label: 'Descripción', type: DynamicFieldType.multiline, maxLines: 3, initialValue: goal['descripcion']),
+              DynamicFieldConfig(key: 'indicador', label: 'Indicador', initialValue: goal['indicador']),
+              DynamicFieldConfig(key: 'valor_objetivo', label: 'Valor objetivo', initialValue: goal['valor_objetivo']),
+              DynamicFieldConfig(key: 'valor_real', label: 'Valor real', initialValue: goal['valor_real']),
+              DynamicFieldConfig(
+                key: 'tipo', label: 'Tipo', type: DynamicFieldType.select,
+                initialValue: goal['tipo'] ?? 'calidad',
+                options: const [DynamicFieldOption(value: 'calidad', label: 'Calidad'), DynamicFieldOption(value: 'prl', label: 'PRL')],
+              ),
+              DynamicFieldConfig(
+                key: 'estado', label: 'Estado', type: DynamicFieldType.select,
+                initialValue: goal['estado'] ?? 'pendiente',
+                options: const [
+                  DynamicFieldOption(value: 'pendiente', label: 'Pendiente'),
+                  DynamicFieldOption(value: 'en_proceso', label: 'En proceso'),
+                  DynamicFieldOption(value: 'realizado', label: 'Realizado'),
+                ],
+              ),
+              DynamicFieldConfig(key: 'fecha_inicio', label: 'Fecha de inicio', type: DynamicFieldType.date, initialValue: _dateValue(goal['fecha_inicio'])),
+              DynamicFieldConfig(key: 'fecha_fin', label: 'Fecha fin', type: DynamicFieldType.date, initialValue: _dateValue(goal['fecha_fin'])),
+              DynamicFieldConfig(key: 'observaciones', label: 'Observaciones', type: DynamicFieldType.multiline, maxLines: 3, initialValue: goal['observaciones']),
+            ],
+            onSubmit: (values) async {
+              final payload = <String, dynamic>{
+                'name': values['name'],
+                'descripcion': values['descripcion'],
+                'indicador': values['indicador'],
+                'estado': values['estado'],
+                'observaciones': values['observaciones'],
+                if (values['valor_objetivo'].toString().trim().isNotEmpty) 'valor_objetivo': double.tryParse(values['valor_objetivo'].toString().replaceAll(',', '.')),
+                if (values['valor_real'].toString().trim().isNotEmpty) 'valor_real': double.tryParse(values['valor_real'].toString().replaceAll(',', '.')),
+                if (_datePayload(values['fecha_inicio']).isNotEmpty) 'fecha_inicio': _datePayload(values['fecha_inicio']),
+                if (_datePayload(values['fecha_fin']).isNotEmpty) 'fecha_fin': _datePayload(values['fecha_fin']),
+                'tipo': values['tipo'],
+              };
+              if (_odoo.isPortalSession) {
+                await _portalApi.action('goal_update', recordId: id, values: payload);
+              } else {
+                await _odoo.write('calidad.objetivo', id, payload);
+              }
+            },
+          ),
+        ),
+      ),
+    );
+    if (edited == true) _load();
   }
 
   @override
@@ -272,10 +351,13 @@ class _GoalsScreenState extends State<GoalsScreen> {
                                   ),
                                 ),
                               ),
-                              AppStatusChip(
-                                label: estado.replaceAll('_', ' '),
-                                color: color,
-                              ),
+                              AppStatusChip(label: estado.replaceAll('_', ' '), color: color),
+                              if (auth.canEditModule('goals'))
+                                IconButton(
+                                  tooltip: 'Editar',
+                                  onPressed: () => _editGoal(goal),
+                                  icon: const Icon(Icons.edit_outlined, size: 19),
+                                ),
                             ],
                           ),
                           const SizedBox(height: 8),

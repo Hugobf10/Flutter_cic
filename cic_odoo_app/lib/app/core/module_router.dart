@@ -13,7 +13,6 @@ import '../../features/permissions/permissions_center_screen.dart';
 import '../../features/portal/portal_screen.dart';
 import '../../features/portal/portal_section_screen.dart';
 import '../../features/purchases/purchases_screen.dart';
-import '../../features/suggestions/suggestions_screen.dart';
 import '../../features/suppliers/suppliers_screen.dart';
 import '../../features/training/training_screen.dart';
 import '../../features/quality/quality_center_screen.dart';
@@ -44,7 +43,7 @@ class ModuleRouter {
       case 'quality':
         return const QualityCenterScreen();
       case 'training':
-      case 'elearning':
+      case 'elearning': // Legacy key kept for old deep links.
         return const TrainingScreen();
       case 'planning':
         return const PlanningScreen();
@@ -64,14 +63,13 @@ class ModuleRouter {
         return const EquipmentScreen();
       case 'chemicals':
         return const ChemicalsScreen();
-      case 'suggestions':
-        return const SuggestionsScreen();
-      case 'permissions':
-      case 'roles':
-      case 'users':
-        return const PermissionsCenterScreen();
+      case 'suggestions': // Legacy key; suggestions now lives in Comunicaciones.
       case 'communications':
         return const CommunicationsScreen();
+      case 'permissions':
+      case 'roles': // Legacy key.
+      case 'users': // Legacy key.
+        return const PermissionsCenterScreen();
       case 'suppliers':
         return const SuppliersScreen();
       case 'maintenance':

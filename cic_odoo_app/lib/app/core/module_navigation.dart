@@ -39,7 +39,10 @@ class ModuleNavigation {
     if (haystack.contains('comunica')) return 'communications';
     if (haystack.contains('proveedor')) return 'suppliers';
     if (haystack.contains('formaci')) return 'training';
-    if (haystack.contains('objetiv')) return 'goals';
+    if (haystack.contains('objetiv')) return 'planning';
+    if (haystack.contains('plan de acci') || haystack.contains('action plan')) {
+      return 'planning';
+    }
     if (haystack.contains('plan')) return 'planning';
     if (haystack.contains('reserva')) return 'reservas';
     if (haystack.contains('nómina') || haystack.contains('nomina')) {
@@ -48,7 +51,7 @@ class ModuleNavigation {
     if (haystack.contains('salud')) return 'health';
     if (haystack.contains('equipo')) return 'equipment';
     if (haystack.contains('químic') || haystack.contains('quimic')) {
-      return 'chemicals';
+      return 'planning';
     }
     return null;
   }

@@ -8,8 +8,6 @@ import '../../services/odoo_values.dart';
 import '../../services/odoo_service.dart';
 import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
-import '../action_plans/action_plans_screen.dart';
-import '../goals/goals_screen.dart';
 import '../payroll/payroll_screen.dart';
 import '../../app/core/module_navigation.dart';
 
@@ -201,15 +199,6 @@ class _PortalScreenState extends State<PortalScreen> {
           icon: Icons.school_rounded,
           color: AppTheme.info,
         ),
-      if (auth.canViewModule('suggestions'))
-        _moduleAction(
-          auth: auth,
-          moduleKey: 'suggestions',
-          title: 'Sugerencias',
-          subtitle: 'Envía propuestas y sigue su estado.',
-          icon: Icons.lightbulb_outline_rounded,
-          color: AppTheme.warning,
-        ),
       if (auth.canViewModule('incidents'))
         _moduleAction(
           auth: auth,
@@ -228,36 +217,12 @@ class _PortalScreenState extends State<PortalScreen> {
           icon: Icons.description_outlined,
           color: AppTheme.primary,
         ),
-      if (auth.canViewModule('goals'))
-        _PortalAction(
-          title: 'Objetivos',
-          subtitle: 'Seguimiento de objetivos personales o asignados.',
-          icon: Icons.flag_outlined,
-          color: AppTheme.success,
-          onTap: () {
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const GoalsScreen()));
-          },
-        ),
-      if (auth.canViewModule('action_plans'))
-        _PortalAction(
-          title: 'Planes de acción',
-          subtitle: 'Acciones ligadas a objetivos e incidencias.',
-          icon: Icons.task_alt_rounded,
-          color: AppTheme.warning,
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ActionPlansScreen()),
-            );
-          },
-        ),
       if (auth.canViewModule('communications'))
         _moduleAction(
           auth: auth,
           moduleKey: 'communications',
           title: 'Comunicaciones',
-          subtitle: 'Comunicados y actividad compartida.',
+          subtitle: 'Comunicados, sugerencias y actividad compartida.',
           icon: Icons.campaign_outlined,
           color: AppTheme.info,
         ),
@@ -297,21 +262,12 @@ class _PortalScreenState extends State<PortalScreen> {
           icon: Icons.precision_manufacturing_rounded,
           color: AppTheme.warning,
         ),
-      if (auth.canViewModule('chemicals'))
-        _moduleAction(
-          auth: auth,
-          moduleKey: 'chemicals',
-          title: 'Químicos',
-          subtitle: 'Productos, fichas y caducidades visibles.',
-          icon: Icons.science_outlined,
-          color: AppTheme.success,
-        ),
       if (auth.canViewModule('planning'))
         _moduleAction(
           auth: auth,
           moduleKey: 'planning',
-          title: 'Agenda',
-          subtitle: 'Consulta la planificación y tus reservas.',
+          title: 'Planificación',
+          subtitle: 'Objetivos, planes de acción, químicos e informe.',
           icon: Icons.event_note_rounded,
           color: AppTheme.accent,
         ),
@@ -380,13 +336,15 @@ class _PortalScreenState extends State<PortalScreen> {
         canEdit: auth.isInternalUser,
       ),
       _PortalPermissionRow(
-        title: 'Sugerencias y formación personal',
+        title: 'Comunicaciones y formación personal',
         subtitle:
             'Autoservicio disponible para perfiles portal según la documentación de Odoo.',
         canView:
-            auth.canViewModule('suggestions') || auth.canViewModule('training'),
+            auth.canViewModule('communications') ||
+            auth.canViewModule('training'),
         canEdit:
-            auth.canEditModule('suggestions') || auth.canEditModule('training'),
+            auth.canEditModule('communications') ||
+            auth.canEditModule('training'),
       ),
       _PortalPermissionRow(
         title: 'Objetivos y planes',

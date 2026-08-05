@@ -164,7 +164,7 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
 
   List<AppModule> _intranetModules(List<AppModule> modules, AuthProvider auth) {
     if (auth.isAdmin) return modules.where((m) => m.implemented).toList();
-    const hidden = {'users', 'roles', 'organization', 'permissions'};
+    const hidden = {'organization', 'permissions'};
     return modules
         .where(
           (m) =>

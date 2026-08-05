@@ -77,7 +77,6 @@ class AuthProvider extends ChangeNotifier {
     'Comunicaciones': canViewModule('communications'),
     'Nóminas': canViewModule('payroll'),
     'Reservas': canViewModule('reservas'),
-    'Sugerencias': canViewModule('suggestions'),
     'Proveedores': canViewModule('suppliers'),
     'Normativa': canViewModule('normative'),
     'Equipos': canViewModule('equipment'),
@@ -88,7 +87,14 @@ class AuthProvider extends ChangeNotifier {
 
   bool canEditModule(String moduleKey) {
     if (isAdmin) return true;
+    if (moduleKey == 'planning') {
+      return canEditModule('goals') || canEditModule('action_plans') || canEditModule('chemicals');
+    }
     if (isPortalOnlyUser) {
+      if (moduleKey == 'communications') {
+        return _portalCapabilities['communications']?['edit'] == true ||
+            _portalCapabilities['suggestions']?['edit'] == true;
+      }
       return _portalCapabilities[moduleKey]?['edit'] == true;
     }
     final modelWriteAccess = _modelAccess['$moduleKey.write'];
@@ -150,10 +156,21 @@ class AuthProvider extends ChangeNotifier {
       if (moduleKey == 'quality') {
         return _portalCapabilities.values.any((value) => value['view'] == true);
       }
-      if (moduleKey == 'planning') moduleKey = 'reservas';
+      if (moduleKey == 'planning') {
+        return _portalCapabilities['goals']?['view'] == true ||
+            _portalCapabilities['action_plans']?['view'] == true ||
+            _portalCapabilities['chemicals']?['view'] == true;
+      }
+      if (moduleKey == 'communications') {
+        return _portalCapabilities['communications']?['view'] == true ||
+            _portalCapabilities['suggestions']?['view'] == true;
+      }
       return _portalCapabilities[moduleKey]?['view'] == true;
     }
     final modelReadAccess = _modelAccess[moduleKey];
+    if (moduleKey == 'planning') {
+      return canViewModule('goals') || canViewModule('action_plans') || canViewModule('chemicals');
+    }
     if (modelReadAccess == false) return false;
     const permissionMap = {
       'dashboard': null,
@@ -201,7 +218,6 @@ class AuthProvider extends ChangeNotifier {
               canViewModule('training') ||
               canViewModule('communications') ||
               canViewModule('suppliers') ||
-              canViewModule('suggestions') ||
               canViewModule('goals');
         case 'reservas':
         case 'planning':
@@ -465,7 +481,7 @@ class AuthProvider extends ChangeNotifier {
       'goals': 'calidad.objetivo',
       'action_plans': 'calidad.plan.accion',
       'reservas': 'reserva.reserva',
-      'planning': 'reserva.reserva',
+      'planning': 'calidad.objetivo',
       'health': 'calidad.salud.reconocimiento',
       'normative': 'calidad.normativa',
       'equipment': 'calidad.equipo',

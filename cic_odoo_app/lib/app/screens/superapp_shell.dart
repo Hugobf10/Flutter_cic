@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../features/communications/communications_screen.dart';
-import '../../features/suggestions/suggestions_screen.dart';
 import '../../features/suppliers/suppliers_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../screens/documentos/documentos_screen.dart';
@@ -252,12 +251,6 @@ class _SuperAppShellState extends State<SuperAppShell> {
                         'Nuevo proveedor',
                         Icons.local_shipping_rounded,
                         const SuppliersScreen(),
-                      ),
-                    if (auth.canEditModule('suggestions'))
-                      _quickAction(
-                        'Nueva sugerencia',
-                        Icons.lightbulb_outline_rounded,
-                        const SuggestionsScreen(),
                       ),
                     if (auth.canEditModule('reservas'))
                       _quickAction(

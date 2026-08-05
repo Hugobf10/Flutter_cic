@@ -32,6 +32,15 @@ class AppStateProvider extends ChangeNotifier {
       // Purchases is a backend workflow and is never part of the portal intranet.
       if (_odoo.isPortalSession && m.key == 'purchases') return false;
       if (m.requiredPermission == null) return true;
+      if (m.key == 'communications') {
+        return _grantedPermissions.contains('communications.view') ||
+            _grantedPermissions.contains('suggestions.view');
+      }
+      if (m.key == 'planning') {
+        return _grantedPermissions.contains('goals.view') ||
+            _grantedPermissions.contains('action_plans.view') ||
+            _grantedPermissions.contains('chemicals.view');
+      }
       return _grantedPermissions.contains(m.requiredPermission);
     }).toList();
   }
