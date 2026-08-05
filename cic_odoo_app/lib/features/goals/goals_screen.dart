@@ -138,21 +138,29 @@ class _GoalsScreenState extends State<GoalsScreen> {
                 icon: Icons.check_rounded,
                 onPressed: () async {
                   if (nameCtrl.text.trim().isEmpty) return;
-                  final auth = context.read<AuthProvider>();
-                  final values = <String, dynamic>{
-                    'name': nameCtrl.text.trim(),
-                    'descripcion': descCtrl.text.trim(),
-                    'tipo': tipo,
-                    'estado': estado,
-                    'anio': year,
-                    'responsable_id': auth.partnerId,
-                  };
-                  if (_odoo.isPortalSession) {
-                    await _portalApi.action('goal_create', values: values);
-                  } else {
-                    await _odoo.create('calidad.objetivo', values);
+                  try {
+                    final auth = context.read<AuthProvider>();
+                    final values = <String, dynamic>{
+                      'name': nameCtrl.text.trim(),
+                      'descripcion': descCtrl.text.trim(),
+                      'tipo': tipo,
+                      'estado': estado,
+                      'anio': year,
+                      'responsable_id': auth.partnerId,
+                    };
+                    if (_odoo.isPortalSession) {
+                      await _portalApi.action('goal_create', values: values);
+                    } else {
+                      await _odoo.create('calidad.objetivo', values);
+                    }
+                    if (ctx.mounted) Navigator.of(ctx).pop(true);
+                  } catch (error) {
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(content: Text(OdooService.prettyError(error))),
+                      );
+                    }
                   }
-                  if (ctx.mounted) Navigator.of(ctx).pop(true);
                 },
               ),
             ],

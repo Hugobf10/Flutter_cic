@@ -88,7 +88,17 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
             fields: const [
               DynamicFieldConfig(key: 'name', label: 'Nombre', required: true),
               DynamicFieldConfig(key: 'codigo', label: 'Código'),
-              DynamicFieldConfig(key: 'tipo', label: 'Tipo'),
+              DynamicFieldConfig(
+                key: 'tipo',
+                label: 'Tipo',
+                type: DynamicFieldType.select,
+                initialValue: 'otro',
+                options: const [
+                  DynamicFieldOption(value: 'reactivo', label: 'Reactivo'),
+                  DynamicFieldOption(value: 'producto', label: 'Producto'),
+                  DynamicFieldOption(value: 'otro', label: 'Otro'),
+                ],
+              ),
               DynamicFieldConfig(
                 key: 'fecha_caducidad',
                 label: 'Fecha caducidad',

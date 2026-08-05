@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../services/odoo_service.dart';
+
 class DynamicFieldConfig {
   const DynamicFieldConfig({
     required this.key,
@@ -187,6 +189,12 @@ class _DynamicFormState extends State<DynamicForm> {
     try {
       await widget.onSubmit(payload);
       if (mounted) Navigator.of(context).maybePop(true);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(OdooService.prettyError(error))),
+        );
+      }
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

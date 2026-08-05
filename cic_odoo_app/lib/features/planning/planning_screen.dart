@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/ui/app_components.dart';
+import '../../providers/auth_provider.dart';
+import '../../theme/app_theme.dart';
 import '../action_plans/action_plans_screen.dart';
 import '../chemicals/chemical_report_screen.dart';
 import '../chemicals/chemicals_screen.dart';
 import '../goals/goals_screen.dart';
-import '../../providers/auth_provider.dart';
 
 class PlanningScreen extends StatelessWidget {
   const PlanningScreen({super.key});
@@ -13,41 +15,113 @@ class PlanningScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final tabs = <Tab>[];
-    final screens = <Widget>[];
-    if (auth.canViewModule('goals')) {
-      tabs.add(const Tab(icon: Icon(Icons.flag_outlined), text: 'Objetivos'));
-      screens.add(const GoalsScreen());
-    }
-    if (auth.canViewModule('action_plans')) {
-      tabs.add(const Tab(icon: Icon(Icons.task_alt_rounded), text: 'Planes'));
-      screens.add(const ActionPlansScreen());
-    }
-    if (auth.canViewModule('chemicals')) {
-      tabs.add(const Tab(icon: Icon(Icons.science_outlined), text: 'Químicos'));
-      screens.add(const ChemicalsScreen());
-      tabs.add(const Tab(icon: Icon(Icons.analytics_outlined), text: 'Informe'));
-      screens.add(const ChemicalReportScreen());
-    }
-    if (tabs.isEmpty) {
-      return const Scaffold(
-        body: Center(child: Text('No tienes permisos para ver Planificación.')),
-      );
-    }
-    return DefaultTabController(
-      length: tabs.length,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Planificación'),
-          bottom: TabBar(
-            isScrollable: true,
-            tabs: tabs,
-          ),
-        ),
-        body: TabBarView(
-          children: screens,
-        ),
-      ),
+    final entries = auth.canViewModule('planning')
+        ? <_PlanningEntry>[
+            _PlanningEntry(
+          title: 'Objetivos',
+          subtitle: 'Consulta y edición de objetivos de calidad y PRL.',
+          icon: Icons.flag_outlined,
+          color: AppTheme.primary,
+          builder: () => const GoalsScreen(),
+            ),
+            _PlanningEntry(
+          title: 'Planes de acción',
+          subtitle: 'Acciones preventivas y planes ligados a objetivos.',
+          icon: Icons.task_alt_rounded,
+          color: AppTheme.warning,
+          builder: () => const ActionPlansScreen(),
+            ),
+            _PlanningEntry(
+          title: 'Químicos',
+          subtitle: 'Inventario, peligrosidad, caducidades y fichas.',
+          icon: Icons.science_outlined,
+          color: AppTheme.success,
+          builder: () => const ChemicalsScreen(),
+            ),
+            _PlanningEntry(
+          title: 'Informe de químicos',
+          subtitle: 'Resumen operativo por tipo y peligrosidad.',
+          icon: Icons.analytics_outlined,
+          color: AppTheme.info,
+          builder: () => const ChemicalReportScreen(),
+            ),
+          ]
+        : const <_PlanningEntry>[];
+
+    return AppScaffold(
+      title: 'Planificación',
+      child: entries.isEmpty
+          ? const AppEmptyState(
+              title: 'Sin acceso',
+              subtitle: 'No tienes permisos para ver ningún apartado de planificación.',
+              icon: Icons.lock_outline_rounded,
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.only(bottom: 96),
+              itemCount: entries.length,
+              separatorBuilder: (_, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final entry = entries[index];
+                return AppCard(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => entry.builder()),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: entry.color.withValues(alpha: 0.14),
+                          borderRadius: AppTheme.radiusMd,
+                        ),
+                        child: Icon(entry.icon, color: entry.color),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              entry.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              entry.subtitle,
+                              style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right_rounded),
+                    ],
+                  ),
+                );
+              },
+            ),
     );
   }
+}
+
+class _PlanningEntry {
+  const _PlanningEntry({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.builder,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final Widget Function() builder;
 }
