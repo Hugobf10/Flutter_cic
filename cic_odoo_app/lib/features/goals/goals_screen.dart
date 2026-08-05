@@ -5,6 +5,7 @@ import '../../app/ui/app_components.dart';
 import '../../features/forms/dynamic_form.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
+import '../../services/odoo_values.dart';
 import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 
@@ -62,7 +63,11 @@ class _GoalsScreenState extends State<GoalsScreen> {
               order: 'anio desc, fecha_fin asc, id desc',
               limit: 200,
             );
-      _rows = rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      _rows = rows.whereType<Map>().map((e) {
+        final row = Map<String, dynamic>.from(e);
+        row['avance'] = OdooValues.number(row['avance']);
+        return row;
+      }).toList();
     } catch (e) {
       _error = OdooService.prettyError(e);
     }
@@ -330,12 +335,14 @@ class _GoalsScreenState extends State<GoalsScreen> {
                     icon: Icons.flag_outlined,
                   ),
                 ..._rows.map((goal) {
+                  // Odoo puede serializar un Float como número o como texto
+                  // según el controlador/versión. Nunca dejemos que un valor
+                  // válido de la API rompa el árbol de widgets.
                   final pct =
-                      ((goal['avance'] as num?)?.toDouble() ?? 0).clamp(
-                        0,
-                        100,
-                      ) /
-                      100;
+                      OdooValues.number(goal['avance'])
+                              .clamp(0, 100)
+                              .toDouble() /
+                          100;
                   final estado = (goal['estado'] ?? 'pendiente').toString();
                   final color = estado == 'realizado'
                       ? AppTheme.success
