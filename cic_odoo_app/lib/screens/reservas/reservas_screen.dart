@@ -81,6 +81,7 @@ class _ReservasScreenState extends State<ReservasScreen>
   List<DateTimeRange> _busyRanges = [];
   ReservationEntryTarget? _activeTarget;
   int? _agendaVariantFilterId;
+  int? _editingReservationId;
 
   @override
   void initState() {
@@ -268,21 +269,14 @@ class _ReservasScreenState extends State<ReservasScreen>
     setState(() => _isLoadingAvailability = true);
     try {
       final rows = _odoo.isPortalSession
-          ? ((await _portalApi.section('reservas', limit: 400)).where((row) {
-              if (OdooValues.many2oneId(row['servicio_id']) != _variantId) {
-                return false;
-              }
-              final start = _tryParseOdooDateTime(
-                row['fecha_inicio']?.toString() ?? '',
-              );
-              final end = _tryParseOdooDateTime(
-                row['fecha_fin']?.toString() ?? '',
-              );
-              return start != null &&
-                  end != null &&
-                  start.isBefore(endDay) &&
-                  end.isAfter(startDay);
-            }).toList())
+          ? await _portalApi.section(
+              'reservation_agenda',
+              limit: 400,
+              params: {
+                'date': _formatOdooDate(startDay),
+                'service_id': _variantId,
+              },
+            )
           : await _odoo.searchRead(
               'reserva.reserva',
               domain: [
@@ -301,6 +295,12 @@ class _ReservasScreenState extends State<ReservasScreen>
             );
 
       _busyRanges = rows
+          .where(
+            (row) =>
+                _editingReservationId == null ||
+                OdooValues.intValue((row as Map)['id']) !=
+                    _editingReservationId,
+          )
           .map((e) {
             final m = Map<String, dynamic>.from(e as Map);
             final start = _tryParseOdooDateTime(
@@ -340,6 +340,7 @@ class _ReservasScreenState extends State<ReservasScreen>
               fields: [
                 'name',
                 'servicio_id',
+                'servicio_template_id',
                 'session_type_id',
                 'fecha_inicio',
                 'fecha_fin',
@@ -383,23 +384,15 @@ class _ReservasScreenState extends State<ReservasScreen>
         domain.add(['servicio_id', '=', _agendaVariantFilterId]);
       }
       final result = _odoo.isPortalSession
-          ? (await _portalApi.section('reservas', limit: 400)).where((row) {
-              final start = _tryParseOdooDateTime(
-                row['fecha_inicio']?.toString() ?? '',
-              );
-              final end = _tryParseOdooDateTime(
-                row['fecha_fin']?.toString() ?? '',
-              );
-              final variantMatches =
-                  _agendaVariantFilterId == null ||
-                  OdooValues.many2oneId(row['servicio_id']) ==
-                      _agendaVariantFilterId;
-              return variantMatches &&
-                  start != null &&
-                  end != null &&
-                  start.isBefore(endDay) &&
-                  end.isAfter(startDay);
-            }).toList()
+          ? await _portalApi.section(
+              'reservation_agenda',
+              limit: 400,
+              params: {
+                'date': _formatOdooDate(startDay),
+                if (_agendaVariantFilterId != null)
+                  'service_id': _agendaVariantFilterId,
+              },
+            )
           : await _odoo.searchRead(
               'reserva.reserva',
               domain: domain,
@@ -509,24 +502,42 @@ class _ReservasScreenState extends State<ReservasScreen>
         if (_sessionTypeId != null) 'session_type_id': _sessionTypeId,
       };
       if (_odoo.isPortalSession) {
-        await _portalApi.action('reservation_create', values: values);
-      } else {
-        try {
-          await _odoo.callMethod(
-            'reserva.reserva',
-            'cic_mobile_create_reservation',
-            args: [values],
+        if (_editingReservationId == null) {
+          await _portalApi.action('reservation_create', values: values);
+        } else {
+          await _portalApi.action(
+            'reservation_update',
+            recordId: _editingReservationId,
+            values: values,
           );
-        } catch (e) {
-          if (!OdooService.isMethodUnavailable(e)) rethrow;
-          await _odoo.create('reserva.reserva', values);
+        }
+      } else {
+        if (_editingReservationId != null) {
+          await _odoo.write('reserva.reserva', _editingReservationId!, values);
+        } else {
+          try {
+            await _odoo.callMethod(
+              'reserva.reserva',
+              'cic_mobile_create_reservation',
+              args: [values],
+            );
+          } catch (e) {
+            if (!OdooService.isMethodUnavailable(e)) rethrow;
+            await _odoo.create('reserva.reserva', values);
+          }
         }
       }
 
+      final wasEditing = _editingReservationId != null;
       _motivoCtrl.clear();
+      _editingReservationId = null;
       await _loadMisReservas();
       await _loadAgendaReservas(day: _agendaDay);
-      _showSnack('Reserva creada correctamente.');
+      _showSnack(
+        wasEditing
+            ? 'Reserva actualizada. Confírmala cuando esté lista.'
+            : 'Reserva creada en borrador. Revísala y confírmala cuando esté lista.',
+      );
       if (mounted) setState(() {});
     } catch (e) {
       _showSnack(
@@ -564,6 +575,76 @@ class _ReservasScreenState extends State<ReservasScreen>
         isError: true,
       );
     }
+  }
+
+  Future<void> _cancelarReserva(int id) async {
+    try {
+      if (_odoo.isPortalSession) {
+        await _portalApi.action('reservation_cancel', recordId: id);
+      } else {
+        await _odoo.callRecordMethod('reserva.reserva', [
+          id,
+        ], 'action_cancelar');
+      }
+      await _loadMisReservas();
+      await _loadAgendaReservas(day: _agendaDay);
+      if (mounted) setState(() {});
+      _showSnack('Reserva cancelada.');
+    } catch (e) {
+      _showSnack(
+        'No se pudo cancelar: ${OdooService.prettyError(e)}',
+        isError: true,
+      );
+    }
+  }
+
+  Future<void> _editarReserva(Map<String, dynamic> reservation) async {
+    final id = OdooValues.intValue(reservation['id']);
+    final templateId = OdooValues.many2oneId(
+      reservation['servicio_template_id'],
+    );
+    final variantId = OdooValues.many2oneId(reservation['servicio_id']);
+    final sessionTypeId = OdooValues.many2oneId(reservation['session_type_id']);
+    final start = _tryParseOdooDateTime(
+      reservation['fecha_inicio']?.toString() ?? '',
+    );
+    final end = _tryParseOdooDateTime(
+      reservation['fecha_fin']?.toString() ?? '',
+    );
+    if (id == null ||
+        templateId == null ||
+        variantId == null ||
+        start == null ||
+        end == null) {
+      _showSnack(
+        'No se pudo preparar esta reserva para editar.',
+        isError: true,
+      );
+      return;
+    }
+
+    setState(() {
+      _editingReservationId = id;
+      _serviceTemplateId = templateId;
+      _variantId = variantId;
+      _sessionTypeId = sessionTypeId;
+      _start = start;
+      _end = end;
+      _selectedDay = DateTime(start.year, start.month, start.day);
+      _durationMinutes = end.difference(start).inMinutes;
+      _motivoCtrl.text = OdooValues.string(reservation['motivo']);
+      _wizardStep = 0;
+    });
+    await _loadServiceOptions(preferredVariantId: variantId);
+    if (!mounted) return;
+    if (sessionTypeId != null &&
+        _sessionTypes.any(
+          (item) => OdooValues.intValue(item['id']) == sessionTypeId,
+        )) {
+      setState(() => _sessionTypeId = sessionTypeId);
+    }
+    _tabController.animateTo(0);
+    setState(() {});
   }
 
   Future<void> _scanReservationQr() async {
@@ -662,11 +743,12 @@ class _ReservasScreenState extends State<ReservasScreen>
       appBar: AppBar(
         title: const Text('Reservas'),
         actions: [
-          IconButton(
-            onPressed: _scanReservationQr,
-            icon: const Icon(Icons.qr_code_scanner_rounded),
-            tooltip: 'Escanear QR de sala o equipo',
-          ),
+          if (auth.isInternalUser || auth.isAdmin)
+            IconButton(
+              onPressed: _scanReservationQr,
+              icon: const Icon(Icons.qr_code_scanner_rounded),
+              tooltip: 'Escanear QR de sala o equipo',
+            ),
           IconButton(
             onPressed: _loadInitial,
             icon: const Icon(Icons.refresh_rounded),
@@ -701,10 +783,12 @@ class _ReservasScreenState extends State<ReservasScreen>
                   icon: Icons.calendar_month_rounded,
                 ),
                 if (_activeTarget != null) _buildResourceContextBanner(),
-                _buildAdminQrCard(),
-                const SizedBox(height: 12),
-                _buildApiDiagnosticsCard(),
-                const SizedBox(height: 12),
+                if (auth.isInternalUser || auth.isAdmin) ...[
+                  _buildAdminQrCard(),
+                  const SizedBox(height: 12),
+                  _buildApiDiagnosticsCard(),
+                  const SizedBox(height: 12),
+                ],
                 if (auth.canEditModule('reservas'))
                   _buildNewReservationCard()
                 else
@@ -788,11 +872,12 @@ class _ReservasScreenState extends State<ReservasScreen>
       appBar: AppBar(
         title: const Text('Reservas'),
         actions: [
-          IconButton(
-            onPressed: _scanReservationQr,
-            icon: const Icon(Icons.qr_code_scanner_rounded),
-            tooltip: 'Escanear QR de sala o equipo',
-          ),
+          if (auth.isInternalUser || auth.isAdmin)
+            IconButton(
+              onPressed: _scanReservationQr,
+              icon: const Icon(Icons.qr_code_scanner_rounded),
+              tooltip: 'Escanear QR de sala o equipo',
+            ),
           IconButton(
             onPressed: _loadInitial,
             icon: const Icon(Icons.refresh_rounded),
@@ -1473,7 +1558,10 @@ class _ReservasScreenState extends State<ReservasScreen>
           ],
           const SizedBox(height: 8),
           Text(
-            'Los QR se generan en esta pantalla al seleccionar un microservicio o recurso en la pestaña Nueva.',
+            (context.watch<AuthProvider>().isInternalUser ||
+                    context.watch<AuthProvider>().isAdmin)
+                ? 'Los QR se generan al seleccionar un microservicio o recurso en la pestaña Nueva.'
+                : 'La agenda muestra la ocupación de los recursos sin revelar datos de otros usuarios.',
             style: TextStyle(
               color: AppTheme.textMutedFor(context),
               fontSize: 12,
@@ -1870,6 +1958,16 @@ class _ReservasScreenState extends State<ReservasScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (_editingReservationId != null) ...[
+            const Text(
+              'Editando borrador',
+              style: TextStyle(
+                color: AppTheme.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
           _buildWizardHeader(),
           const SizedBox(height: 12),
           AnimatedSize(
@@ -1917,7 +2015,13 @@ class _ReservasScreenState extends State<ReservasScreen>
                       : const Icon(Icons.arrow_forward_rounded),
                   label: Text(
                     _wizardStep == 3
-                        ? (_isCreating ? 'Creando...' : 'Confirmar y crear')
+                        ? (_isCreating
+                              ? (_editingReservationId == null
+                                    ? 'Creando...'
+                                    : 'Guardando...')
+                              : (_editingReservationId == null
+                                    ? 'Crear borrador'
+                                    : 'Guardar cambios'))
                         : 'Siguiente',
                   ),
                 ),
@@ -2286,12 +2390,30 @@ class _ReservasScreenState extends State<ReservasScreen>
             ),
           if (estado == 'borrador' && auth.canEditModule('reservas')) ...[
             const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: () => _editarReserva(r),
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('Editar'),
+                ),
+                TextButton.icon(
+                  onPressed: () => _confirmarReserva(id),
+                  icon: const Icon(Icons.check_circle_outline_rounded),
+                  label: const Text('Confirmar'),
+                ),
+              ],
+            ),
+          ],
+          if (estado == 'confirmada' && auth.canEditModule('reservas')) ...[
+            const SizedBox(height: 10),
             Align(
               alignment: Alignment.centerRight,
               child: TextButton.icon(
-                onPressed: () => _confirmarReserva(id),
-                icon: const Icon(Icons.check_circle_outline_rounded),
-                label: const Text('Confirmar'),
+                onPressed: () => _cancelarReserva(id),
+                icon: const Icon(Icons.cancel_outlined),
+                label: const Text('Cancelar'),
               ),
             ),
           ],
@@ -2349,6 +2471,13 @@ class _ReservasScreenState extends State<ReservasScreen>
     final h = dt.hour.toString().padLeft(2, '0');
     final mi = dt.minute.toString().padLeft(2, '0');
     return '$y-$m-$d $h:$mi:00';
+  }
+
+  String _formatOdooDate(DateTime dt) {
+    final y = dt.year.toString().padLeft(4, '0');
+    final m = dt.month.toString().padLeft(2, '0');
+    final d = dt.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
   }
 
   String _money(dynamic value) {
