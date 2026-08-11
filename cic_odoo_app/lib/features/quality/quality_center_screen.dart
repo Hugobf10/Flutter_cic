@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../features/communications/communications_screen.dart';
 import '../../features/suppliers/suppliers_screen.dart';
-import '../../screens/incidencias/incidencias_screen.dart';
 import '../../theme/app_theme.dart';
 
 class QualityCenterScreen extends StatelessWidget {
@@ -21,17 +20,10 @@ class QualityCenterScreen extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           const Text(
-            'Accesos rápidos a los flujos críticos de calidad.',
+            'Gestiona proveedores y comunicaciones relacionadas con calidad.',
             style: TextStyle(color: AppTheme.textSecondary),
           ),
           const SizedBox(height: 14),
-          _entry(
-            context,
-            icon: Icons.warning_amber_rounded,
-            title: 'Incidencias',
-            subtitle: 'Registrar y gestionar no conformidades',
-            to: const IncidenciasScreen(),
-          ),
           _entry(
             context,
             icon: Icons.local_shipping_rounded,

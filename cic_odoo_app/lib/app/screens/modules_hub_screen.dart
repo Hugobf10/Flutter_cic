@@ -72,7 +72,7 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Todos tus módulos',
+                  'Módulos disponibles',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
@@ -81,7 +81,7 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Busca rápido y abre solo lo que realmente usa este perfil.',
+                  'Accede a las áreas habilitadas para tu perfil. Cada módulo aplica los permisos y operaciones definidos en Odoo.',
                   style: TextStyle(color: AppTheme.textSecondaryFor(context)),
                 ),
               ],

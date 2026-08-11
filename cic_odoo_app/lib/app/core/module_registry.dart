@@ -5,20 +5,12 @@ import '../models/app_module.dart';
 class ModuleRegistry {
   static const List<AppModule> all = [
     AppModule(
-      key: 'dashboard',
-      title: 'Inicio',
-      icon: Icons.space_dashboard_rounded,
-      color: Color(0xFF5B7CFA),
-      requiredPermission: 'dashboard.view',
-      description: 'KPIs y actividad en tiempo real',
-      implemented: true,
-    ),
-    AppModule(
       key: 'quality',
       title: 'Calidad',
       icon: Icons.verified_user_rounded,
       color: Color(0xFF6D5EF9),
       requiredPermission: 'quality.view',
+      description: 'Proveedores y comunicaciones de calidad',
       implemented: true,
     ),
     AppModule(
@@ -27,6 +19,7 @@ class ModuleRegistry {
       icon: Icons.warning_amber_rounded,
       color: Color(0xFFFF6B57),
       requiredPermission: 'incidents.view',
+      description: 'Registro, seguimiento y cierre de incidencias de tu unidad',
       implemented: true,
     ),
     AppModule(
@@ -44,14 +37,7 @@ class ModuleRegistry {
       icon: Icons.description_rounded,
       color: Color(0xFF4D84FF),
       requiredPermission: 'documents.view',
-      implemented: true,
-    ),
-    AppModule(
-      key: 'profile',
-      title: 'Mi perfil',
-      icon: Icons.account_circle_outlined,
-      color: Color(0xFF2563EB),
-      requiredPermission: null,
+      description: 'Consulta y descarga de documentos disponibles para ti',
       implemented: true,
     ),
     AppModule(
@@ -60,6 +46,7 @@ class ModuleRegistry {
       icon: Icons.shield_outlined,
       color: Color(0xFF0F766E),
       requiredPermission: null,
+      description: 'Procedimientos y documentación de seguridad',
       implemented: true,
     ),
     AppModule(
@@ -68,6 +55,7 @@ class ModuleRegistry {
       icon: Icons.inventory_2_outlined,
       color: Color(0xFF0891B2),
       requiredPermission: null,
+      description: 'Información y documentación entregada al usuario',
       implemented: true,
     ),
     AppModule(
@@ -85,6 +73,7 @@ class ModuleRegistry {
       icon: Icons.person_search_rounded,
       color: Color(0xFF8E66FF),
       requiredPermission: 'recruitment.view',
+      description: 'Procesos de selección y seguimiento de candidaturas',
       implemented: true,
     ),
     AppModule(
@@ -93,7 +82,7 @@ class ModuleRegistry {
       icon: Icons.calendar_month_rounded,
       color: Color(0xFF4F46E5),
       requiredPermission: null,
-      description: 'Reserva servicios y recursos',
+      description: 'Consulta disponibilidad y gestiona reservas de servicios y recursos',
       implemented: true,
     ),
     AppModule(
@@ -102,7 +91,7 @@ class ModuleRegistry {
       icon: Icons.event_note_rounded,
       color: Color(0xFFFF8C42),
       requiredPermission: 'planning.view',
-      description: 'Objetivos, planes de acción y químicos',
+      description: 'Objetivos, planes de acción, químicos e informes',
       implemented: true,
     ),
     AppModule(
@@ -111,6 +100,7 @@ class ModuleRegistry {
       icon: Icons.monitor_heart_rounded,
       color: Color(0xFF7D5BFF),
       requiredPermission: 'health.view',
+      description: 'Seguimiento de vigilancia de la salud',
       implemented: true,
     ),
     AppModule(
@@ -119,6 +109,7 @@ class ModuleRegistry {
       icon: Icons.gavel_rounded,
       color: Color(0xFF0EA5E9),
       requiredPermission: 'normative.view',
+      description: 'Consulta de normativa y documentación aplicable',
       implemented: true,
     ),
     AppModule(
@@ -127,6 +118,7 @@ class ModuleRegistry {
       icon: Icons.precision_manufacturing_rounded,
       color: Color(0xFFF59E0B),
       requiredPermission: 'equipment.view',
+      description: 'Inventario y seguimiento de equipos asociados a calidad',
       implemented: true,
     ),
     AppModule(
@@ -135,6 +127,7 @@ class ModuleRegistry {
       icon: Icons.article_outlined,
       color: Color(0xFF7C3AED),
       requiredPermission: null,
+      description: 'Consulta de publicaciones y contenidos informativos',
       implemented: true,
     ),
     AppModule(
@@ -152,7 +145,7 @@ class ModuleRegistry {
       icon: Icons.chat_bubble_outline_rounded,
       color: Color(0xFF3B82F6),
       requiredPermission: 'communications.view',
-      description: 'Comunicaciones y sugerencias',
+      description: 'Comunicaciones, avisos y sugerencias',
       implemented: true,
     ),
     AppModule(
@@ -161,15 +154,7 @@ class ModuleRegistry {
       icon: Icons.local_shipping_rounded,
       color: Color(0xFFB45309),
       requiredPermission: 'suppliers.view',
-      implemented: true,
-    ),
-    AppModule(
-      key: 'portal',
-      title: 'Portal',
-      icon: Icons.open_in_browser_rounded,
-      color: Color(0xFFEC4899),
-      requiredPermission: 'portal.view',
-      description: 'Accesos portal, autoservicio y nóminas',
+      description: 'Gestión y seguimiento de proveedores',
       implemented: true,
     ),
     AppModule(
@@ -187,7 +172,7 @@ class ModuleRegistry {
       icon: Icons.shopping_cart_checkout_rounded,
       color: Color(0xFF0EA5E9),
       requiredPermission: null,
-      description: 'Productos, códigos y recepción',
+      description: 'Consulta de productos, códigos y recepción de compras',
       implemented: true,
     ),
     AppModule(
@@ -196,7 +181,7 @@ class ModuleRegistry {
       icon: Icons.build_circle_rounded,
       color: Color(0xFFF59E0B),
       requiredPermission: 'maintenance.view',
-      description: 'Solicitudes y equipos enlazados con calidad',
+      description: 'Solicitudes de mantenimiento y equipos enlazados con calidad',
       implemented: true,
     ),
   ];
