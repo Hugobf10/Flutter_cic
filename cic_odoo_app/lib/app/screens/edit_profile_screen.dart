@@ -114,6 +114,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             'email': _emailCtrl.text.trim(),
             'phone': _phoneCtrl.text.trim(),
             'mobile': _mobileCtrl.text.trim(),
+            if (_avatarData != null) 'image_data': _avatarData,
             if (_cvData != null) 'cv_data': _cvData,
             if (_cvName != null) 'cv_name': _cvName,
           },

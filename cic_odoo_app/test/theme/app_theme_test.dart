@@ -39,4 +39,48 @@ void main() {
       isA<AppPageTransitionsBuilder>(),
     );
   });
+
+  testWidgets(
+    'AppAvatar muestra la foto de Odoo y conserva iniciales de respaldo',
+    (tester) async {
+      const pixelPng =
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const Scaffold(
+            body: Row(
+              children: [
+                AppAvatar(name: 'Hugo Benítez', imageBase64: pixelPng),
+                AppAvatar(name: 'Hugo Benítez', imageBase64: 'false'),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byKey(const ValueKey('app-avatar-image')), findsOneWidget);
+      expect(find.text('HB'), findsOneWidget);
+    },
+  );
+
+  testWidgets('AppIconSurface aplica relieve a los iconos compartidos', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: const Scaffold(
+          body: AppIconSurface(
+            icon: Icons.school_rounded,
+            color: AppTheme.success,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(NeumorphicSurface), findsOneWidget);
+    expect(find.byIcon(Icons.school_rounded), findsOneWidget);
+  });
 }

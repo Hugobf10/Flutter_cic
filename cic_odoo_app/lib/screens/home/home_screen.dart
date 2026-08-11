@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -151,7 +150,6 @@ class _HomeHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = auth.userName.trim().isEmpty ? 'Usuario' : auth.userName;
     final firstName = name.split(' ').first;
-    final avatarBytes = _decodeAvatar(auth.profileImageBase64);
     final hour = DateTime.now().hour;
     final greeting = hour < 12
         ? 'Buenos días'
@@ -214,12 +212,11 @@ class _HomeHero extends StatelessWidget {
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const ProfileScreen()),
                 ),
-                child: avatarBytes == null
-                    ? AppAvatar(name: name, size: 42)
-                    : CircleAvatar(
-                        radius: 21,
-                        backgroundImage: MemoryImage(avatarBytes),
-                      ),
+                child: AppAvatar(
+                  name: name,
+                  size: 42,
+                  imageBase64: auth.profileImageBase64,
+                ),
               ),
             ),
           ],
@@ -242,15 +239,6 @@ class _HomeHero extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  Uint8List? _decodeAvatar(String raw) {
-    if (raw.trim().isEmpty) return null;
-    try {
-      return Uint8List.fromList(base64Decode(raw));
-    } catch (_) {
-      return null;
-    }
   }
 }
 
@@ -609,11 +597,11 @@ class _QuickActions extends StatelessWidget {
                 onTap: a.onTap,
                 child: Row(
                   children: [
-                    NeumorphicSurface(
-                      padding: const EdgeInsets.all(9),
-                      borderRadius: BorderRadius.circular(14),
-                      subtle: true,
-                      child: Icon(a.icon, color: a.color, size: 21),
+                    AppIconSurface(
+                      icon: a.icon,
+                      color: a.color,
+                      size: 42,
+                      iconSize: 21,
                     ),
                     const SizedBox(width: 11),
                     Expanded(

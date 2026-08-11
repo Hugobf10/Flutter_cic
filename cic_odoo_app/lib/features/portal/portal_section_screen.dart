@@ -104,14 +104,9 @@ class _PortalSectionScreenState extends State<PortalSectionScreen> {
       child: AppCard(
         child: ListTile(
           contentPadding: EdgeInsets.zero,
-          leading: NeumorphicSurface(
-            padding: const EdgeInsets.all(10),
-            borderRadius: BorderRadius.circular(14),
-            subtle: true,
-            child: Icon(
-              _iconFor(widget.section),
-              color: Theme.of(context).colorScheme.primary,
-            ),
+          leading: AppIconSurface(
+            icon: _iconFor(widget.section),
+            color: Theme.of(context).colorScheme.primary,
           ),
           title: Text(
             title,

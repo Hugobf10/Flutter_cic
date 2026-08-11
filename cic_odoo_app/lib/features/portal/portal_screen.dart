@@ -414,7 +414,11 @@ class _PortalHero extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppAvatar(name: name, size: 54),
+              AppAvatar(
+                name: name,
+                size: 54,
+                imageBase64: auth.profileImageBase64,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -487,11 +491,11 @@ class _PortalActionCard extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            NeumorphicSurface(
-              padding: const EdgeInsets.all(9),
-              borderRadius: BorderRadius.circular(14),
-              subtle: true,
-              child: Icon(action.icon, color: action.color, size: 21),
+            AppIconSurface(
+              icon: action.icon,
+              color: action.color,
+              size: 42,
+              iconSize: 21,
             ),
             const SizedBox(width: 11),
             Expanded(

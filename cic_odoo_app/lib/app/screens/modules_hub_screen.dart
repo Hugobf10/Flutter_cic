@@ -60,32 +60,42 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
       title: 'Explorar',
       child: Column(
         children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: AppTheme.cardGradientFor(context),
-              borderRadius: AppTheme.radiusLg,
-              border: Border.all(color: AppTheme.dividerFor(context)),
-              boxShadow: AppTheme.raisedShadowFor(context),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Módulos disponibles',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimaryFor(context),
+          AppReveal(
+            child: AppCard(
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const AppIconSurface(
+                    icon: Icons.grid_view_rounded,
+                    color: AppTheme.primary,
+                    size: 54,
                   ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Accede a las áreas habilitadas para tu perfil. Cada módulo aplica los permisos y operaciones definidos en Odoo.',
-                  style: TextStyle(color: AppTheme.textSecondaryFor(context)),
-                ),
-              ],
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Módulos disponibles',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textPrimaryFor(context),
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          'Solo ves las áreas habilitadas para tu perfil en Odoo.',
+                          style: TextStyle(
+                            color: AppTheme.textSecondaryFor(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 14),

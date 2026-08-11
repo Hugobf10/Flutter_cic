@@ -29,34 +29,30 @@ class ModuleTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: module.color.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(module.icon, color: module.color, size: 22),
-            ),
-            const Spacer(),
-            Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: module.implemented
-                    ? module.color.withValues(alpha: 0.1)
-                    : Colors.orange.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                module.implemented ? 'Disponible' : 'Próximamente',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: module.implemented ? module.color : Colors.orange,
+            Row(
+              children: [
+                AppIconSurface(
+                  icon: module.icon,
+                  color: module.color,
+                  size: 52,
                 ),
-              ),
+                const Spacer(),
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: module.color.withValues(alpha: 0.09),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.arrow_outward_rounded,
+                    color: module.color,
+                    size: 17,
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 14),
             Text(
               module.title,
               style: TextStyle(
@@ -68,15 +64,43 @@ class ModuleTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             if (module.description != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  module.description!,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall,
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    module.description!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ),
-              ),
+              )
+            else
+              const Spacer(),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: module.implemented ? module.color : Colors.orange,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  module.implemented ? 'Disponible' : 'Próximamente',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: module.implemented
+                        ? AppTheme.textSecondaryFor(context)
+                        : Colors.orange,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),

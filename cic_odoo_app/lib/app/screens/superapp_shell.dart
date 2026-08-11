@@ -388,7 +388,11 @@ class _SuperAppShellState extends State<SuperAppShell> {
       ),
       child: Row(
         children: [
-          AppAvatar(name: auth.userName, size: 30),
+          AppAvatar(
+            name: auth.userName,
+            size: 30,
+            imageBase64: auth.profileImageBase64,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

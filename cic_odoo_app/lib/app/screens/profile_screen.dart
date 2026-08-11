@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -118,7 +115,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       builder: (_) => EditProfileScreen(partnerData: _partner),
                     ),
                   );
-                  if (saved == true) _load();
+                  if (saved == true) {
+                    await auth.refreshPartnerProfile();
+                    await _load();
+                  }
                 },
           icon: Icon(Icons.edit_outlined),
         ),
@@ -138,7 +138,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   name: name,
                   email: (_partner['email'] ?? auth.userLogin).toString(),
                   unitName: auth.unidadNombre,
-                  avatar: _buildAvatar(name),
+                  avatar: AppAvatar(
+                    name: name,
+                    size: 58,
+                    imageBase64: _profileImage(auth.profileImageBase64),
+                  ),
                 ),
                 const SizedBox(height: 14),
                 const AppSectionHeader(
@@ -187,18 +191,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildAvatar(String name) {
-    final raw = (_partner['image_1920'] ?? '').toString();
-    if (raw.isEmpty) return AppAvatar(name: name, size: 54);
-    try {
-      final bytes = base64Decode(raw);
-      return CircleAvatar(
-        radius: 27,
-        backgroundImage: MemoryImage(Uint8List.fromList(bytes)),
-      );
-    } catch (_) {
-      return AppAvatar(name: name, size: 54);
+  String _profileImage(String fallback) {
+    for (final raw in [
+      _partner['image_128'],
+      _partner['image_1920'],
+      fallback,
+    ]) {
+      if (raw is String) {
+        final value = raw.trim();
+        final lower = value.toLowerCase();
+        if (value.isNotEmpty && lower != 'false' && lower != 'null') {
+          return value;
+        }
+      }
     }
+    return '';
   }
 
   Widget _buildCvCard() {
@@ -208,14 +215,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return AppCard(
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppTheme.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(Icons.description_rounded, color: AppTheme.primary),
+          const AppIconSurface(
+            icon: Icons.description_rounded,
+            color: AppTheme.primary,
+            size: 42,
+            iconSize: 20,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -275,18 +279,11 @@ class _InfoTile extends StatelessWidget {
       child: AppCard(
         child: Row(
           children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: AppTheme.elevatedFor(context),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: AppTheme.textSecondaryFor(context),
-                size: 18,
-              ),
+            AppIconSurface(
+              icon: icon,
+              color: AppTheme.primary,
+              size: 40,
+              iconSize: 18,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -335,23 +332,11 @@ class _ProfileHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AppCard(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: AppTheme.primaryGradient,
-        borderRadius: AppTheme.radiusLg,
-        boxShadow: AppTheme.glowShadow,
-      ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: avatar,
-          ),
+          avatar,
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -360,7 +345,7 @@ class _ProfileHero extends StatelessWidget {
                 Text(
                   name,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.textPrimaryFor(context),
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
                   ),
@@ -369,7 +354,7 @@ class _ProfileHero extends StatelessWidget {
                 Text(
                   email,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.86),
+                    color: AppTheme.textSecondaryFor(context),
                     fontSize: 13,
                   ),
                 ),
@@ -378,7 +363,7 @@ class _ProfileHero extends StatelessWidget {
                   Text(
                     'Unidad: $unitName',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: AppTheme.textMutedFor(context),
                       fontSize: 12,
                     ),
                   ),

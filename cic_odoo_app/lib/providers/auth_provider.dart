@@ -48,8 +48,9 @@ class AuthProvider extends ChangeNotifier {
   bool get portalCalidadHabilitado =>
       _partnerProfile['portal_calidad_habilitado'] == true;
   String get profileImageBase64 =>
-      (_partnerProfile['image_128'] ?? _partnerProfile['image_1920'] ?? '')
-          .toString();
+      _validImageValue(_partnerProfile['image_128']) ??
+      _validImageValue(_partnerProfile['image_1920']) ??
+      '';
   String get unidadNombre {
     final unidad = _partnerProfile['unidad_id'];
     if (unidad is List && unidad.length >= 2) return unidad[1].toString();
@@ -84,6 +85,20 @@ class AuthProvider extends ChangeNotifier {
   };
   int get enabledPortalPermissions =>
       portalPermissions.values.where((e) => e).length;
+
+  static String? _validImageValue(Object? raw) {
+    if (raw is! String) return null;
+    final value = raw.trim();
+    final lower = value.toLowerCase();
+    if (value.isEmpty || lower == 'false' || lower == 'null') return null;
+    return value;
+  }
+
+  Future<void> refreshPartnerProfile() async {
+    if (!_odoo.isPortalSession) await _loadPartnerProfile();
+    await _loadPortalCapabilities();
+    notifyListeners();
+  }
 
   bool canEditModule(String moduleKey) {
     if (isAdmin) return true;

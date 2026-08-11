@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -311,11 +313,51 @@ class AppSectionHeader extends StatelessWidget {
   }
 }
 
+class AppIconSurface extends StatelessWidget {
+  const AppIconSurface({
+    super.key,
+    required this.icon,
+    required this.color,
+    this.size = 48,
+    this.iconSize = 22,
+  });
+
+  final IconData icon;
+  final Color color;
+  final double size;
+  final double iconSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final tint = Color.alphaBlend(
+      color.withValues(alpha: AppTheme.isDark(context) ? 0.16 : 0.09),
+      AppTheme.elevatedFor(context),
+    );
+    return SizedBox(
+      width: size,
+      height: size,
+      child: NeumorphicSurface(
+        color: tint,
+        padding: EdgeInsets.all(size * 0.22),
+        borderRadius: BorderRadius.circular(size * 0.34),
+        subtle: true,
+        child: Icon(icon, color: color, size: iconSize),
+      ),
+    );
+  }
+}
+
 class AppAvatar extends StatelessWidget {
-  const AppAvatar({super.key, required this.name, this.size = 42});
+  const AppAvatar({
+    super.key,
+    required this.name,
+    this.size = 42,
+    this.imageBase64,
+  });
 
   final String name;
   final double size;
+  final String? imageBase64;
 
   @override
   Widget build(BuildContext context) {
@@ -329,26 +371,58 @@ class AppAvatar extends StatelessWidget {
         : parts.length == 1
         ? parts.first[0].toUpperCase()
         : '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    final imageBytes = _decodeImage(imageBase64);
 
-    return Container(
-      width: size,
-      height: size,
-      decoration: AppTheme.neumorphicDecoration(
-        context,
-        borderRadius: BorderRadius.circular(size / 2),
-        subtle: true,
-      ),
-      child: Center(
-        child: Text(
-          initials,
-          style: TextStyle(
-            color: AppTheme.primary,
-            fontWeight: FontWeight.w800,
-            fontSize: size * 0.34,
-          ),
+    final fallback = Center(
+      child: Text(
+        initials,
+        style: TextStyle(
+          color: AppTheme.primary,
+          fontWeight: FontWeight.w800,
+          fontSize: size * 0.34,
         ),
       ),
     );
+
+    return Semantics(
+      image: imageBytes != null,
+      label: imageBytes == null ? 'Avatar de $name' : 'Foto de perfil de $name',
+      child: Container(
+        width: size,
+        height: size,
+        clipBehavior: Clip.antiAlias,
+        decoration: AppTheme.neumorphicDecoration(
+          context,
+          borderRadius: BorderRadius.circular(size / 2),
+          subtle: true,
+        ),
+        child: imageBytes == null
+            ? fallback
+            : Image.memory(
+                imageBytes,
+                key: const ValueKey('app-avatar-image'),
+                width: size,
+                height: size,
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+                errorBuilder: (_, _, _) => fallback,
+              ),
+      ),
+    );
+  }
+
+  static Uint8List? _decodeImage(String? raw) {
+    var value = (raw ?? '').trim();
+    final lower = value.toLowerCase();
+    if (value.isEmpty || lower == 'false' || lower == 'null') return null;
+    if (value.startsWith('data:') && value.contains(',')) {
+      value = value.substring(value.indexOf(',') + 1);
+    }
+    try {
+      return base64Decode(value.replaceAll(RegExp(r'\s+'), ''));
+    } catch (_) {
+      return null;
+    }
   }
 }
 
