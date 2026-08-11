@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/ui/app_components.dart';
 import '../../features/forms/dynamic_form.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/attachment_service.dart';
@@ -337,7 +338,7 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: AppLoadingView());
     }
     if (_error != null) {
       return Scaffold(

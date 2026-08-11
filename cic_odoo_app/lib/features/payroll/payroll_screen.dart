@@ -127,7 +127,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
   }
 
   Widget _buildBody(List<Map<String, dynamic>> rows) {
-    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loading) return const AppLoadingView();
     if (_error != null) {
       return AppEmptyState(
         title: 'No se pudieron cargar las nóminas',

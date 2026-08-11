@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/ui/app_components.dart';
 import '../../features/workflow/workflow_stage.dart';
 import '../../features/workflow/workflow_widgets.dart';
 import '../../features/forms/dynamic_form.dart';
+import 'communication_detail_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
 import '../../services/portal_api_service.dart';
@@ -64,21 +66,7 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
           return id == null || seenIds.add(id);
         }).toList();
       } else {
-        rows = (await _odoo.searchRead(
-          'calidad.comunicacion',
-          fields: [
-            'name',
-            'tipo',
-            'fecha',
-            'estado',
-            'partner_id',
-            'descripcion',
-          ],
-          order: 'fecha desc, id desc',
-          limit: 80,
-        ))
-            .map((e) => Map<String, dynamic>.from(e as Map))
-            .toList();
+        rows = await _portalApi.section('communications', limit: 80);
       }
       _rows = rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     } catch (e) {
@@ -90,7 +78,13 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
 
   Future<void> _runAction(int id, String method) async {
     try {
-      await _odoo.callRecordMethod('calidad.comunicacion', [id], method);
+      final action = switch (method) {
+        'action_marcar_en_analisis' => 'communication_mark_en_analisis',
+        'action_marcar_tratada' => 'communication_mark_tratada',
+        'action_cerrar' => 'communication_close',
+        _ => method,
+      };
+      await _portalApi.action(action, recordId: id);
       await _load();
     } catch (e) {
       if (!mounted) return;
@@ -161,7 +155,7 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                 'partner_id': partnerId,
                 if (date != null) 'fecha': '$y-$m-$d',
               };
-              if (_odoo.isPortalSession && values['tipo'] == 'sugerencia') {
+              if (values['tipo'] == 'sugerencia') {
                 await _portalApi.action(
                   'suggestion_create',
                   values: {
@@ -170,7 +164,7 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                   },
                 );
               } else {
-                await _odoo.create('calidad.comunicacion', payload);
+                await _portalApi.action('communication_create', values: payload);
               }
             },
           ),
@@ -195,7 +189,7 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
       };
     }).toList();
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: AppLoadingView());
     }
 
     return Scaffold(
@@ -262,6 +256,15 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                         stages: _stages,
                         onAction: _runAction,
                         canEdit: auth.canEditModule('communications'),
+                        onTap: () {
+                          final id = (row['id'] as num?)?.toInt();
+                          if (id == null) return;
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => CommunicationDetailScreen(id: id),
+                            ),
+                          );
+                        },
                       );
                     },
                   ),
@@ -278,12 +281,14 @@ class _CommunicationCard extends StatelessWidget {
     required this.stages,
     required this.onAction,
     required this.canEdit,
+    this.onTap,
   });
 
   final Map<String, dynamic> row;
   final List<WorkflowStage> stages;
   final Future<void> Function(int id, String method) onAction;
   final bool canEdit;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -306,7 +311,10 @@ class _CommunicationCard extends StatelessWidget {
       _ => AppTheme.textMuted,
     };
 
-    return Container(
+    return InkWell(
+      borderRadius: AppTheme.radiusMd,
+      onTap: onTap,
+      child: Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
@@ -364,6 +372,7 @@ class _CommunicationCard extends StatelessWidget {
               ],
             ),
         ],
+      ),
       ),
     );
   }

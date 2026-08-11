@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../theme/app_theme.dart';
 
@@ -105,14 +108,7 @@ class AppButton extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (loading)
-          const SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: Colors.white,
-            ),
-          )
+          const AppLoadingIndicator(size: 18)
         else if (icon != null)
           Icon(icon, size: 18),
         if (loading || icon != null) const SizedBox(width: 8),
@@ -401,29 +397,100 @@ class AppEmptyState extends StatelessWidget {
 }
 
 class AppLoadingView extends StatelessWidget {
-  const AppLoadingView({super.key, this.label = 'Cargando...'});
+  const AppLoadingView({super.key, this.label = 'Cargando'});
   final String label;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(
-            width: 24,
-            height: 24,
-            child: CircularProgressIndicator(strokeWidth: 2.2),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            label,
-            style: TextStyle(
-              color: AppTheme.textSecondaryFor(context),
-              fontSize: 12,
+    return Center(child: AppLoadingIndicator(semanticLabel: label));
+  }
+}
+
+/// Indicador de carga de la app: únicamente el símbolo de marca rebotando.
+class AppLoadingIndicator extends StatefulWidget {
+  const AppLoadingIndicator({
+    super.key,
+    this.size = 56,
+    this.semanticLabel = 'Cargando',
+  });
+
+  final double size;
+  final String semanticLabel;
+
+  @override
+  State<AppLoadingIndicator> createState() => _AppLoadingIndicatorState();
+}
+
+class _AppLoadingIndicatorState extends State<AppLoadingIndicator>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  double _jump(double phase) {
+    if (phase < 0.12) return 0;
+    if (phase < 0.34) {
+      return -Curves.easeOutCubic.transform((phase - 0.12) / 0.22);
+    }
+    if (phase < 0.58) {
+      return -1 + Curves.easeOutBack.transform((phase - 0.34) / 0.24) * 1.12;
+    }
+    if (phase < 0.70) {
+      return 0.12 * (1 - Curves.easeOutCubic.transform((phase - 0.58) / 0.12));
+    }
+    return 0;
+  }
+
+  double _tilt(double phase) {
+    if (phase < 0.34 || phase > 0.70) return 0;
+    final progress = (phase - 0.34) / 0.36;
+    return math.sin(progress * math.pi * 2) * 0.07;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: widget.semanticLabel,
+      liveRegion: true,
+      child: SizedBox(
+        width: widget.size,
+        height: widget.size,
+        child: RepaintBoundary(
+          child: AnimatedBuilder(
+            animation: _controller,
+            child: SvgPicture.asset(
+              'assets/branding/cic_mark.svg',
+              width: widget.size,
+              height: widget.size * 0.76,
+              fit: BoxFit.contain,
+              excludeFromSemantics: true,
             ),
+            builder: (context, child) {
+              final jump = _jump(_controller.value);
+              return Align(
+                alignment: Alignment.bottomCenter,
+                child: Transform.translate(
+                  offset: Offset(0, jump * widget.size * 0.24),
+                  child: Transform.rotate(
+                    angle: _tilt(_controller.value),
+                    child: Transform.scale(
+                      scale: 1 + (-jump * 0.08),
+                      alignment: Alignment.bottomCenter,
+                      child: child,
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
-        ],
+        ),
       ),
     );
   }

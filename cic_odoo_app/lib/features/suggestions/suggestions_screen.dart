@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/ui/app_components.dart';
 import '../../features/forms/dynamic_form.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
@@ -124,7 +125,7 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const AppLoadingView()
           : _error != null
           ? Center(
               child: Padding(

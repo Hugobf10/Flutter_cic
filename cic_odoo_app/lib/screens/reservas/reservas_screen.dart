@@ -18,7 +18,6 @@ import '../../services/odoo_values.dart';
 import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/section_header.dart';
-import '../../widgets/shimmer_loading.dart';
 import 'reservation_entry_target.dart';
 
 class ReservasScreen extends StatefulWidget {
@@ -715,7 +714,7 @@ class _ReservasScreenState extends State<ReservasScreen>
     if (_isLoading) {
       return Scaffold(
         backgroundColor: AppTheme.surfaceFor(context),
-        body: const Padding(padding: EdgeInsets.all(16), child: ShimmerList()),
+        body: const AppLoadingView(),
       );
     }
 
@@ -1152,11 +1151,7 @@ class _ReservasScreenState extends State<ReservasScreen>
                   child: ElevatedButton.icon(
                     onPressed: _isExportingQr ? null : _exportCurrentQrPng,
                     icon: _isExportingQr
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
+                        ? const AppLoadingIndicator(size: 16)
                         : const Icon(Icons.download_rounded),
                     label: Text(
                       _isExportingQr ? 'Exportando...' : 'Exportar PNG',
@@ -1242,14 +1237,7 @@ class _ReservasScreenState extends State<ReservasScreen>
                       ? null
                       : _runReservationApiDiagnostics,
                   icon: _isRunningApiChecks
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
+                      ? const AppLoadingIndicator(size: 16)
                       : const Icon(Icons.playlist_add_check_circle_rounded),
                   label: Text(
                     _isRunningApiChecks
@@ -2003,14 +1991,7 @@ class _ReservasScreenState extends State<ReservasScreen>
                       : _nextStep,
                   icon: _wizardStep == 3
                       ? (_isCreating
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
+                            ? const AppLoadingIndicator(size: 16)
                             : const Icon(Icons.check_circle_outline_rounded))
                       : const Icon(Icons.arrow_forward_rounded),
                   label: Text(
@@ -2235,7 +2216,7 @@ class _ReservasScreenState extends State<ReservasScreen>
               if (_isLoadingAvailability)
                 const Padding(
                   padding: EdgeInsets.only(bottom: 8),
-                  child: LinearProgressIndicator(minHeight: 2),
+                  child: Center(child: AppLoadingIndicator(size: 30)),
                 ),
               Wrap(
                 spacing: 8,

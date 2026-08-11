@@ -124,7 +124,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ],
       child: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const AppLoadingView()
           : _error != null
           ? AppEmptyState(
               title: 'No se pudo cargar el perfil',

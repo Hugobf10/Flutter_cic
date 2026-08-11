@@ -3,6 +3,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/screens/document_viewer_screen.dart';
+import '../../app/ui/app_components.dart';
 import '../../features/forms/dynamic_form.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/attachment_service.dart';
@@ -93,7 +94,7 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
                 label: 'Tipo',
                 type: DynamicFieldType.select,
                 initialValue: 'otro',
-                options: const [
+                options: [
                   DynamicFieldOption(value: 'reactivo', label: 'Reactivo'),
                   DynamicFieldOption(value: 'producto', label: 'Producto'),
                   DynamicFieldOption(value: 'otro', label: 'Otro'),
@@ -157,7 +158,7 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const AppLoadingView()
           : _error != null
           ? Center(
               child: Padding(

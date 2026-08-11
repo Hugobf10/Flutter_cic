@@ -85,6 +85,7 @@ class AttachmentService {
         ? await _portalApi.attachment(
             section: portalSection,
             recordId: portalRecordId,
+            attachmentId: attachmentId,
           )
         : await _odoo.read(
             'ir.attachment',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../app/ui/app_components.dart';
 import '../../services/app_permission_service.dart';
 import '../../theme/app_theme.dart';
 
@@ -74,7 +75,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         ],
       ),
       body: !_ready
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
+          ? const AppLoadingView()
           : Stack(
               children: [
                 MobileScanner(controller: _controller, onDetect: _onDetect),

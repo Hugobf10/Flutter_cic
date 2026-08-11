@@ -78,7 +78,7 @@ class _ChemicalReportScreenState extends State<ChemicalReportScreen> {
       title: 'Informe de químicos',
       actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))],
       child: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const AppLoadingView()
           : _error != null
           ? AppEmptyState(
               title: 'Error',

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/ui/app_components.dart';
 import '../../services/odoo_service.dart';
 import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
@@ -70,7 +71,7 @@ class _NormativaScreenState extends State<NormativaScreen> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const AppLoadingView()
           : _error != null
           ? Center(
               child: Padding(

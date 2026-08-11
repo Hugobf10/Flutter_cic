@@ -10,7 +10,7 @@ class ModuleRegistry {
       icon: Icons.verified_user_rounded,
       color: Color(0xFF6D5EF9),
       requiredPermission: 'quality.view',
-      description: 'Proveedores y comunicaciones de calidad',
+      description: 'Comunicaciones y sugerencias de calidad',
       implemented: true,
     ),
     AppModule(

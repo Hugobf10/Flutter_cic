@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/ui/app_components.dart';
 import '../../services/odoo_service.dart';
 
 class DynamicFieldConfig {
@@ -98,7 +99,7 @@ class _DynamicFormState extends State<DynamicForm> {
                 child: ElevatedButton(
                   onPressed: _submitting ? null : _submit,
                   child: _submitting
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? const AppLoadingIndicator(size: 18)
                       : Text(widget.submitLabel),
                 ),
               ),

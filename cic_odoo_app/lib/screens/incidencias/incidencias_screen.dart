@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../app/ui/app_components.dart';
 import '../../features/forms/dynamic_form.dart';
 import '../../features/incidents/incidence_detail_screen.dart';
 import '../../providers/auth_provider.dart';
@@ -8,7 +9,6 @@ import '../../services/odoo_values.dart';
 import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/section_header.dart';
-import '../../widgets/shimmer_loading.dart';
 
 /// Pantalla de listado de incidencias de calidad (calidad.incidencia).
 class IncidenciasScreen extends StatefulWidget {
@@ -238,7 +238,7 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
 
   Widget _buildPortalList() {
     if (_portalLoading && _portalRows.isEmpty) {
-      return const Padding(padding: EdgeInsets.all(16), child: ShimmerList());
+      return const AppLoadingView();
     }
     if (_portalError != null) {
       return Center(

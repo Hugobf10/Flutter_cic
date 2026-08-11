@@ -254,7 +254,7 @@ class _ActionPlansScreenState extends State<ActionPlansScreen> {
         IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
       ],
       child: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const AppLoadingView()
           : _error != null
           ? AppEmptyState(
               title: 'Error',

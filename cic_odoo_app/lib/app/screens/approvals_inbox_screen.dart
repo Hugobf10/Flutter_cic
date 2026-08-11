@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../ui/app_components.dart';
 import '../../services/odoo_service.dart';
 import '../../theme/app_theme.dart';
 
@@ -118,7 +119,7 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: AppLoadingView());
     }
 
     return Scaffold(

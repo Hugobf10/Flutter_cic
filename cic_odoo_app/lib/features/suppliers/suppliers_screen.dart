@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/ui/app_components.dart';
 import '../../features/forms/dynamic_form.dart';
 import '../../features/suppliers/supplier_detail_screen.dart';
 import '../../features/workflow/workflow_stage.dart';
 import '../../features/workflow/workflow_widgets.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/odoo_service.dart';
 import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 
@@ -18,7 +18,6 @@ class SuppliersScreen extends StatefulWidget {
 }
 
 class _SuppliersScreenState extends State<SuppliersScreen> {
-  final OdooService _odoo = OdooService();
   final PortalApiService _portalApi = PortalApiService();
   bool _loading = true;
   String? _error;
@@ -42,22 +41,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
     });
 
     try {
-      final rows = _odoo.isPortalSession
-          ? await _portalApi.section('suppliers', limit: 80)
-          : await _odoo.searchRead(
-              'calidad.proveedor.unidad',
-              fields: [
-                'partner_id',
-                'estado',
-                'fecha_homologacion',
-                'fecha_desestimacion',
-                'motivo_homologacion',
-                'motivo_desestimacion',
-                'observaciones',
-              ],
-              order: 'id desc',
-              limit: 80,
-            );
+      final rows = await _portalApi.section('suppliers', limit: 80);
       _rows = rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     } catch (e) {
       _error = e.toString();
@@ -68,7 +52,10 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
 
   Future<void> _runAction(int id, String method) async {
     try {
-      await _odoo.callRecordMethod('calidad.proveedor.unidad', [id], method);
+      await _portalApi.action(
+        method == 'action_desestimar' ? 'supplier_reject' : 'supplier_reactivate',
+        recordId: id,
+      );
       await _load();
     } catch (e) {
       if (!mounted) return;
@@ -84,17 +71,11 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
   Future<void> _openCreateDialog() async {
     List<DynamicFieldOption> partnerOptions = const [];
     try {
-      final rows = await _odoo.searchRead(
-        'res.partner',
-        domain: [
-          ['company_type', '=', 'company'],
-        ],
-        fields: ['name'],
-        order: 'name',
-        limit: 200,
-      );
+      final response = await _portalApi.action('supplier_options');
+      final rows = response['items'] is List ? response['items'] as List : const [];
       partnerOptions = rows
-          .map((e) => Map<String, dynamic>.from(e as Map))
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
           .map(
             (m) => DynamicFieldOption(
               value: m['id'],
@@ -169,11 +150,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                 'motivo_homologacion': values['motivo_homologacion'],
                 'observaciones': values['observaciones'],
               };
-              if (_odoo.isPortalSession) {
-                await _portalApi.action('supplier_create', values: payload);
-              } else {
-                await _odoo.create('calidad.proveedor.unidad', payload);
-              }
+              await _portalApi.action('supplier_create', values: payload);
             },
           ),
         );
@@ -189,7 +166,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: AppLoadingView());
     }
 
     return Scaffold(

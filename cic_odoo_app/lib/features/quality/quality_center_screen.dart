@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../features/communications/communications_screen.dart';
-import '../../features/suppliers/suppliers_screen.dart';
 import '../../theme/app_theme.dart';
 
 class QualityCenterScreen extends StatelessWidget {
@@ -20,17 +19,10 @@ class QualityCenterScreen extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           const Text(
-            'Gestiona proveedores y comunicaciones relacionadas con calidad.',
+            'Gestiona comunicaciones y sugerencias relacionadas con calidad.',
             style: TextStyle(color: AppTheme.textSecondary),
           ),
           const SizedBox(height: 14),
-          _entry(
-            context,
-            icon: Icons.local_shipping_rounded,
-            title: 'Proveedores',
-            subtitle: 'Homologaciones y estado de proveedores',
-            to: const SuppliersScreen(),
-          ),
           _entry(
             context,
             icon: Icons.chat_bubble_outline_rounded,

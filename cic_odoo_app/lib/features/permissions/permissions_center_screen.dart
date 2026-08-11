@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/ui/app_components.dart';
 import '../../services/odoo_service.dart';
 import '../../theme/app_theme.dart';
 
@@ -81,7 +82,7 @@ class _PermissionsCenterScreenState extends State<PermissionsCenterScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: AppLoadingView());
     }
     if (_error != null) {
       return Scaffold(

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../app/ui/app_components.dart';
 import '../../providers/data_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/section_header.dart';
-import '../../widgets/shimmer_loading.dart';
 
 /// Pantalla del directorio de personal (res.partner filtrado por personas).
 class PersonalScreen extends StatefulWidget {
@@ -80,7 +80,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
   }
 
   Widget _buildList(DataProvider p) {
-    if (p.isLoading && p.records.isEmpty) return const Padding(padding: EdgeInsets.all(16), child: ShimmerList());
+    if (p.isLoading && p.records.isEmpty) return const AppLoadingView();
     if (p.errorMessage != null) {
       return Center(child: Text('Error: ${p.errorMessage}', style: const TextStyle(color: AppTheme.textMuted)));
     }

@@ -93,7 +93,7 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
 
   Widget _buildList(DataProvider p) {
     if (p.isLoading && p.records.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoadingView();
     }
     if (p.errorMessage != null) {
       final limitedAccess = OdooService.isAccessError(p.errorMessage);

@@ -105,7 +105,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
             const SizedBox(height: 12),
             Expanded(
               child: _loading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const AppLoadingView()
                   : _error != null && !_limitedAccessMode
                   ? AppEmptyState(
                       title: 'Error al cargar formación',

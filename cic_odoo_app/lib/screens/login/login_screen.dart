@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/ui/app_components.dart';
 import '../../config/app_config.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
@@ -240,14 +241,7 @@ class _LoginScreenState extends State<LoginScreen>
               child: FilledButton.icon(
                 onPressed: loading ? null : _handleLogin,
                 icon: loading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.2,
-                          color: Colors.white,
-                        ),
-                      )
+                    ? const AppLoadingIndicator(size: 18)
                     : const Icon(Icons.arrow_forward_rounded),
                 label: Text(loading ? 'Entrando...' : 'Entrar'),
               ),
