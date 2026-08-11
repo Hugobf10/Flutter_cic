@@ -17,7 +17,6 @@ import '../../services/odoo_service.dart';
 import '../../services/odoo_values.dart';
 import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/section_header.dart';
 import 'reservation_entry_target.dart';
 
 class ReservasScreen extends StatefulWidget {
@@ -712,314 +711,299 @@ class _ReservasScreenState extends State<ReservasScreen>
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     if (_isLoading) {
-      return Scaffold(
-        backgroundColor: AppTheme.surfaceFor(context),
-        body: const AppLoadingView(),
-      );
+      return const AppScaffold(title: 'Reservas', child: AppLoadingView());
     }
 
     if (_error != null) {
       if (_limitedAccessMode) {
         return _buildLimitedAccessReservationMode(auth);
       }
-      return Scaffold(
-        backgroundColor: AppTheme.surfaceFor(context),
-        appBar: AppBar(title: Text('Reservas')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Text(
-              _error!,
-              style: TextStyle(color: AppTheme.textMutedFor(context)),
-            ),
+      return AppScaffold(
+        title: 'Reservas',
+        child: AppEmptyState(
+          title: 'No se pudieron cargar las reservas',
+          subtitle: _error!,
+          icon: Icons.cloud_off_rounded,
+          action: AppButton.primary(
+            label: 'Reintentar',
+            onPressed: _loadInitial,
           ),
         ),
       );
     }
 
-    return Scaffold(
-      backgroundColor: AppTheme.surfaceFor(context),
-      appBar: AppBar(
-        title: Text('Reservas'),
-        actions: [
-          if (auth.isInternalUser || auth.isAdmin)
-            IconButton(
-              onPressed: _scanReservationQr,
-              icon: Icon(Icons.qr_code_scanner_rounded),
-              tooltip: 'Escanear QR de sala o equipo',
-            ),
+    return AppScaffold(
+      title: 'Reservas',
+      padding: EdgeInsets.zero,
+      actions: [
+        if (auth.isInternalUser || auth.isAdmin)
           IconButton(
-            onPressed: _loadInitial,
-            icon: Icon(Icons.refresh_rounded),
+            onPressed: _scanReservationQr,
+            icon: Icon(Icons.qr_code_scanner_rounded),
+            tooltip: 'Escanear QR de sala o equipo',
           ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(
-              text: 'Nueva reserva',
-              icon: Icon(Icons.add_circle_outline_rounded),
-            ),
-            Tab(text: 'Mis reservas', icon: Icon(Icons.list_alt_rounded)),
-            Tab(
-              text: 'Agenda diaria',
-              icon: Icon(Icons.calendar_view_day_rounded),
-            ),
-          ],
-        ),
-      ),
-      body: TabBarView(
+        IconButton(onPressed: _loadInitial, icon: Icon(Icons.refresh_rounded)),
+      ],
+      appBarBottom: TabBar(
         controller: _tabController,
-        children: [
-          RefreshIndicator(
-            onRefresh: _loadInitial,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-              children: [
-                const SectionHeader(
-                  title: 'Reserva rápida',
-                  subtitle: 'Selecciona servicio, recurso y horario en 4 pasos',
-                  icon: Icons.calendar_month_rounded,
-                ),
-                if (_activeTarget != null) _buildResourceContextBanner(),
-                if (auth.isInternalUser || auth.isAdmin) ...[
-                  _buildAdminQrCard(),
-                  const SizedBox(height: 12),
-                  _buildApiDiagnosticsCard(),
-                  const SizedBox(height: 12),
-                ],
-                if (auth.canEditModule('reservas'))
-                  _buildNewReservationCard()
-                else
-                  const AppEmptyState(
-                    title: 'Reserva no disponible',
-                    subtitle:
-                        'Este usuario puede consultar reservas, pero no crear nuevas desde la app.',
-                    icon: Icons.lock_outline_rounded,
-                  ),
-              ],
-            ),
+        tabs: const [
+          Tab(
+            text: 'Nueva reserva',
+            icon: Icon(Icons.add_circle_outline_rounded),
           ),
-          RefreshIndicator(
-            onRefresh: _loadInitial,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-              children: [
-                SectionHeader(
-                  title: 'Mis reservas',
-                  subtitle: '${_reservas.length} registros',
-                  icon: Icons.list_alt_rounded,
-                ),
-                if (_reservasError != null)
-                  _buildReservasNotice(_reservasError!),
-                if (_reservas.isEmpty)
-                  const AppEmptyState(
-                    title: 'Sin reservas',
-                    subtitle: 'No tienes reservas registradas.',
-                    icon: Icons.event_busy_outlined,
-                  )
-                else
-                  ..._reservas.map((r) => _buildReservaCard(r, auth: auth)),
-              ],
-            ),
-          ),
-          RefreshIndicator(
-            onRefresh: _loadInitial,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-              children: [
-                SectionHeader(
-                  title: 'Agenda del día',
-                  subtitle:
-                      '${_agendaReservas.length} reservas visibles el ${_formatAgendaDay(_agendaDay)}',
-                  icon: Icons.calendar_view_day_rounded,
-                ),
-                if (_activeTarget != null) _buildResourceContextBanner(),
-                _buildAgendaDaySelector(),
-                const SizedBox(height: 12),
-                if (_agendaError != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Text(
-                      _agendaError!,
-                      style: TextStyle(
-                        color: AppTheme.textMutedFor(context),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                if (_agendaReservas.isEmpty)
-                  const AppEmptyState(
-                    title: 'Sin reservas este día',
-                    subtitle:
-                        'No hay reservas disponibles para consultar en la fecha seleccionada.',
-                    icon: Icons.calendar_today_outlined,
-                  )
-                else
-                  _buildAgendaTimeline(auth),
-              ],
-            ),
+          Tab(text: 'Mis reservas', icon: Icon(Icons.list_alt_rounded)),
+          Tab(
+            text: 'Agenda diaria',
+            icon: Icon(Icons.calendar_view_day_rounded),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildLimitedAccessReservationMode(AuthProvider auth) {
-    return Scaffold(
-      backgroundColor: AppTheme.surfaceFor(context),
-      appBar: AppBar(
-        title: Text('Reservas'),
-        actions: [
-          if (auth.isInternalUser || auth.isAdmin)
-            IconButton(
-              onPressed: _scanReservationQr,
-              icon: Icon(Icons.qr_code_scanner_rounded),
-              tooltip: 'Escanear QR de sala o equipo',
-            ),
-          IconButton(
-            onPressed: _loadInitial,
-            icon: Icon(Icons.refresh_rounded),
-          ),
-        ],
-        bottom: TabBar(
+      child: SizedBox.expand(
+        child: TabBarView(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Mis reservas', icon: Icon(Icons.list_alt_rounded)),
-            Tab(
-              text: 'Agenda diaria',
-              icon: Icon(Icons.calendar_view_day_rounded),
-            ),
-            Tab(text: 'Acceso', icon: Icon(Icons.lock_outline_rounded)),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          RefreshIndicator(
-            onRefresh: _loadInitial,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-              children: [
-                SectionHeader(
-                  title: 'Mis reservas',
-                  subtitle: '${_reservas.length} registros',
-                  icon: Icons.list_alt_rounded,
-                ),
-                if (_reservasError != null)
-                  _buildReservasNotice(_reservasError!),
-                if (_reservas.isEmpty)
-                  const AppEmptyState(
-                    title: 'Sin reservas',
-                    subtitle: 'No tienes reservas registradas.',
-                    icon: Icons.event_busy_outlined,
-                  )
-                else
-                  ..._reservas.map((r) => _buildReservaCard(r, auth: auth)),
-              ],
-            ),
-          ),
-          RefreshIndicator(
-            onRefresh: _loadInitial,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-              children: [
-                SectionHeader(
-                  title: 'Agenda del día',
-                  subtitle:
-                      '${_agendaReservas.length} reservas visibles el ${_formatAgendaDay(_agendaDay)}',
-                  icon: Icons.calendar_view_day_rounded,
-                ),
-                if (_activeTarget != null) _buildResourceContextBanner(),
-                _buildAgendaDaySelector(),
-                const SizedBox(height: 12),
-                if (_agendaError != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Text(
-                      _agendaError!,
-                      style: TextStyle(
-                        color: AppTheme.textMutedFor(context),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                if (_agendaReservas.isEmpty)
-                  const AppEmptyState(
-                    title: 'Sin reservas este día',
+          children: [
+            RefreshIndicator(
+              onRefresh: _loadInitial,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                children: [
+                  const AppSectionHeader(
+                    title: 'Reserva rápida',
                     subtitle:
-                        'No hay reservas visibles en la fecha seleccionada.',
-                    icon: Icons.calendar_today_outlined,
-                  )
-                else
-                  _buildAgendaTimeline(auth),
-              ],
-            ),
-          ),
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 560),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.cardFor(context),
-                  borderRadius: AppTheme.radiusMd,
-                  border: Border.all(color: AppTheme.dividerFor(context)),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(
-                          Icons.lock_outline_rounded,
-                          color: AppTheme.primary,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Reservas con acceso limitado',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Este perfil está en modo de consulta dentro de la app. Puede revisar sus reservas y la agenda diaria, pero no crear ni editar nuevas reservas con sus permisos actuales.',
-                      style: TextStyle(
-                        color: AppTheme.textSecondaryFor(context),
-                      ),
-                    ),
+                        'Selecciona servicio, recurso y horario en 4 pasos',
+                  ),
+                  if (_activeTarget != null) _buildResourceContextBanner(),
+                  if (auth.isInternalUser || auth.isAdmin) ...[
+                    _buildAdminQrCard(),
                     const SizedBox(height: 12),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppTheme.elevatedFor(context),
-                        borderRadius: AppTheme.radiusSm,
-                        border: Border.all(color: AppTheme.dividerFor(context)),
-                      ),
+                    _buildApiDiagnosticsCard(),
+                    const SizedBox(height: 12),
+                  ],
+                  if (auth.canEditModule('reservas'))
+                    _buildNewReservationCard()
+                  else
+                    const AppEmptyState(
+                      title: 'Reserva no disponible',
+                      subtitle:
+                          'Este usuario puede consultar reservas, pero no crear nuevas desde la app.',
+                      icon: Icons.lock_outline_rounded,
+                    ),
+                ],
+              ),
+            ),
+            RefreshIndicator(
+              onRefresh: _loadInitial,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                children: [
+                  AppSectionHeader(
+                    title: 'Mis reservas',
+                    subtitle: '${_reservas.length} registros',
+                  ),
+                  if (_reservasError != null)
+                    _buildReservasNotice(_reservasError!),
+                  if (_reservas.isEmpty)
+                    const AppEmptyState(
+                      title: 'Sin reservas',
+                      subtitle: 'No tienes reservas registradas.',
+                      icon: Icons.event_busy_outlined,
+                    )
+                  else
+                    ..._reservas.map((r) => _buildReservaCard(r, auth: auth)),
+                ],
+              ),
+            ),
+            RefreshIndicator(
+              onRefresh: _loadInitial,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                children: [
+                  AppSectionHeader(
+                    title: 'Agenda del día',
+                    subtitle:
+                        '${_agendaReservas.length} reservas visibles el ${_formatAgendaDay(_agendaDay)}',
+                  ),
+                  if (_activeTarget != null) _buildResourceContextBanner(),
+                  _buildAgendaDaySelector(),
+                  const SizedBox(height: 12),
+                  if (_agendaError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
                       child: Text(
-                        'Si este usuario debe poder reservar desde la app, hay que habilitar permisos API para su perfil en el flujo de reservas.',
+                        _agendaError!,
                         style: TextStyle(
                           color: AppTheme.textMutedFor(context),
                           fontSize: 12,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    _buildApiDiagnosticsCard(),
-                  ],
+                  if (_agendaReservas.isEmpty)
+                    const AppEmptyState(
+                      title: 'Sin reservas este día',
+                      subtitle:
+                          'No hay reservas disponibles para consultar en la fecha seleccionada.',
+                      icon: Icons.calendar_today_outlined,
+                    )
+                  else
+                    _buildAgendaTimeline(auth),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLimitedAccessReservationMode(AuthProvider auth) {
+    return AppScaffold(
+      title: 'Reservas',
+      padding: EdgeInsets.zero,
+      actions: [
+        if (auth.isInternalUser || auth.isAdmin)
+          IconButton(
+            onPressed: _scanReservationQr,
+            icon: Icon(Icons.qr_code_scanner_rounded),
+            tooltip: 'Escanear QR de sala o equipo',
+          ),
+        IconButton(onPressed: _loadInitial, icon: Icon(Icons.refresh_rounded)),
+      ],
+      appBarBottom: TabBar(
+        controller: _tabController,
+        tabs: const [
+          Tab(text: 'Mis reservas', icon: Icon(Icons.list_alt_rounded)),
+          Tab(
+            text: 'Agenda diaria',
+            icon: Icon(Icons.calendar_view_day_rounded),
+          ),
+          Tab(text: 'Acceso', icon: Icon(Icons.lock_outline_rounded)),
+        ],
+      ),
+      child: SizedBox.expand(
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            RefreshIndicator(
+              onRefresh: _loadInitial,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                children: [
+                  AppSectionHeader(
+                    title: 'Mis reservas',
+                    subtitle: '${_reservas.length} registros',
+                  ),
+                  if (_reservasError != null)
+                    _buildReservasNotice(_reservasError!),
+                  if (_reservas.isEmpty)
+                    const AppEmptyState(
+                      title: 'Sin reservas',
+                      subtitle: 'No tienes reservas registradas.',
+                      icon: Icons.event_busy_outlined,
+                    )
+                  else
+                    ..._reservas.map((r) => _buildReservaCard(r, auth: auth)),
+                ],
+              ),
+            ),
+            RefreshIndicator(
+              onRefresh: _loadInitial,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                children: [
+                  AppSectionHeader(
+                    title: 'Agenda del día',
+                    subtitle:
+                        '${_agendaReservas.length} reservas visibles el ${_formatAgendaDay(_agendaDay)}',
+                  ),
+                  if (_activeTarget != null) _buildResourceContextBanner(),
+                  _buildAgendaDaySelector(),
+                  const SizedBox(height: 12),
+                  if (_agendaError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        _agendaError!,
+                        style: TextStyle(
+                          color: AppTheme.textMutedFor(context),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  if (_agendaReservas.isEmpty)
+                    const AppEmptyState(
+                      title: 'Sin reservas este día',
+                      subtitle:
+                          'No hay reservas visibles en la fecha seleccionada.',
+                      icon: Icons.calendar_today_outlined,
+                    )
+                  else
+                    _buildAgendaTimeline(auth),
+                ],
+              ),
+            ),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: AppCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            AppIconSurface(
+                              icon: Icons.lock_outline_rounded,
+                              color: AppTheme.primary,
+                              size: 42,
+                              iconSize: 20,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Reservas con acceso limitado',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Este perfil está en modo de consulta dentro de la app. Puede revisar sus reservas y la agenda diaria, pero no crear ni editar nuevas reservas con sus permisos actuales.',
+                          style: TextStyle(
+                            color: AppTheme.textSecondaryFor(context),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: NeumorphicSurface(
+                            padding: const EdgeInsets.all(12),
+                            color: AppTheme.elevatedFor(context),
+                            borderRadius: AppTheme.radiusSm,
+                            subtle: true,
+                            child: Text(
+                              'Si este usuario debe poder reservar desde la app, hay que habilitar permisos API para su perfil en el flujo de reservas.',
+                              style: TextStyle(
+                                color: AppTheme.textMutedFor(context),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildApiDiagnosticsCard(),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1038,8 +1022,13 @@ class _ReservasScreenState extends State<ReservasScreen>
           children: [
             Row(
               children: [
-                Icon(Icons.qr_code_2_rounded, color: AppTheme.primary),
-                const SizedBox(width: 8),
+                const AppIconSurface(
+                  icon: Icons.qr_code_2_rounded,
+                  color: AppTheme.primary,
+                  size: 42,
+                  iconSize: 20,
+                ),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     label?.trim().isNotEmpty == true
@@ -1081,8 +1070,13 @@ class _ReservasScreenState extends State<ReservasScreen>
         children: [
           const Row(
             children: [
-              Icon(Icons.qr_code_2_rounded, color: AppTheme.primary),
-              SizedBox(width: 8),
+              AppIconSurface(
+                icon: Icons.qr_code_2_rounded,
+                color: AppTheme.primary,
+                size: 42,
+                iconSize: 20,
+              ),
+              SizedBox(width: 10),
               Text(
                 'QR de recurso',
                 style: TextStyle(fontWeight: FontWeight.w700),
@@ -1102,14 +1096,11 @@ class _ReservasScreenState extends State<ReservasScreen>
           if (variantId != null) ...[
             const SizedBox(height: 12),
             Center(
-              child: Container(
+              child: NeumorphicSurface(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: AppTheme.dividerFor(context)),
-                  boxShadow: AppTheme.subtleShadowFor(context),
-                ),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                subtle: true,
                 child: Column(
                   children: [
                     QrImageView(
@@ -1129,15 +1120,15 @@ class _ReservasScreenState extends State<ReservasScreen>
                     Text(
                       variantName ?? 'Recurso',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Servicio ${templateId ?? '-'} · Recurso $variantId',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.textMutedFor(context),
-                      ),
+                      style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
                     ),
                   ],
                 ),
@@ -1209,8 +1200,13 @@ class _ReservasScreenState extends State<ReservasScreen>
         children: [
           const Row(
             children: [
-              Icon(Icons.health_and_safety_outlined, color: AppTheme.primary),
-              SizedBox(width: 8),
+              AppIconSurface(
+                icon: Icons.health_and_safety_outlined,
+                color: AppTheme.primary,
+                size: 42,
+                iconSize: 20,
+              ),
+              SizedBox(width: 10),
               Text(
                 'Diagnóstico API',
                 style: TextStyle(fontWeight: FontWeight.w700),
@@ -1226,22 +1222,21 @@ class _ReservasScreenState extends State<ReservasScreen>
             ),
           ),
           const SizedBox(height: 10),
-          Container(
+          SizedBox(
             width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
+            child: NeumorphicSurface(
+              padding: const EdgeInsets.all(12),
               color: AppTheme.elevatedFor(context),
               borderRadius: AppTheme.radiusSm,
-              border: Border.all(color: AppTheme.dividerFor(context)),
-              boxShadow: AppTheme.subtleShadowFor(context),
-            ),
-            child: Text(
-              'Día actual: ${_formatAgendaDay(_currentReservationDay())}\n'
-              'Servicio: ${serviceLabel ?? '-'}\n'
-              'Recurso: ${variantLabel ?? '-'}',
-              style: TextStyle(
-                color: AppTheme.textMutedFor(context),
-                fontSize: 12,
+              subtle: true,
+              child: Text(
+                'Día actual: ${_formatAgendaDay(_currentReservationDay())}\n'
+                'Servicio: ${serviceLabel ?? '-'}\n'
+                'Recurso: ${variantLabel ?? '-'}',
+                style: TextStyle(
+                  color: AppTheme.textMutedFor(context),
+                  fontSize: 12,
+                ),
               ),
             ),
           ),
@@ -1292,43 +1287,42 @@ class _ReservasScreenState extends State<ReservasScreen>
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Container(
+      child: SizedBox(
         width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
+        child: NeumorphicSurface(
+          padding: const EdgeInsets.all(12),
           color: AppTheme.elevatedFor(context),
           borderRadius: AppTheme.radiusSm,
-          border: Border.all(color: AppTheme.dividerFor(context)),
-          boxShadow: AppTheme.subtleShadowFor(context),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color, size: 18),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    result.label,
-                    style: TextStyle(
-                      color: AppTheme.textPrimaryFor(context),
-                      fontWeight: FontWeight.w700,
+          subtle: true,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppIconSurface(icon: icon, color: color, size: 38, iconSize: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      result.label,
+                      style: TextStyle(
+                        color: AppTheme.textPrimaryFor(context),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    result.message,
-                    style: TextStyle(
-                      color: AppTheme.textMutedFor(context),
-                      fontSize: 12,
+                    const SizedBox(height: 4),
+                    Text(
+                      result.message,
+                      style: TextStyle(
+                        color: AppTheme.textMutedFor(context),
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1617,16 +1611,18 @@ class _ReservasScreenState extends State<ReservasScreen>
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
+                NeumorphicSurface(
                   width: 78,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
                     vertical: 10,
                   ),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    borderRadius: AppTheme.radiusSm,
+                  color: Color.alphaBlend(
+                    color.withValues(alpha: 0.10),
+                    AppTheme.cardFor(context),
                   ),
+                  borderRadius: AppTheme.radiusSm,
+                  subtle: true,
                   child: Column(
                     children: [
                       Text(
@@ -1768,18 +1764,27 @@ class _ReservasScreenState extends State<ReservasScreen>
   Widget _buildReservasNotice(String message) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Container(
-        width: double.infinity,
+      child: AppCard(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppTheme.elevatedFor(context),
-          borderRadius: AppTheme.radiusSm,
-          border: Border.all(color: AppTheme.dividerFor(context)),
-          boxShadow: AppTheme.subtleShadowFor(context),
-        ),
-        child: Text(
-          message,
-          style: TextStyle(color: AppTheme.textMutedFor(context), fontSize: 12),
+        child: Row(
+          children: [
+            const AppIconSurface(
+              icon: Icons.info_outline_rounded,
+              color: AppTheme.info,
+              size: 38,
+              iconSize: 18,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  color: AppTheme.textMutedFor(context),
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1955,16 +1960,8 @@ class _ReservasScreenState extends State<ReservasScreen>
         ? null
         : selectedVariantList.first;
     final hourlyPrice = selectedVariant?['lst_price'];
-    return Container(
+    return AppCard(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppTheme.cardFor(context),
-        borderRadius: AppTheme.radiusMd,
-        border: Border.all(
-          color: AppTheme.dividerFor(context).withValues(alpha: 0.5),
-        ),
-        boxShadow: AppTheme.subtleShadowFor(context),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2045,19 +2042,33 @@ class _ReservasScreenState extends State<ReservasScreen>
         return Expanded(
           child: Column(
             children: [
-              CircleAvatar(
-                radius: 12,
-                backgroundColor: done || active
-                    ? AppTheme.primary
-                    : AppTheme.elevatedFor(context),
-                child: Text(
-                  done ? '✓' : '${i + 1}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: done || active
-                        ? Colors.white
-                        : AppTheme.textMutedFor(context),
+              SizedBox(
+                width: 28,
+                height: 28,
+                child: NeumorphicSurface(
+                  color: done || active
+                      ? AppTheme.primary
+                      : AppTheme.elevatedFor(context),
+                  borderRadius: BorderRadius.circular(14),
+                  padding: EdgeInsets.zero,
+                  subtle: !active,
+                  child: Center(
+                    child: done
+                        ? const Icon(
+                            Icons.check_rounded,
+                            size: 15,
+                            color: Colors.white,
+                          )
+                        : Text(
+                            '${i + 1}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: active
+                                  ? Colors.white
+                                  : AppTheme.textMutedFor(context),
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -2111,10 +2122,11 @@ class _ReservasScreenState extends State<ReservasScreen>
                 children: _services.map((s) {
                   final id = s['id'] as int;
                   final selected = _serviceTemplateId == id;
-                  return ChoiceChip(
-                    label: Text((s['name'] ?? '').toString()),
+                  return AppChoicePill(
+                    label: (s['name'] ?? '').toString(),
+                    icon: Icons.category_outlined,
                     selected: selected,
-                    onSelected: (_) async {
+                    onTap: () async {
                       if (selected) return;
                       setState(() => _serviceTemplateId = id);
                       await _loadServiceOptions();
@@ -2151,12 +2163,11 @@ class _ReservasScreenState extends State<ReservasScreen>
                 children: _variants.map((v) {
                   final id = v['id'] as int;
                   final selected = _variantId == id;
-                  return ChoiceChip(
-                    label: Text(
-                      '${v['display_name']} (${_money(v['lst_price'])}/h)',
-                    ),
+                  return AppChoicePill(
+                    label: '${v['display_name']} (${_money(v['lst_price'])}/h)',
+                    icon: Icons.meeting_room_outlined,
                     selected: selected,
-                    onSelected: (_) async {
+                    onTap: () async {
                       if (selected) return;
                       setState(() => _variantId = id);
                       await _loadAvailability();
@@ -2219,10 +2230,11 @@ class _ReservasScreenState extends State<ReservasScreen>
                   itemBuilder: (_, i) {
                     final d = days[i];
                     final selected = _sameDay(d, _selectedDay);
-                    return ChoiceChip(
-                      label: Text(_dayLabel(d)),
+                    return AppChoicePill(
+                      label: _dayLabel(d),
+                      icon: Icons.calendar_today_outlined,
                       selected: selected,
-                      onSelected: (_) async {
+                      onTap: () async {
                         setState(() => _selectedDay = d);
                         await _loadAvailability();
                       },
@@ -2251,12 +2263,15 @@ class _ReservasScreenState extends State<ReservasScreen>
                   final selected =
                       _start != null && _start!.isAtSameMomentAs(slot);
                   final busy = _isSlotBusy(slot);
-                  return ChoiceChip(
-                    label: Text(_slotLabel(slot)),
+                  return AppChoicePill(
+                    label: _slotLabel(slot),
+                    icon: busy
+                        ? Icons.lock_clock_rounded
+                        : Icons.schedule_rounded,
                     selected: selected,
-                    onSelected: busy
+                    onTap: busy
                         ? null
-                        : (_) {
+                        : () {
                             setState(() {
                               _start = slot;
                               _end = _start!.add(
@@ -2281,10 +2296,11 @@ class _ReservasScreenState extends State<ReservasScreen>
                 runSpacing: 8,
                 children: [30, 60, 90, 120].map((minutes) {
                   final selected = _durationMinutes == minutes;
-                  return ChoiceChip(
-                    label: Text(_durationLabel(minutes)),
+                  return AppChoicePill(
+                    label: _durationLabel(minutes),
+                    icon: Icons.timelapse_rounded,
                     selected: selected,
-                    onSelected: (_) {
+                    onTap: () {
                       _setDurationMinutes(minutes);
                       if (_start != null && _isSlotBusy(_start!)) {
                         setState(() {
@@ -2310,22 +2326,18 @@ class _ReservasScreenState extends State<ReservasScreen>
                 'Revisa los datos antes de guardar. La reserva quedará en borrador: podrás editarla o confirmarla desde «Mis reservas».',
               ),
               const SizedBox(height: 12),
-              TextField(
+              AppInput(
                 controller: _motivoCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Motivo (opcional)',
-                ),
+                labelText: 'Motivo (opcional)',
+                prefixIcon: Icons.notes_rounded,
               ),
               const SizedBox(height: 10),
-              Container(
+              NeumorphicSurface(
                 width: double.infinity,
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppTheme.elevatedFor(context),
-                  borderRadius: AppTheme.radiusSm,
-                  border: Border.all(color: AppTheme.dividerFor(context)),
-                  boxShadow: AppTheme.subtleShadowFor(context),
-                ),
+                color: AppTheme.elevatedFor(context),
+                borderRadius: AppTheme.radiusSm,
+                subtle: true,
                 child: Text(
                   'Resumen: ${selectedService?['name'] ?? '-'} · ${selectedVariant?['display_name'] ?? '-'}\n'
                   '${_fmt(_start!)} -> ${_fmt(_end!)} · ${_money(((hourlyPrice is num ? hourlyPrice.toDouble() : 0) * (_durationMinutes / 60)))}',
@@ -2342,18 +2354,24 @@ class _ReservasScreenState extends State<ReservasScreen>
   }
 
   Widget _buildWizardHint(IconData icon, String message) {
-    return Container(
+    return NeumorphicSurface(
       width: double.infinity,
       padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: AppTheme.primary.withValues(alpha: 0.08),
-        borderRadius: AppTheme.radiusSm,
-        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.2)),
+      color: Color.alphaBlend(
+        AppTheme.primary.withValues(alpha: 0.08),
+        AppTheme.cardFor(context),
       ),
+      borderRadius: AppTheme.radiusSm,
+      subtle: true,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AppTheme.primary),
+          AppIconSurface(
+            icon: icon,
+            color: AppTheme.primary,
+            size: 38,
+            iconSize: 18,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -2385,145 +2403,122 @@ class _ReservasScreenState extends State<ReservasScreen>
     final total = (r['importe_total'] as num?)?.toDouble() ?? 0;
     final motivo = (r['motivo'] ?? '').toString();
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppTheme.cardFor(context),
-        borderRadius: AppTheme.radiusMd,
-        border: Border.all(
-          color: AppTheme.dividerFor(context).withValues(alpha: 0.5),
-        ),
-        boxShadow: AppTheme.subtleShadowFor(context),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: AppCard(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const AppIconSurface(
+                  icon: Icons.event_available_rounded,
+                  color: AppTheme.primary,
+                  size: 42,
+                  iconSize: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    servicio,
+                    style: TextStyle(
+                      color: AppTheme.textPrimaryFor(context),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                _estadoBadge(estado),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '$start  ->  $end',
+              style: TextStyle(
+                color: AppTheme.textSecondaryFor(context),
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Duración: ${duracion.toStringAsFixed(1)}h  ·  Total: ${_money(total)}',
+              style: TextStyle(
+                color: AppTheme.textMutedFor(context),
+                fontSize: 12,
+              ),
+            ),
+            if (session.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  servicio,
+                  'Tipo: $session',
                   style: TextStyle(
-                    color: AppTheme.textPrimaryFor(context),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textMutedFor(context),
+                    fontSize: 12,
                   ),
                 ),
               ),
-              _estadoBadge(estado),
+            if (motivo.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Motivo: $motivo',
+                  style: TextStyle(
+                    color: AppTheme.textMutedFor(context),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            if (contacto.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Solicitante: $contacto',
+                  style: TextStyle(
+                    color: AppTheme.textMutedFor(context),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            if (estado == 'borrador' && auth.canEditModule('reservas')) ...[
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => _editarReserva(r),
+                    icon: Icon(Icons.edit_outlined),
+                    label: Text('Editar'),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => _confirmarReserva(id),
+                    icon: Icon(Icons.check_circle_outline_rounded),
+                    label: Text('Confirmar'),
+                  ),
+                ],
+              ),
             ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '$start  ->  $end',
-            style: TextStyle(
-              color: AppTheme.textSecondaryFor(context),
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Duración: ${duracion.toStringAsFixed(1)}h  ·  Total: ${_money(total)}',
-            style: TextStyle(
-              color: AppTheme.textMutedFor(context),
-              fontSize: 12,
-            ),
-          ),
-          if (session.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                'Tipo: $session',
-                style: TextStyle(
-                  color: AppTheme.textMutedFor(context),
-                  fontSize: 12,
+            if (estado == 'confirmada' && auth.canEditModule('reservas')) ...[
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => _cancelarReserva(id),
+                  icon: Icon(Icons.cancel_outlined),
+                  label: Text('Cancelar'),
                 ),
               ),
-            ),
-          if (motivo.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                'Motivo: $motivo',
-                style: TextStyle(
-                  color: AppTheme.textMutedFor(context),
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          if (contacto.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                'Solicitante: $contacto',
-                style: TextStyle(
-                  color: AppTheme.textMutedFor(context),
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          if (estado == 'borrador' && auth.canEditModule('reservas')) ...[
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton.icon(
-                  onPressed: () => _editarReserva(r),
-                  icon: Icon(Icons.edit_outlined),
-                  label: Text('Editar'),
-                ),
-                TextButton.icon(
-                  onPressed: () => _confirmarReserva(id),
-                  icon: Icon(Icons.check_circle_outline_rounded),
-                  label: Text('Confirmar'),
-                ),
-              ],
-            ),
+            ],
           ],
-          if (estado == 'confirmada' && auth.canEditModule('reservas')) ...[
-            const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () => _cancelarReserva(id),
-                icon: Icon(Icons.cancel_outlined),
-                label: Text('Cancelar'),
-              ),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
 
   Widget _estadoBadge(String estado) {
-    Color color;
-    switch (estado) {
-      case 'confirmada':
-        color = AppTheme.info;
-        break;
-      case 'facturada':
-        color = AppTheme.success;
-        break;
-      default:
-        color = AppTheme.warning;
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: AppTheme.radiusXl,
-      ),
-      child: Text(
-        estado,
-        style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
+    final color = _estadoColor(estado);
+    return AppStatusChip(label: _formatEstado(estado), color: color);
   }
 
   String _nameFromMany2one(dynamic v) {

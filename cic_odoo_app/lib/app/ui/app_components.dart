@@ -15,6 +15,7 @@ class AppScaffold extends StatelessWidget {
     required this.child,
     this.actions,
     this.floatingActionButton,
+    this.appBarBottom,
     this.showAppBar = true,
     this.padding = const EdgeInsets.fromLTRB(20, 10, 20, 20),
   });
@@ -23,6 +24,7 @@ class AppScaffold extends StatelessWidget {
   final Widget child;
   final List<Widget>? actions;
   final Widget? floatingActionButton;
+  final PreferredSizeWidget? appBarBottom;
   final bool showAppBar;
   final EdgeInsets padding;
 
@@ -30,7 +32,9 @@ class AppScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.surfaceFor(context),
-      appBar: showAppBar ? AppBar(title: Text(title), actions: actions) : null,
+      appBar: showAppBar
+          ? AppBar(title: Text(title), actions: actions, bottom: appBarBottom)
+          : null,
       floatingActionButton: floatingActionButton,
       body: Container(
         decoration: BoxDecoration(gradient: AppTheme.heroGradientFor(context)),
@@ -60,6 +64,8 @@ class NeumorphicSurface extends StatefulWidget {
     this.margin = EdgeInsets.zero,
     this.borderRadius,
     this.color,
+    this.width,
+    this.height,
     this.onTap,
     this.subtle = false,
     this.showBorder = true,
@@ -70,6 +76,8 @@ class NeumorphicSurface extends StatefulWidget {
   final EdgeInsetsGeometry margin;
   final BorderRadius? borderRadius;
   final Color? color;
+  final double? width;
+  final double? height;
   final VoidCallback? onTap;
   final bool subtle;
   final bool showBorder;
@@ -90,6 +98,8 @@ class _NeumorphicSurfaceState extends State<NeumorphicSurface> {
       duration: duration,
       curve: AppMotion.enterCurve,
       margin: widget.margin,
+      width: widget.width,
+      height: widget.height,
       padding: widget.padding,
       decoration: AppTheme.neumorphicDecoration(
         context,
@@ -248,18 +258,20 @@ class AppChoicePill extends StatelessWidget {
     super.key,
     required this.label,
     required this.selected,
-    required this.onTap,
+    this.onTap,
     this.icon,
   });
 
   final String label;
   final bool selected;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
-    final color = selected
+    final color = onTap == null
+        ? AppTheme.textMutedFor(context)
+        : selected
         ? AppTheme.primary
         : AppTheme.textSecondaryFor(context);
     final background = selected
@@ -273,7 +285,8 @@ class AppChoicePill extends StatelessWidget {
     return Semantics(
       label: label,
       selected: selected,
-      button: true,
+      button: onTap != null,
+      enabled: onTap != null,
       child: ExcludeSemantics(
         child: NeumorphicSurface(
           onTap: onTap,

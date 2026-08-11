@@ -136,4 +136,63 @@ void main() {
     await tester.enterText(find.byType(TextField), 'calidad');
     expect(controller.text, 'calidad');
   });
+
+  testWidgets('AppScaffold integra pestañas de contenido sin perder altura', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: DefaultTabController(
+          length: 2,
+          child: AppScaffold(
+            title: 'Reservas',
+            padding: EdgeInsets.zero,
+            appBarBottom: const TabBar(
+              tabs: [
+                Tab(text: 'Nueva'),
+                Tab(text: 'Agenda'),
+              ],
+            ),
+            child: const SizedBox.expand(
+              child: TabBarView(
+                children: [Text('Crear reserva'), Text('Agenda diaria')],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Crear reserva'), findsOneWidget);
+    await tester.tap(find.text('Agenda'));
+    await tester.pumpAndSettle();
+    expect(find.text('Agenda diaria'), findsOneWidget);
+  });
+
+  testWidgets(
+    'AppChoicePill representa horarios ocupados como deshabilitados',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: const Scaffold(
+            body: AppChoicePill(
+              label: '10:30',
+              icon: Icons.lock_clock_rounded,
+              selected: false,
+            ),
+          ),
+        ),
+      );
+
+      final semantics = tester.widgetList<Semantics>(
+        find.ancestor(of: find.text('10:30'), matching: find.byType(Semantics)),
+      );
+      expect(
+        semantics.any((widget) => widget.properties.enabled == false),
+        true,
+      );
+    },
+  );
 }
