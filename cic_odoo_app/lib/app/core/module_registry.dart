@@ -5,15 +5,6 @@ import '../models/app_module.dart';
 class ModuleRegistry {
   static const List<AppModule> all = [
     AppModule(
-      key: 'quality',
-      title: 'Calidad',
-      icon: Icons.verified_user_rounded,
-      color: Color(0xFF6D5EF9),
-      requiredPermission: 'quality.view',
-      description: 'Comunicaciones y sugerencias de calidad',
-      implemented: true,
-    ),
-    AppModule(
       key: 'incidents',
       title: 'Incidencias',
       icon: Icons.warning_amber_rounded,

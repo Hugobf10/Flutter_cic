@@ -45,6 +45,54 @@ class AppScaffold extends StatelessWidget {
   }
 }
 
+/// Superficie base del sistema neumórfico. Mantiene contraste mediante borde
+/// además del relieve para que funcione también en modo oscuro.
+class NeumorphicSurface extends StatelessWidget {
+  const NeumorphicSurface({
+    super.key,
+    required this.child,
+    this.padding = EdgeInsets.zero,
+    this.margin = EdgeInsets.zero,
+    this.borderRadius,
+    this.color,
+    this.onTap,
+    this.subtle = false,
+    this.showBorder = true,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final EdgeInsetsGeometry margin;
+  final BorderRadius? borderRadius;
+  final Color? color;
+  final VoidCallback? onTap;
+  final bool subtle;
+  final bool showBorder;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = borderRadius ?? AppTheme.radiusMd;
+    final content = AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      margin: margin,
+      padding: padding,
+      decoration: AppTheme.neumorphicDecoration(
+        context,
+        borderRadius: radius,
+        color: color,
+        subtle: subtle,
+        showBorder: showBorder,
+      ),
+      child: child,
+    );
+    if (onTap == null) return content;
+    return Semantics(
+      button: true,
+      child: InkWell(borderRadius: radius, onTap: onTap, child: content),
+    );
+  }
+}
+
 class AppCard extends StatelessWidget {
   const AppCard({
     super.key,
@@ -59,22 +107,10 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final content = AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
+    return NeumorphicSurface(
       padding: padding,
-      decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
-        borderRadius: AppTheme.radiusMd,
-        border: Border.all(color: AppTheme.dividerFor(context)),
-        boxShadow: AppTheme.softShadow,
-      ),
-      child: child,
-    );
-    if (onTap == null) return content;
-    return InkWell(
-      borderRadius: AppTheme.radiusMd,
       onTap: onTap,
-      child: content,
+      child: child,
     );
   }
 }
@@ -265,15 +301,22 @@ class AppAvatar extends StatelessWidget {
         ? parts.first[0].toUpperCase()
         : '${parts[0][0]}${parts[1][0]}'.toUpperCase();
 
-    return CircleAvatar(
-      radius: size / 2,
-      backgroundColor: AppTheme.primary.withValues(alpha: 0.12),
-      child: Text(
-        initials,
-        style: TextStyle(
-          color: AppTheme.primary,
-          fontWeight: FontWeight.w700,
-          fontSize: size * 0.34,
+    return Container(
+      width: size,
+      height: size,
+      decoration: AppTheme.neumorphicDecoration(
+        context,
+        borderRadius: BorderRadius.circular(size / 2),
+        subtle: true,
+      ),
+      child: Center(
+        child: Text(
+          initials,
+          style: TextStyle(
+            color: AppTheme.primary,
+            fontWeight: FontWeight.w800,
+            fontSize: size * 0.34,
+          ),
         ),
       ),
     );
@@ -364,9 +407,11 @@ class AppEmptyState extends StatelessWidget {
             Container(
               width: 56,
               height: 56,
-              decoration: BoxDecoration(
+              decoration: AppTheme.neumorphicDecoration(
+                context,
                 color: AppTheme.elevatedFor(context),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(18),
+                subtle: true,
               ),
               child: Icon(
                 icon,
@@ -508,6 +553,7 @@ class AppStatusChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: AppTheme.radiusXl,
+        border: Border.all(color: color.withValues(alpha: 0.26)),
       ),
       child: Text(
         label,
@@ -606,8 +652,10 @@ class AppBottomNavigation extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.cardFor(context).withValues(alpha: 0.96),
           borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: AppTheme.dividerFor(context)),
-          boxShadow: AppTheme.softShadow,
+          border: Border.all(
+            color: AppTheme.dividerFor(context).withValues(alpha: 0.78),
+          ),
+          boxShadow: AppTheme.raisedShadowFor(context),
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
@@ -627,9 +675,19 @@ class AppBottomNavigation extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: selected
-                          ? AppTheme.primary.withValues(alpha: 0.12)
+                          ? AppTheme.primary.withValues(
+                              alpha: AppTheme.isDark(context) ? 0.22 : 0.14,
+                            )
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(18),
+                      border: selected
+                          ? Border.all(
+                              color: AppTheme.primary.withValues(alpha: 0.24),
+                            )
+                          : null,
+                      boxShadow: selected
+                          ? AppTheme.subtleShadowFor(context)
+                          : const [],
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
