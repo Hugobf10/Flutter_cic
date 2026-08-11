@@ -2093,6 +2093,11 @@ class _ReservasScreenState extends State<ReservasScreen>
                 ),
               ),
               const SizedBox(height: 8),
+              _buildWizardHint(
+                Icons.category_outlined,
+                'Elige el tipo de servicio. En el siguiente paso seleccionarás el recurso concreto que quieres reservar.',
+              ),
+              const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -2128,6 +2133,11 @@ class _ReservasScreenState extends State<ReservasScreen>
                 ),
               ),
               const SizedBox(height: 8),
+              _buildWizardHint(
+                Icons.meeting_room_outlined,
+                'Selecciona el recurso exacto. Si aparece un tipo de sesión, debes elegir el que corresponda antes de continuar.',
+              ),
+              const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -2188,6 +2198,11 @@ class _ReservasScreenState extends State<ReservasScreen>
                 ),
               ),
               const SizedBox(height: 8),
+              _buildWizardHint(
+                Icons.schedule_outlined,
+                'Solo puedes elegir franjas libres. Las reservas se hacen en bloques de 30 minutos y no se permiten horarios pasados ni solapados.',
+              ),
+              const SizedBox(height: 12),
               SizedBox(
                 height: 44,
                 child: ListView.separated(
@@ -2283,6 +2298,11 @@ class _ReservasScreenState extends State<ReservasScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _buildWizardHint(
+                Icons.fact_check_outlined,
+                'Revisa los datos antes de guardar. La reserva quedará en borrador: podrás editarla o confirmarla desde «Mis reservas».',
+              ),
+              const SizedBox(height: 12),
               TextField(
                 controller: _motivoCtrl,
                 decoration: const InputDecoration(
@@ -2311,6 +2331,35 @@ class _ReservasScreenState extends State<ReservasScreen>
           ),
         );
     }
+  }
+
+  Widget _buildWizardHint(IconData icon, String message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppTheme.primary.withValues(alpha: 0.08),
+        borderRadius: AppTheme.radiusSm,
+        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: AppTheme.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 12,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildReservaCard(
