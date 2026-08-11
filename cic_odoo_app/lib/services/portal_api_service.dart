@@ -73,10 +73,15 @@ class PortalApiService {
   Future<Map<String, dynamic>> attachment({
     required String section,
     required int recordId,
+    int? attachmentId,
   }) {
     return _call(
       '/my/calidad/mobile/attachment',
-      params: {'section': section, 'record_id': recordId},
+      params: {
+        'section': section,
+        'record_id': recordId,
+        ...?(attachmentId == null ? null : {'attachment_id': attachmentId}),
+      },
     );
   }
 
