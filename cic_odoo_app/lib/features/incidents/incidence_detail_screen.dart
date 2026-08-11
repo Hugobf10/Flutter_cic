@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../features/forms/dynamic_form.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
 import '../../services/odoo_values.dart';
 import '../../services/portal_api_service.dart';
@@ -20,6 +21,7 @@ class IncidenceDetailScreen extends StatefulWidget {
 class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
   final OdooService _odoo = OdooService();
   final PortalApiService _portalApi = PortalApiService();
+  final AttachmentService _attachments = AttachmentService();
   bool _loading = true;
   Map<String, dynamic>? _record;
   String? _error;
@@ -45,23 +47,13 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
         if (rows.isEmpty) throw StateError('La incidencia no está disponible.');
         _record = rows.first;
       } else {
-        _record = await _odoo.read(
-          'calidad.incidencia',
-          widget.id,
-          fields: [
-            'name',
-            'descripcion',
-            'tipo',
-            'categoria',
-            'subtipo',
-            'fecha',
-            'estado',
-            'avance',
-            'analisis',
-            'tratamiento',
-            'requiere_accion_correctiva',
-          ],
+        final rows = await _portalApi.section(
+          'incidents',
+          recordId: widget.id,
+          limit: 1,
         );
+        if (rows.isEmpty) throw StateError('La incidencia no está disponible.');
+        _record = rows.first;
       }
     } catch (e) {
       _error = OdooService.prettyError(e);
@@ -71,10 +63,6 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
 
   Future<void> _edit() async {
     if (_record == null) return;
-    if (_odoo.isPortalSession) {
-      await _createCorrectiveAction();
-      return;
-    }
     final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -173,7 +161,7 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
               ),
             ],
             onSubmit: (values) async {
-              await _odoo.write('calidad.incidencia', widget.id, {
+              final payload = <String, dynamic>{
                 'name': values['name'],
                 'tipo': values['tipo'],
                 'categoria': values['categoria'],
@@ -182,7 +170,12 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
                 'descripcion': values['descripcion'],
                 'analisis': values['analisis'],
                 'tratamiento': values['tratamiento'],
-              });
+              };
+              if (_odoo.isPortalSession) {
+                await _portalApi.action('incident_update', recordId: widget.id, values: payload);
+              } else {
+                await _odoo.write('calidad.incidencia', widget.id, payload);
+              }
             },
           ),
         );
@@ -234,6 +227,112 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
     if (created == true) await _load();
   }
 
+  Future<void> _closeIncident() async {
+    try {
+      if (_odoo.isPortalSession) {
+        await _portalApi.action(
+          'incident_update',
+          recordId: widget.id,
+          values: const {'estado': 'cerrada'},
+        );
+      } else {
+        await _odoo.write('calidad.incidencia', widget.id, const {'estado': 'cerrada'});
+      }
+      await _load();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(OdooService.prettyError(error))),
+        );
+      }
+    }
+  }
+
+  Future<void> _uploadAttachment() async {
+    final picked = await _attachments.pickAnyFile();
+    if (picked == null) return;
+    try {
+      if (_odoo.isPortalSession) {
+        await _portalApi.action(
+          'incident_attachment_create',
+          recordId: widget.id,
+          values: {
+            'name': picked.name,
+            'mimetype': picked.mimeType,
+            'datas': picked.base64Data,
+          },
+        );
+      } else {
+        final attachmentId = await _attachments.createAttachment(
+          name: picked.name,
+          mimeType: picked.mimeType,
+          base64Data: picked.base64Data,
+          resModel: 'calidad.incidencia',
+          resId: widget.id,
+        );
+        await _odoo.write('calidad.incidencia', widget.id, {
+          'documento_ids': [
+            [4, attachmentId],
+          ],
+        });
+      }
+      await _load();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(OdooService.prettyError(error))),
+        );
+      }
+    }
+  }
+
+  Future<void> _editCorrectiveAction(Map<String, dynamic> action) async {
+    final id = OdooValues.intValue(action['id']);
+    if (id == null) return;
+    final edited = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + MediaQuery.of(ctx).viewInsets.bottom),
+        child: DynamicForm(
+          submitLabel: 'Guardar acción',
+          fields: [
+            DynamicFieldConfig(key: 'name', label: 'Título', required: true, initialValue: action['name']),
+            DynamicFieldConfig(key: 'descripcion', label: 'Descripción', type: DynamicFieldType.multiline, maxLines: 4, initialValue: action['descripcion']),
+            DynamicFieldConfig(
+              key: 'estado', label: 'Estado', type: DynamicFieldType.select, required: true,
+              initialValue: action['estado'] ?? 'pendiente',
+              options: const [
+                DynamicFieldOption(value: 'pendiente', label: 'Pendiente'),
+                DynamicFieldOption(value: 'en_proceso', label: 'En proceso'),
+                DynamicFieldOption(value: 'finalizada', label: 'Finalizada'),
+              ],
+            ),
+            DynamicFieldConfig(
+              key: 'eficacia', label: 'Eficacia', type: DynamicFieldType.select, required: true,
+              initialValue: action['eficacia'] ?? 'pendiente',
+              options: const [
+                DynamicFieldOption(value: 'pendiente', label: 'Pendiente'),
+                DynamicFieldOption(value: 'eficaz', label: 'Eficaz'),
+                DynamicFieldOption(value: 'no_eficaz', label: 'No eficaz'),
+              ],
+            ),
+          ],
+          onSubmit: (values) async {
+            await _portalApi.action('corrective_action_update', recordId: id, values: {
+              'name': values['name'],
+              'descripcion': values['descripcion'],
+              'estado': values['estado'],
+              'eficacia': values['eficacia'],
+            });
+          },
+        ),
+      ),
+    );
+    if (edited == true) await _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -259,6 +358,12 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
         title: const Text('Detalle incidencia'),
         actions: [
           if (auth.canEditModule('incidents'))
+            IconButton(
+              tooltip: 'Añadir acción correctiva',
+              onPressed: _createCorrectiveAction,
+              icon: const Icon(Icons.add_task_rounded),
+            ),
+          if (auth.canEditModule('incidents'))
             IconButton(onPressed: _edit, icon: const Icon(Icons.edit_rounded)),
         ],
       ),
@@ -278,6 +383,17 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
               _chip('Categoría: ${r['categoria'] ?? '-'}'),
             ],
           ),
+          if (auth.canEditModule('incidents') && estado != 'cerrada') ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                onPressed: _closeIncident,
+                icon: const Icon(Icons.task_alt_rounded),
+                label: const Text('Cerrar incidencia'),
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           Text('Descripción', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 4),
@@ -290,6 +406,19 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
           Text('Tratamiento', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 4),
           Text(r['tratamiento']?.toString() ?? '-'),
+          const SizedBox(height: 12),
+          Text('Adjuntos', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
+          ..._attachmentTiles(r['documento_ids']),
+          if (auth.canEditModule('incidents'))
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                onPressed: _uploadAttachment,
+                icon: const Icon(Icons.attach_file_rounded),
+                label: const Text('Subir archivo'),
+              ),
+            ),
           const SizedBox(height: 12),
           Text('Avance: ${avance.toStringAsFixed(0)}%'),
           const SizedBox(height: 6),
@@ -311,15 +440,7 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            ...correctiveActions.whereType<Map>().map(
-              (action) => ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(OdooValues.string(action['name'])),
-                subtitle: Text(
-                  'Estado: ${OdooValues.string(action['estado'], fallback: 'pendiente')}',
-                ),
-              ),
-            ),
+            ..._correctiveActionTiles(correctiveActions, auth.canEditModule('incidents')),
           ],
         ],
       ),
@@ -337,4 +458,40 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
     ),
   );
+
+  List<Widget> _attachmentTiles(dynamic raw) {
+    if (raw is! List || raw.isEmpty) {
+      return const [Text('Sin adjuntos', style: TextStyle(color: AppTheme.textMuted))];
+    }
+    return raw.whereType<List>().map((item) {
+      final label = item.length > 1 ? item[1].toString() : 'Archivo';
+      return ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: const Icon(Icons.insert_drive_file_outlined),
+        title: Text(label),
+      );
+    }).toList();
+  }
+
+  List<Widget> _correctiveActionTiles(dynamic raw, bool canEdit) {
+    if (raw is! List || raw.isEmpty) {
+      return const [Text('Sin acciones correctivas', style: TextStyle(color: AppTheme.textMuted))];
+    }
+    return raw.whereType<Map>().map((item) {
+      final action = Map<String, dynamic>.from(item);
+      return ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: const Icon(Icons.task_alt_rounded),
+        title: Text(OdooValues.string(action['name'])),
+        subtitle: Text('Estado: ${OdooValues.string(action['estado'], fallback: 'pendiente')}'),
+        trailing: canEdit
+            ? IconButton(
+                tooltip: 'Editar acción',
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () => _editCorrectiveAction(action),
+              )
+            : null,
+      );
+    }).toList();
+  }
 }

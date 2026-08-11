@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import '../../features/forms/dynamic_form.dart';
 import '../../features/incidents/incidence_detail_screen.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/data_provider.dart';
 import '../../services/odoo_service.dart';
+import '../../services/odoo_values.dart';
 import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/section_header.dart';
@@ -19,20 +19,12 @@ class IncidenciasScreen extends StatefulWidget {
 }
 
 class _IncidenciasScreenState extends State<IncidenciasScreen> {
-  final DataProvider _provider = DataProvider();
   final OdooService _odoo = OdooService();
   final PortalApiService _portalApi = PortalApiService();
   String _filtroEstado = 'todas';
-
-  static const _fields = [
-    'name',
-    'tipo',
-    'categoria',
-    'estado',
-    'fecha',
-    'avance',
-    'unidad_id',
-  ];
+  bool _portalLoading = false;
+  String? _portalError;
+  List<Map<String, dynamic>> _portalRows = [];
 
   @override
   void initState() {
@@ -41,18 +33,32 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
   }
 
   void _loadData() {
-    final domain = _filtroEstado == 'todas'
-        ? <dynamic>[]
-        : [
-            ['estado', '=', _filtroEstado],
-          ];
-    _provider.loadRecords(
-      'calidad.incidencia',
-      domain: domain,
-      fields: _fields,
-      order: 'fecha desc',
-      limit: 50,
-    );
+    _loadPortalData();
+  }
+
+  Future<void> _loadPortalData() async {
+    if (!mounted) return;
+    setState(() {
+      _portalLoading = true;
+      _portalError = null;
+    });
+    try {
+      final rows = await _portalApi.section('incidents', limit: 200);
+      final filtered = _filtroEstado == 'todas'
+          ? rows
+          : rows.where((row) => row['estado']?.toString() == _filtroEstado).toList();
+      if (!mounted) return;
+      setState(() {
+        _portalRows = filtered.map((row) => Map<String, dynamic>.from(row)).toList();
+        _portalLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _portalError = OdooService.prettyError(error);
+        _portalLoading = false;
+      });
+    }
   }
 
   Future<void> _openCreateDialog() async {
@@ -161,34 +167,27 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    return ChangeNotifierProvider.value(
-      value: _provider,
-      child: Scaffold(
-        backgroundColor: AppTheme.surface,
-        appBar: AppBar(
-          title: const Text('Incidencias'),
-          actions: [
-            if (auth.canEditModule('incidents'))
-              IconButton(
-                icon: const Icon(Icons.add_rounded),
-                onPressed: _openCreateDialog,
-              ),
+    return Scaffold(
+      backgroundColor: AppTheme.surface,
+      appBar: AppBar(
+        title: const Text('Incidencias'),
+        actions: [
+          if (auth.canEditModule('incidents'))
             IconButton(
-              icon: const Icon(Icons.refresh_rounded),
-              onPressed: _loadData,
+              icon: const Icon(Icons.add_rounded),
+              onPressed: _openCreateDialog,
             ),
-          ],
-        ),
-        body: Column(
-          children: [
-            _buildFilterChips(),
-            Expanded(
-              child: Consumer<DataProvider>(
-                builder: (context, p, child) => _buildList(p),
-              ),
-            ),
-          ],
-        ),
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: _loadData,
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          _buildFilterChips(),
+          Expanded(child: _buildPortalList()),
+        ],
       ),
     );
   }
@@ -237,61 +236,35 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
     );
   }
 
-  Widget _buildList(DataProvider p) {
-    if (p.isLoading && p.records.isEmpty) {
+  Widget _buildPortalList() {
+    if (_portalLoading && _portalRows.isEmpty) {
       return const Padding(padding: EdgeInsets.all(16), child: ShimmerList());
     }
-    if (p.errorMessage != null) {
-      final limitedAccess = OdooService.isAccessError(p.errorMessage);
+    if (_portalError != null) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              limitedAccess ? Icons.lock_outline_rounded : Icons.error_outline,
-              color: limitedAccess ? AppTheme.warning : AppTheme.danger,
-              size: 40,
-            ),
+            const Icon(Icons.error_outline, color: AppTheme.danger, size: 40),
             const SizedBox(height: 8),
-            Text(
-              limitedAccess
-                  ? 'Este perfil no puede consultar el listado completo de incidencias por API con sus permisos actuales.'
-                  : p.errorMessage!,
-              style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
-              textAlign: TextAlign.center,
-            ),
+            Text(_portalError!, textAlign: TextAlign.center),
             const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: _loadData,
-              child: const Text('Reintentar'),
-            ),
+            ElevatedButton(onPressed: _loadPortalData, child: const Text('Reintentar')),
           ],
         ),
       );
     }
-    if (p.records.isEmpty) {
-      return const Center(
-        child: Text(
-          'No hay incidencias.',
-          style: TextStyle(color: AppTheme.textMuted),
-        ),
-      );
+    if (_portalRows.isEmpty) {
+      return const Center(child: Text('No hay incidencias.', style: TextStyle(color: AppTheme.textMuted)));
     }
-
     return RefreshIndicator(
-      onRefresh: () async => _loadData(),
+      onRefresh: _loadPortalData,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
-        itemCount: p.records.length + 1,
-        itemBuilder: (_, i) {
-          if (i == 0) {
-            return SectionHeader(
-              title: '${p.totalCount} incidencias',
-              subtitle: 'Ordenadas por fecha',
-            );
-          }
-          return _buildCard(Map<String, dynamic>.from(p.records[i - 1] as Map));
-        },
+        itemCount: _portalRows.length + 1,
+        itemBuilder: (_, index) => index == 0
+            ? SectionHeader(title: '${_portalRows.length} incidencias', subtitle: 'De tu unidad, ordenadas por fecha')
+            : _buildCard(_portalRows[index - 1]),
       ),
     );
   }
@@ -300,7 +273,7 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
     final id = (inc['id'] as num?)?.toInt();
     final tipo = inc['tipo']?.toString() ?? '';
     final estado = inc['estado']?.toString() ?? '';
-    final avance = (inc['avance'] as num?)?.toDouble() ?? 0;
+    final avance = OdooValues.number(inc['avance']);
     final unidad = inc['unidad_id'] is List
         ? (inc['unidad_id'] as List).last?.toString() ?? ''
         : '';
