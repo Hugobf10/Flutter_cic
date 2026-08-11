@@ -7,6 +7,7 @@ import '../../features/suppliers/supplier_detail_screen.dart';
 import '../../features/workflow/workflow_stage.dart';
 import '../../features/workflow/workflow_widgets.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/odoo_service.dart';
 import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
 
@@ -18,6 +19,7 @@ class SuppliersScreen extends StatefulWidget {
 }
 
 class _SuppliersScreenState extends State<SuppliersScreen> {
+  final OdooService _odoo = OdooService();
   final PortalApiService _portalApi = PortalApiService();
   bool _loading = true;
   String? _error;
@@ -70,9 +72,27 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
 
   Future<void> _openCreateDialog() async {
     List<DynamicFieldOption> partnerOptions = const [];
+    String? optionsError;
     try {
-      final response = await _portalApi.action('supplier_options');
-      final rows = response['items'] is List ? response['items'] as List : const [];
+      List<dynamic> rows;
+      if (_odoo.isPortalSession) {
+        final response = await _portalApi.action('supplier_options');
+        rows = response['items'] is List ? response['items'] as List : const [];
+      } else {
+        // Internal users can use the same Odoo partner search as the native form.
+        rows = await _odoo.searchRead(
+          'res.partner',
+          domain: const [
+            ['active', '=', true],
+            '|',
+            ['company_type', '=', 'company'],
+            ['is_company', '=', true],
+          ],
+          fields: const ['name'],
+          order: 'name',
+          limit: 200,
+        );
+      }
       partnerOptions = rows
           .whereType<Map>()
           .map((e) => Map<String, dynamic>.from(e))
@@ -83,17 +103,24 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
             ),
           )
           .toList();
-    } catch (_) {}
+    } catch (error) {
+      optionsError = OdooService.prettyError(error);
+    }
 
     if (!mounted) return;
     if (partnerOptions.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'No se pudieron cargar proveedores para crear un registro.',
+            'No hay empresas proveedoras disponibles para crear un registro.',
           ),
         ),
       );
+      if (optionsError != null && optionsError!.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(optionsError!)),
+        );
+      }
       return;
     }
 
