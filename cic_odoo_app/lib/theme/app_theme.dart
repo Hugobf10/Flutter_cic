@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import 'app_motion.dart';
 
 class AppTheme {
   AppTheme._();
@@ -255,6 +258,9 @@ class AppTheme {
         centerTitle: false,
         toolbarHeight: 68,
         scrolledUnderElevation: 0,
+        systemOverlayStyle: isDark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
         iconTheme: IconThemeData(color: textSub),
         actionsIconTheme: IconThemeData(color: textSub),
         titleTextStyle: GoogleFonts.plusJakartaSans(
@@ -545,6 +551,16 @@ class AppTheme {
         ),
         elevation: 10,
         shape: RoundedRectangleBorder(borderRadius: radiusSm),
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: AppPageTransitionsBuilder(),
+          TargetPlatform.iOS: AppPageTransitionsBuilder(),
+          TargetPlatform.macOS: AppPageTransitionsBuilder(),
+          TargetPlatform.windows: AppPageTransitionsBuilder(),
+          TargetPlatform.linux: AppPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: AppPageTransitionsBuilder(),
+        },
       ),
       tooltipTheme: TooltipThemeData(
         decoration: BoxDecoration(

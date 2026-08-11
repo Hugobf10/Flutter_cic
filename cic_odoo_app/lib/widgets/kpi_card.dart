@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../app/ui/app_components.dart';
+import '../theme/app_motion.dart';
 import '../theme/app_theme.dart';
 
 /// Tarjeta de KPI con indicador de estado y animación.
@@ -27,21 +30,36 @@ class KpiCard extends StatefulWidget {
 }
 
 class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
+  late final AnimationController _controller;
+  late final Animation<double> _scaleAnimation;
+  late final Animation<double> _fadeAnimation;
+  bool _started = false;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: AppMotion.emphasized,
       vsync: this,
     );
-    _scaleAnimation = CurvedAnimation(
+    final curved = CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeOutBack,
+      curve: AppMotion.enterCurve,
     );
-    _controller.forward();
+    _scaleAnimation = Tween<double>(begin: 0.96, end: 1).animate(curved);
+    _fadeAnimation = curved;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (AppMotion.reduceMotion(context)) {
+      _controller.value = 1;
+    } else {
+      _controller.forward();
+    }
   }
 
   @override
@@ -65,21 +83,13 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return ScaleTransition(
-      scale: _scaleAnimation,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Container(
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: NeumorphicSurface(
+          onTap: widget.onTap,
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            gradient: AppTheme.cardGradientFor(context),
-            borderRadius: AppTheme.radiusMd,
-            border: Border.all(
-              color: AppTheme.dividerFor(context).withValues(alpha: 0.72),
-              width: 1,
-            ),
-            boxShadow: AppTheme.raisedShadowFor(context),
-          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,

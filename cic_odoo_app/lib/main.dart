@@ -15,6 +15,7 @@ import 'screens/login/login_screen.dart';
 import 'services/deep_link_service.dart';
 import 'services/app_logger.dart';
 import 'services/monitoring_service.dart';
+import 'theme/app_motion.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -86,6 +87,8 @@ class CicSalamancaApp extends StatelessWidget {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: appState.themeMode,
+            themeAnimationDuration: AppMotion.standard,
+            themeAnimationCurve: AppMotion.enterCurve,
             home: const _DeepLinkBootstrap(child: AuthGate()),
           );
         },

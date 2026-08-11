@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../services/app_logger.dart';
+import '../../theme/app_motion.dart';
 import '../../theme/app_theme.dart';
 import '../core/module_router.dart';
 import '../core/module_registry.dart';
@@ -129,7 +130,13 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
                     itemBuilder: (_, i) {
                       final module = modules[i];
                       return ModuleTile(
+                        key: ValueKey(module.key),
                         module: module,
+                        animationDelay: Duration(
+                          milliseconds:
+                              AppMotion.stagger.inMilliseconds *
+                              (i > 8 ? 8 : i),
+                        ),
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(

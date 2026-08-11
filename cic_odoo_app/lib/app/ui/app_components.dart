@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../theme/app_motion.dart';
 import '../../theme/app_theme.dart';
 
 class AppScaffold extends StatelessWidget {
@@ -36,7 +37,9 @@ class AppScaffold extends StatelessWidget {
             alignment: Alignment.topCenter,
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1120),
-              child: Padding(padding: padding, child: child),
+              child: AppReveal(
+                child: Padding(padding: padding, child: child),
+              ),
             ),
           ),
         ),
@@ -47,7 +50,7 @@ class AppScaffold extends StatelessWidget {
 
 /// Superficie base del sistema neumórfico. Mantiene contraste mediante borde
 /// además del relieve para que funcione también en modo oscuro.
-class NeumorphicSurface extends StatelessWidget {
+class NeumorphicSurface extends StatefulWidget {
   const NeumorphicSurface({
     super.key,
     required this.child,
@@ -70,25 +73,55 @@ class NeumorphicSurface extends StatelessWidget {
   final bool showBorder;
 
   @override
+  State<NeumorphicSurface> createState() => _NeumorphicSurfaceState();
+}
+
+class _NeumorphicSurfaceState extends State<NeumorphicSurface> {
+  bool _pressed = false;
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    final radius = borderRadius ?? AppTheme.radiusMd;
+    final radius = widget.borderRadius ?? AppTheme.radiusMd;
+    final duration = AppMotion.adaptive(context, AppMotion.quick);
     final content = AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      margin: margin,
-      padding: padding,
+      duration: duration,
+      curve: AppMotion.enterCurve,
+      margin: widget.margin,
+      padding: widget.padding,
       decoration: AppTheme.neumorphicDecoration(
         context,
         borderRadius: radius,
-        color: color,
-        subtle: subtle,
-        showBorder: showBorder,
+        color: widget.color,
+        subtle: widget.subtle || _pressed,
+        showBorder: widget.showBorder,
       ),
-      child: child,
+      child: widget.child,
     );
-    if (onTap == null) return content;
+    if (widget.onTap == null) return content;
+
+    final scale = _pressed ? 0.985 : (_hovered ? 1.006 : 1.0);
     return Semantics(
       button: true,
-      child: InkWell(borderRadius: radius, onTap: onTap, child: content),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() {
+          _hovered = false;
+          _pressed = false;
+        }),
+        child: AnimatedScale(
+          scale: scale,
+          duration: duration,
+          curve: AppMotion.enterCurve,
+          child: InkWell(
+            borderRadius: radius,
+            onTap: widget.onTap,
+            onHighlightChanged: (value) => setState(() => _pressed = value),
+            child: content,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -467,7 +500,19 @@ class _AppLoadingIndicatorState extends State<AppLoadingIndicator>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1400),
-  )..repeat();
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (AppMotion.reduceMotion(context)) {
+      _controller
+        ..stop()
+        ..value = 0;
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
+  }
 
   @override
   void dispose() {
@@ -685,14 +730,23 @@ class AppBottomNavigation extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        item.badge ??
-                            Icon(
-                              item.icon,
-                              size: 20,
-                              color: selected
-                                  ? AppTheme.primary
-                                  : AppTheme.textSecondaryFor(context),
-                            ),
+                        AnimatedScale(
+                          scale: selected ? 1.1 : 1,
+                          duration: AppMotion.adaptive(
+                            context,
+                            AppMotion.standard,
+                          ),
+                          curve: AppMotion.emphasizedCurve,
+                          child:
+                              item.badge ??
+                              Icon(
+                                item.icon,
+                                size: 20,
+                                color: selected
+                                    ? AppTheme.primary
+                                    : AppTheme.textSecondaryFor(context),
+                              ),
+                        ),
                         const SizedBox(height: 4),
                         Text(
                           item.label,

@@ -11,6 +11,7 @@ import '../../screens/reservas/reservation_entry_target.dart';
 import '../../screens/incidencias/incidencias_screen.dart';
 import '../../screens/reservas/reservas_screen.dart';
 import '../../features/portal/portal_screen.dart';
+import '../../theme/app_motion.dart';
 import '../../theme/app_theme.dart';
 import '../providers/app_state_provider.dart';
 import '../ui/app_components.dart';
@@ -82,7 +83,7 @@ class _SuperAppShellState extends State<SuperAppShell> {
 
         if (!desktop) {
           return Scaffold(
-            body: IndexedStack(index: _index, children: pages),
+            body: AppAnimatedIndexedStack(index: _index, children: pages),
             floatingActionButton: FloatingActionButton(
               onPressed: _openQuickActions,
               backgroundColor: AppTheme.primaryDark,
@@ -135,25 +136,41 @@ class _SuperAppShellState extends State<SuperAppShell> {
                     const SizedBox(height: 14),
                     ...List.generate(_labels.length, (i) {
                       final selected = _index == i;
-                      return ListTile(
-                        leading: i == 2 && unread > 0
-                            ? Badge.count(
-                                count: unread > 99 ? 99 : unread,
-                                child: Icon(_icons[i]),
-                              )
-                            : Icon(_icons[i]),
-                        title: Text(_labels[i]),
-                        selected: selected,
-                        onTap: () => setState(() => _index = i),
-                        selectedColor: AppTheme.primary,
-                        selectedTileColor: AppTheme.primary.withValues(
-                          alpha: AppTheme.isDark(context) ? 0.20 : 0.12,
+                      return AnimatedContainer(
+                        duration: AppMotion.adaptive(
+                          context,
+                          AppMotion.standard,
                         ),
-                        iconColor: selected
-                            ? AppTheme.primary
-                            : AppTheme.textSecondaryFor(context),
-                        shape: RoundedRectangleBorder(
+                        curve: AppMotion.enterCurve,
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? AppTheme.primary.withValues(
+                                  alpha: AppTheme.isDark(context) ? 0.20 : 0.12,
+                                )
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: ListTile(
+                          leading: i == 2 && unread > 0
+                              ? Badge.count(
+                                  count: unread > 99 ? 99 : unread,
+                                  child: Icon(_icons[i]),
+                                )
+                              : Icon(_icons[i]),
+                          title: Text(_labels[i]),
+                          selected: selected,
+                          onTap: () => setState(() => _index = i),
+                          selectedColor: AppTheme.primary,
+                          iconColor: selected
+                              ? AppTheme.primary
+                              : AppTheme.textSecondaryFor(context),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
                       );
                     }),
@@ -178,7 +195,7 @@ class _SuperAppShellState extends State<SuperAppShell> {
                 ),
               ),
               Expanded(
-                child: IndexedStack(index: _index, children: pages),
+                child: AppAnimatedIndexedStack(index: _index, children: pages),
               ),
             ],
           ),

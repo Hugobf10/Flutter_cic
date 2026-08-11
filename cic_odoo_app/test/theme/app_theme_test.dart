@@ -1,4 +1,5 @@
 import 'package:cic_odoo_app/app/ui/app_components.dart';
+import 'package:cic_odoo_app/theme/app_motion.dart';
 import 'package:cic_odoo_app/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -33,5 +34,9 @@ void main() {
     expect(light.color, isNot(dark.color));
     expect(light.boxShadow, hasLength(2));
     expect(dark.boxShadow, hasLength(2));
+    expect(
+      AppTheme.lightTheme.pageTransitionsTheme.builders[TargetPlatform.windows],
+      isA<AppPageTransitionsBuilder>(),
+    );
   });
 }

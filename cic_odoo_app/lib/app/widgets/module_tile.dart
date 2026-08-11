@@ -1,29 +1,31 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/app_motion.dart';
 import '../../theme/app_theme.dart';
 import '../models/app_module.dart';
+import '../ui/app_components.dart';
 
 class ModuleTile extends StatelessWidget {
-  const ModuleTile({super.key, required this.module, required this.onTap});
+  const ModuleTile({
+    super.key,
+    required this.module,
+    required this.onTap,
+    this.animationDelay = Duration.zero,
+  });
 
   final AppModule module;
   final VoidCallback onTap;
+  final Duration animationDelay;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(22),
-      onTap: onTap,
-      child: Ink(
+    return AppReveal(
+      delay: animationDelay,
+      offset: const Offset(0, 0.04),
+      child: NeumorphicSurface(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: AppTheme.cardGradientFor(context),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: AppTheme.dividerFor(context).withValues(alpha: 0.72),
-          ),
-          boxShadow: AppTheme.raisedShadowFor(context),
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
