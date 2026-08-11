@@ -51,12 +51,31 @@ void main() {
     expect(find.text('Accesos rápidos'), findsOneWidget);
     expect(find.text('Novedades'), findsOneWidget);
   });
+
+  testWidgets('Inicio portal sustituye Compras por accesos de autoservicio', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_homeApp(ThemeMode.light, auth: _PortalHomeAuth()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mi espacio'), findsOneWidget);
+    expect(find.text('Documentos'), findsOneWidget);
+    expect(find.text('Reservas'), findsWidgets);
+    expect(find.text('Formación'), findsWidgets);
+    expect(find.text('Compras'), findsNothing);
+    expect(find.text('Personal'), findsNothing);
+  });
 }
 
-Widget _homeApp(ThemeMode themeMode) {
+Widget _homeApp(ThemeMode themeMode, {AuthProvider? auth}) {
   return MultiProvider(
     providers: [
-      ChangeNotifierProvider<AuthProvider>.value(value: _HomeAuth()),
+      ChangeNotifierProvider<AuthProvider>.value(value: auth ?? _HomeAuth()),
       ChangeNotifierProvider<DashboardProvider>.value(value: _HomeDashboard()),
       ChangeNotifierProvider<AppStateProvider>.value(value: _HomeState()),
     ],
@@ -81,6 +100,26 @@ class _HomeAuth extends AuthProvider {
 
   @override
   bool canViewModule(String moduleKey) => true;
+}
+
+class _PortalHomeAuth extends _HomeAuth {
+  static const _portalModules = {
+    'portal',
+    'documents',
+    'reservas',
+    'training',
+    'communications',
+    'payroll',
+  };
+
+  @override
+  bool get isInternalUser => false;
+
+  @override
+  bool get isPortalOnlyUser => true;
+
+  @override
+  bool canViewModule(String moduleKey) => _portalModules.contains(moduleKey);
 }
 
 class _HomeDashboard extends DashboardProvider {

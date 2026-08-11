@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/odoo_values.dart';
 import '../../services/odoo_service.dart';
 import '../../services/portal_api_service.dart';
+import '../../theme/app_motion.dart';
 import '../../theme/app_theme.dart';
 import '../payroll/payroll_screen.dart';
 import '../../app/core/module_navigation.dart';
@@ -54,7 +55,7 @@ class _PortalScreenState extends State<PortalScreen> {
     final permissionRows = _buildPermissionRows(auth);
 
     return AppScaffold(
-      title: 'Portal',
+      title: 'Mi espacio',
       actions: [
         IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
       ],
@@ -69,14 +70,14 @@ class _PortalScreenState extends State<PortalScreen> {
             )
           : ListView(
               children: [
-                _PortalHero(partner: _partner, auth: auth),
-                const SizedBox(height: 20),
-                const _PortalMockNews(),
+                AppReveal(
+                  child: _PortalHero(partner: _partner, auth: auth),
+                ),
                 const SizedBox(height: 20),
                 AppSectionHeader(
-                  title: 'Accesos rápidos',
+                  title: 'Servicios disponibles',
                   subtitle:
-                      'Atajos disponibles según los permisos reales del usuario en Odoo.',
+                      'Tu espacio de autoservicio, adaptado a tus permisos.',
                 ),
                 if (actions.isEmpty)
                   const AppEmptyState(
@@ -90,25 +91,28 @@ class _PortalScreenState extends State<PortalScreen> {
                     builder: (context, constraints) {
                       final width = constraints.maxWidth;
                       final columns = width >= 980
+                          ? 4
+                          : width >= 660
                           ? 3
-                          : width >= 680
-                          ? 2
-                          : 1;
-                      final spacing = 12.0;
-                      final itemWidth =
-                          (width - spacing * (columns - 1)) / columns;
+                          : 2;
 
-                      return Wrap(
-                        spacing: spacing,
-                        runSpacing: spacing,
-                        children: actions
-                            .map(
-                              (action) => SizedBox(
-                                width: itemWidth,
-                                child: _PortalActionCard(action: action),
-                              ),
-                            )
-                            .toList(),
+                      return GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: actions.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: columns,
+                          mainAxisSpacing: 10,
+                          crossAxisSpacing: 10,
+                          childAspectRatio: width < 660 ? 1.65 : 1.5,
+                        ),
+                        itemBuilder: (_, index) => AppReveal(
+                          delay: Duration(
+                            milliseconds:
+                                AppMotion.stagger.inMilliseconds * index,
+                          ),
+                          child: _PortalActionCard(action: actions[index]),
+                        ),
                       );
                     },
                   ),
@@ -118,10 +122,15 @@ class _PortalScreenState extends State<PortalScreen> {
                   subtitle:
                       'Resumen del acceso efectivo del usuario portal en la aplicación.',
                 ),
-                ...permissionRows.map(
-                  (row) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _PortalPermissionCard(row: row),
+                ...permissionRows.indexed.map(
+                  (entry) => AppReveal(
+                    delay: Duration(
+                      milliseconds: AppMotion.stagger.inMilliseconds * entry.$1,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _PortalPermissionCard(row: entry.$2),
+                    ),
                   ),
                 ),
               ],
@@ -382,91 +391,6 @@ class _PortalScreenState extends State<PortalScreen> {
   }
 }
 
-class _PortalMockNews extends StatelessWidget {
-  const _PortalMockNews();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const AppSectionHeader(
-          title: 'Noticias',
-          subtitle: 'Actualidad del CIC',
-        ),
-        AppCard(
-          onTap: () => _openNews(context),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.12),
-                  borderRadius: AppTheme.radiusSm,
-                ),
-                child: Icon(Icons.campaign_outlined, color: AppTheme.primary),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Nueva intranet móvil del CIC',
-                      style: TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                    SizedBox(height: 6),
-                    Text(
-                      'Consulta tus documentos, reservas, formación y comunicaciones desde la aplicación.',
-                      style: TextStyle(
-                        color: AppTheme.textSecondaryFor(context),
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right_rounded),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _openNews(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Nueva intranet móvil del CIC',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'La nueva intranet móvil reúne en un solo lugar la información y las gestiones disponibles para cada usuario.',
-                style: TextStyle(color: AppTheme.textSecondaryFor(context)),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                'Esta noticia es una demostración de cómo se mostrarán los comunicados, novedades y avisos importantes dentro de la aplicación.',
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _PortalHero extends StatelessWidget {
   const _PortalHero({required this.partner, required this.auth});
 
@@ -555,37 +479,39 @@ class _PortalActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      onTap: action.onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: action.color.withValues(alpha: 0.12),
-              borderRadius: AppTheme.radiusSm,
+    return Semantics(
+      button: true,
+      label: '${action.title}. ${action.subtitle}',
+      child: AppCard(
+        onTap: action.onTap,
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            NeumorphicSurface(
+              padding: const EdgeInsets.all(9),
+              borderRadius: BorderRadius.circular(14),
+              subtle: true,
+              child: Icon(action.icon, color: action.color, size: 21),
             ),
-            child: Icon(action.icon, color: action.color),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            action.title,
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              color: AppTheme.textPrimaryFor(context),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Text(
+                action.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimaryFor(context),
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            action.subtitle,
-            style: TextStyle(
-              color: AppTheme.textSecondaryFor(context),
-              fontSize: 12,
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 19,
+              color: AppTheme.textMutedFor(context),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

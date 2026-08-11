@@ -10,7 +10,6 @@ import '../../screens/home/home_screen.dart';
 import '../../screens/reservas/reservation_entry_target.dart';
 import '../../screens/incidencias/incidencias_screen.dart';
 import '../../screens/reservas/reservas_screen.dart';
-import '../../features/portal/portal_screen.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_theme.dart';
 import '../providers/app_state_provider.dart';
@@ -68,14 +67,7 @@ class _SuperAppShellState extends State<SuperAppShell> {
       });
     }
 
-    final pages = auth.isPortalOnlyUser
-        ? const [
-            PortalScreen(),
-            ModulesHubScreen(),
-            NotificationsScreen(),
-            ProfileScreen(),
-          ]
-        : _pages;
+    final pages = _pages;
 
     return LayoutBuilder(
       builder: (context, constraints) {

@@ -462,7 +462,7 @@ class _QuickActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final actions =
+    final internalActions =
         <({String title, IconData icon, Color color, VoidCallback onTap})>[
           if (auth.isInternalUser)
             (
@@ -503,6 +503,78 @@ class _QuickActions extends StatelessWidget {
               ),
             ),
         ];
+    final portalActions =
+        <({String title, IconData icon, Color color, VoidCallback onTap})>[
+          if (auth.canViewModule('portal'))
+            (
+              title: 'Mi espacio',
+              icon: Icons.person_rounded,
+              color: AppTheme.accent,
+              onTap: () => ModuleNavigation.openModule(
+                context,
+                auth: auth,
+                moduleKey: 'portal',
+              ),
+            ),
+          if (auth.canViewModule('documents'))
+            (
+              title: 'Documentos',
+              icon: Icons.description_rounded,
+              color: AppTheme.primary,
+              onTap: () => ModuleNavigation.openModule(
+                context,
+                auth: auth,
+                moduleKey: 'documents',
+              ),
+            ),
+          if (auth.canViewModule('reservas'))
+            (
+              title: 'Reservas',
+              icon: Icons.calendar_month_rounded,
+              color: AppTheme.success,
+              onTap: () => ModuleNavigation.openModule(
+                context,
+                auth: auth,
+                moduleKey: 'reservas',
+              ),
+            ),
+          if (auth.canViewModule('training'))
+            (
+              title: 'Formación',
+              icon: Icons.school_rounded,
+              color: AppTheme.info,
+              onTap: () => ModuleNavigation.openModule(
+                context,
+                auth: auth,
+                moduleKey: 'training',
+              ),
+            ),
+          if (auth.canViewModule('communications'))
+            (
+              title: 'Comunicaciones',
+              icon: Icons.campaign_rounded,
+              color: AppTheme.warning,
+              onTap: () => ModuleNavigation.openModule(
+                context,
+                auth: auth,
+                moduleKey: 'communications',
+              ),
+            ),
+          if (auth.canViewModule('payroll'))
+            (
+              title: 'Nóminas',
+              icon: Icons.receipt_long_rounded,
+              color: AppTheme.success,
+              onTap: () => ModuleNavigation.openModule(
+                context,
+                auth: auth,
+                moduleKey: 'payroll',
+              ),
+            ),
+        ];
+    final actions = auth.isPortalOnlyUser
+        ? portalActions.take(4).toList()
+        : internalActions;
 
     if (actions.isEmpty) {
       return const AppEmptyState(

@@ -4,6 +4,8 @@ import '../../app/ui/app_components.dart';
 import '../../services/odoo_service.dart';
 import '../../services/odoo_values.dart';
 import '../../services/portal_api_service.dart';
+import '../../theme/app_motion.dart';
+import '../../theme/app_theme.dart';
 
 class PortalSectionScreen extends StatefulWidget {
   const PortalSectionScreen({
@@ -72,13 +74,13 @@ class _PortalSectionScreenState extends State<PortalSectionScreen> {
                 padding: const EdgeInsets.only(bottom: 24),
                 itemCount: _items.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 8),
-                itemBuilder: (_, index) => _buildItem(_items[index]),
+                itemBuilder: (_, index) => _buildItem(_items[index], index),
               ),
             ),
     );
   }
 
-  Widget _buildItem(Map<String, dynamic> item) {
+  Widget _buildItem(Map<String, dynamic> item, int index) {
     final title = OdooValues.string(
       item['name'] ?? item['title'],
       fallback: 'Registro ${item['id'] ?? ''}',
@@ -97,15 +99,33 @@ class _PortalSectionScreenState extends State<PortalSectionScreen> {
         .whereType<String>()
         .take(4)
         .join('\n');
-    return AppCard(
-      child: ListTile(
-        contentPadding: EdgeInsets.zero,
-        leading: CircleAvatar(
-          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-          child: Icon(_iconFor(widget.section)),
+    return AppReveal(
+      delay: Duration(milliseconds: AppMotion.stagger.inMilliseconds * index),
+      child: AppCard(
+        child: ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: NeumorphicSurface(
+            padding: const EdgeInsets.all(10),
+            borderRadius: BorderRadius.circular(14),
+            subtle: true,
+            child: Icon(
+              _iconFor(widget.section),
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          title: Text(
+            title,
+            style: TextStyle(
+              color: AppTheme.textPrimaryFor(context),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          subtitle: details.isEmpty ? null : Text(details),
+          trailing: Icon(
+            Icons.chevron_right_rounded,
+            color: AppTheme.textMutedFor(context),
+          ),
         ),
-        title: Text(title),
-        subtitle: details.isEmpty ? null : Text(details),
       ),
     );
   }
