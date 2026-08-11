@@ -82,7 +82,7 @@ class ModuleNavigation {
       case 'health':
         return 'Vigilancia de la salud';
       case 'portal':
-        return 'Portal';
+        return 'Inicio';
       case 'maintenance':
         return 'Mantenimiento';
       default:

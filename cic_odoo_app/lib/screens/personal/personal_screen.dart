@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../app/ui/app_components.dart';
 import '../../providers/data_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/section_header.dart';
 
 /// Pantalla del directorio de personal (res.partner filtrado por personas).
 class PersonalScreen extends StatefulWidget {
@@ -67,10 +66,10 @@ class _PersonalScreenState extends State<PersonalScreen> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
       value: _provider,
-      child: Scaffold(
-        backgroundColor: AppTheme.surfaceFor(context),
-        appBar: AppBar(title: Text('Personal')),
-        body: Column(
+      child: AppScaffold(
+        title: 'Personal',
+        padding: EdgeInsets.zero,
+        child: Column(
           children: [
             _buildSearchBar(),
             Expanded(
@@ -86,26 +85,10 @@ class _PersonalScreenState extends State<PersonalScreen> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      child: TextField(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+      child: AppSearchBar(
         controller: _searchCtrl,
-        style: TextStyle(color: AppTheme.textPrimaryFor(context), fontSize: 14),
-        decoration: InputDecoration(
-          hintText: 'Buscar persona...',
-          prefixIcon: Icon(
-            Icons.person_search_rounded,
-            color: AppTheme.textMutedFor(context),
-          ),
-          suffixIcon: _searchCtrl.text.isNotEmpty
-              ? IconButton(
-                  icon: Icon(Icons.close_rounded, size: 18),
-                  onPressed: () {
-                    _searchCtrl.clear();
-                    _loadData();
-                  },
-                )
-              : null,
-        ),
+        hintText: 'Buscar persona...',
         onSubmitted: (v) => _loadData(search: v),
         onChanged: (v) {
           if (v.isEmpty) _loadData();
@@ -118,19 +101,18 @@ class _PersonalScreenState extends State<PersonalScreen> {
   Widget _buildList(DataProvider p) {
     if (p.isLoading && p.records.isEmpty) return const AppLoadingView();
     if (p.errorMessage != null) {
-      return Center(
-        child: Text(
-          'Error: ${p.errorMessage}',
-          style: TextStyle(color: AppTheme.textMutedFor(context)),
-        ),
+      return AppEmptyState(
+        title: 'No se pudo cargar el personal',
+        subtitle: p.errorMessage!,
+        icon: Icons.cloud_off_rounded,
+        action: AppButton.primary(label: 'Reintentar', onPressed: _loadData),
       );
     }
     if (p.records.isEmpty) {
-      return Center(
-        child: Text(
-          'No se encontró personal.',
-          style: TextStyle(color: AppTheme.textMutedFor(context)),
-        ),
+      return const AppEmptyState(
+        title: 'Sin resultados',
+        subtitle: 'No se encontró personal con esos datos.',
+        icon: Icons.person_search_rounded,
       );
     }
 
@@ -141,9 +123,12 @@ class _PersonalScreenState extends State<PersonalScreen> {
         itemCount: p.records.length + 1,
         itemBuilder: (_, i) {
           if (i == 0) {
-            return SectionHeader(
-              title: '${p.totalCount} personas',
-              icon: Icons.people_rounded,
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: AppSectionHeader(
+                title: '${p.totalCount} personas',
+                subtitle: 'Directorio interno disponible para tu perfil.',
+              ),
             );
           }
           return _buildCard(Map<String, dynamic>.from(p.records[i - 1] as Map));
@@ -163,148 +148,103 @@ class _PersonalScreenState extends State<PersonalScreen> {
     final pendientes = _toInt(person['formacion_pendiente_count']);
     final accidentes = _toInt(person['accidente_count']);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppTheme.cardFor(context),
-        borderRadius: AppTheme.radiusMd,
-        border: Border.all(
-          color: AppTheme.dividerFor(context).withValues(alpha: 0.5),
-        ),
-        boxShadow: AppTheme.subtleShadowFor(context),
-      ),
-      child: Row(
-        children: [
-          // Avatar
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              gradient: AppTheme.primaryGradient,
-              borderRadius: AppTheme.radiusMd,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: AppCard(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            AppAvatar(
+              name: name,
+              size: 48,
+              imageBase64: person['image_128']?.toString(),
             ),
-            child: Center(
-              child: Text(
-                _initials(name),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: TextStyle(
-                    color: AppTheme.textPrimaryFor(context),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (email.isNotEmpty && email != 'false') ...[
-                  const SizedBox(height: 2),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    email,
+                    name,
                     style: TextStyle(
-                      color: AppTheme.textMutedFor(context),
-                      fontSize: 11,
+                      color: AppTheme.textPrimaryFor(context),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ],
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    if (unidad.isNotEmpty) ...[
-                      Icon(
-                        Icons.business_rounded,
-                        size: 12,
-                        color: AppTheme.primary.withValues(alpha: 0.6),
+                  if (email.isNotEmpty && email != 'false') ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      email,
+                      style: TextStyle(
+                        color: AppTheme.textMutedFor(context),
+                        fontSize: 11,
                       ),
-                      const SizedBox(width: 3),
-                      Flexible(
-                        child: Text(
-                          unidad,
+                    ),
+                  ],
+                  const SizedBox(height: 5),
+                  Row(
+                    children: [
+                      if (unidad.isNotEmpty) ...[
+                        Icon(
+                          Icons.business_rounded,
+                          size: 12,
+                          color: AppTheme.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            unidad,
+                            style: TextStyle(
+                              color: AppTheme.textSecondaryFor(context),
+                              fontSize: 11,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                      ],
+                      if (phone.isNotEmpty && phone != 'false') ...[
+                        Icon(
+                          Icons.phone_rounded,
+                          size: 12,
+                          color: AppTheme.textMutedFor(context),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          phone,
                           style: TextStyle(
-                            color: AppTheme.textSecondaryFor(context),
+                            color: AppTheme.textMutedFor(context),
                             fontSize: 11,
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const SizedBox(width: 10),
+                      ],
                     ],
-                    if (phone.isNotEmpty && phone != 'false') ...[
-                      Icon(
-                        Icons.phone_rounded,
-                        size: 12,
-                        color: AppTheme.textMutedFor(context),
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        phone,
-                        style: TextStyle(
-                          color: AppTheme.textMutedFor(context),
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (pendientes > 0)
+                  AppStatusChip(
+                    label: '$pendientes form.',
+                    color: AppTheme.warning,
+                  ),
+                if (accidentes > 0) ...[
+                  const SizedBox(height: 5),
+                  AppStatusChip(
+                    label: '$accidentes acc.',
+                    color: AppTheme.danger,
+                  ),
+                ],
               ],
             ),
-          ),
-          // Badges
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (pendientes > 0)
-                _buildBadge('$pendientes form.', AppTheme.warning),
-              if (accidentes > 0) ...[
-                const SizedBox(height: 4),
-                _buildBadge('$accidentes acc.', AppTheme.danger),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBadge(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: AppTheme.radiusXl,
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
+          ],
         ),
       ),
     );
-  }
-
-  String _initials(String name) {
-    final clean = name.trim();
-    if (clean.isEmpty) return '?';
-    final parts = clean
-        .split(RegExp(r'\s+'))
-        .where((p) => p.isNotEmpty)
-        .toList();
-    if (parts.isEmpty) return '?';
-    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    return parts.first[0].toUpperCase();
   }
 
   int _toInt(dynamic value) {

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/core/module_navigation.dart';
 import '../../app/models/app_notification.dart';
@@ -16,6 +15,7 @@ import '../../app/ui/app_components.dart';
 import '../../config/app_config.dart';
 import '../../features/purchases/purchases_screen.dart';
 import '../../features/quality/quality_center_screen.dart';
+import '../../features/news/news_detail_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../theme/app_motion.dart';
@@ -493,17 +493,6 @@ class _QuickActions extends StatelessWidget {
         ];
     final portalActions =
         <({String title, IconData icon, Color color, VoidCallback onTap})>[
-          if (auth.canViewModule('portal'))
-            (
-              title: 'Mi espacio',
-              icon: Icons.person_rounded,
-              color: AppTheme.accent,
-              onTap: () => ModuleNavigation.openModule(
-                context,
-                auth: auth,
-                moduleKey: 'portal',
-              ),
-            ),
           if (auth.canViewModule('documents'))
             (
               title: 'Documentos',
@@ -826,46 +815,16 @@ class _NewsSectionState extends State<_NewsSection> {
   }
 
   void _openNews(BuildContext context, _WordPressPost post) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (post.imageUrl != null) ...[
-                ClipRRect(
-                  borderRadius: AppTheme.radiusMd,
-                  child: Image.network(
-                    post.imageUrl.toString(),
-                    width: double.infinity,
-                    height: 190,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-              Text(post.title, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 12),
-              Text(
-                post.content.isEmpty ? post.excerpt : post.content,
-                style: TextStyle(color: AppTheme.textSecondaryFor(context)),
-              ),
-              if (post.link != null) ...[
-                const SizedBox(height: 18),
-                AppButton.primary(
-                  label: 'Abrir noticia completa',
-                  icon: Icons.open_in_new_rounded,
-                  onPressed: () => launchUrl(
-                    post.link!,
-                    mode: LaunchMode.externalApplication,
-                  ),
-                ),
-              ],
-            ],
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => NewsDetailScreen(
+          article: NewsArticle(
+            title: post.title,
+            excerpt: post.excerpt,
+            content: post.content,
+            link: post.link,
+            imageUrl: post.imageUrl,
+            dateLabel: post.dateLabel,
           ),
         ),
       ),

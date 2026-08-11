@@ -1,5 +1,7 @@
 import 'package:cic_odoo_app/app/models/app_notification.dart';
 import 'package:cic_odoo_app/app/providers/app_state_provider.dart';
+import 'package:cic_odoo_app/app/ui/app_components.dart';
+import 'package:cic_odoo_app/features/news/news_detail_screen.dart';
 import 'package:cic_odoo_app/providers/auth_provider.dart';
 import 'package:cic_odoo_app/providers/dashboard_provider.dart';
 import 'package:cic_odoo_app/screens/home/home_screen.dart';
@@ -63,12 +65,39 @@ void main() {
     await tester.pumpWidget(_homeApp(ThemeMode.light, auth: _PortalHomeAuth()));
     await tester.pumpAndSettle();
 
-    expect(find.text('Mi espacio'), findsOneWidget);
+    expect(find.text('Mi espacio'), findsNothing);
     expect(find.text('Documentos'), findsOneWidget);
     expect(find.text('Reservas'), findsWidgets);
     expect(find.text('Formación'), findsWidgets);
+    expect(find.text('Comunicaciones'), findsOneWidget);
     expect(find.text('Compras'), findsNothing);
     expect(find.text('Personal'), findsNothing);
+  });
+
+  testWidgets('las noticias se abren como una pantalla completa', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_homeApp(ThemeMode.light));
+    await tester.pumpAndSettle();
+
+    final headline = find.text('Nueva intranet móvil del CIC');
+    final newsCard = find
+        .ancestor(of: headline, matching: find.byType(AppCard))
+        .first;
+    await tester.ensureVisible(newsCard);
+    await tester.pumpAndSettle();
+    await tester.tap(newsCard);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NewsDetailScreen), findsOneWidget);
+    expect(find.text('Novedad'), findsOneWidget);
+    expect(find.text('COMUNICADO'), findsOneWidget);
+    expect(find.byType(BottomSheet), findsNothing);
   });
 }
 
