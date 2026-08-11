@@ -203,18 +203,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           AppCard(
             child: Row(
               children: [
-                const Icon(Icons.attach_file_rounded),
+                Icon(Icons.attach_file_rounded),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     _cvName ??
                         (currentCv.isEmpty ? 'Sin CV cargado' : currentCv),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
                 TextButton(
                   onPressed: _saving ? null : _pickCv,
-                  child: const Text('Seleccionar'),
+                  child: Text('Seleccionar'),
                 ),
               ],
             ),

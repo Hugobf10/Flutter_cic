@@ -180,7 +180,7 @@ class _FatalWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppTheme.surface,
+      color: AppTheme.surfaceFor(context),
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -222,25 +222,25 @@ class _NoAppAccessScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
+              Icon(
                 Icons.lock_person_rounded,
                 size: 44,
                 color: AppTheme.warning,
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'Sin acceso disponible',
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
               ),
               const SizedBox(height: 6),
-              const Text(
+              Text(
                 'Tu usuario ha iniciado sesión, pero no tiene módulos habilitados para usar la app. Revisa el acceso portal o los permisos asignados en Odoo.',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 14),
               FilledButton(
                 onPressed: () => context.read<AuthProvider>().logout(),
-                child: const Text('Cerrar sesión'),
+                child: Text('Cerrar sesión'),
               ),
             ],
           ),

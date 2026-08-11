@@ -114,14 +114,14 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
     final auth = context.watch<AuthProvider>();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sugerencias'),
+        title: Text('Sugerencias'),
         actions: [
           if (auth.canEditModule('suggestions'))
             IconButton(
               onPressed: _openCreate,
-              icon: const Icon(Icons.add_comment_rounded),
+              icon: Icon(Icons.add_comment_rounded),
             ),
-          IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+          IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
         ],
       ),
       body: _loading
@@ -134,10 +134,10 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
               ),
             )
           : _rows.isEmpty
-          ? const Center(
+          ? Center(
               child: Text(
                 'Sin sugerencias enviadas.',
-                style: TextStyle(color: AppTheme.textMuted),
+                style: TextStyle(color: AppTheme.textMutedFor(context)),
               ),
             )
           : ListView.separated(
@@ -149,35 +149,38 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
                 return Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppTheme.surfaceCard,
+                    color: AppTheme.cardFor(context),
                     borderRadius: AppTheme.radiusMd,
                     border: Border.all(
-                      color: AppTheme.divider.withValues(alpha: 0.6),
+                      color: AppTheme.dividerFor(
+                        context,
+                      ).withValues(alpha: 0.6),
                     ),
+                    boxShadow: AppTheme.subtleShadowFor(context),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         (it['name'] ?? '').toString(),
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                        style: TextStyle(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         (it['descripcion'] ?? '').toString(),
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppTheme.textSecondary,
+                          color: AppTheme.textSecondaryFor(context),
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Estado: ${it['estado'] ?? '-'} · ${it['fecha'] ?? ''}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: AppTheme.textMuted,
+                          color: AppTheme.textMutedFor(context),
                         ),
                       ),
                     ],

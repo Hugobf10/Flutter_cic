@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import '../../features/communications/communications_screen.dart';
@@ -86,7 +87,7 @@ class _SuperAppShellState extends State<SuperAppShell> {
               onPressed: _openQuickActions,
               backgroundColor: AppTheme.primaryDark,
               foregroundColor: Colors.white,
-              child: const Icon(Icons.add_rounded),
+              child: Icon(Icons.add_rounded),
             ),
             bottomNavigationBar: AppBottomNavigation(
               currentIndex: _index,
@@ -100,7 +101,7 @@ class _SuperAppShellState extends State<SuperAppShell> {
                           size: 20,
                           color: i == _index
                               ? AppTheme.primary
-                              : AppTheme.textSecondary,
+                              : AppTheme.textSecondaryFor(context),
                         ),
                       )
                     : null;
@@ -114,15 +115,18 @@ class _SuperAppShellState extends State<SuperAppShell> {
           floatingActionButton: FloatingActionButton.extended(
             onPressed: _openQuickActions,
             backgroundColor: AppTheme.primaryDark,
-            icon: const Icon(Icons.flash_on_rounded),
-            label: const Text('Acciones'),
+            icon: Icon(Icons.flash_on_rounded),
+            label: Text('Acciones'),
           ),
           body: Row(
             children: [
               Container(
                 width: 248,
-                decoration: const BoxDecoration(
-                  gradient: AppTheme.heroGradient,
+                decoration: BoxDecoration(
+                  gradient: AppTheme.heroGradientFor(context),
+                  border: Border(
+                    right: BorderSide(color: AppTheme.dividerFor(context)),
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -142,9 +146,12 @@ class _SuperAppShellState extends State<SuperAppShell> {
                         selected: selected,
                         onTap: () => setState(() => _index = i),
                         selectedColor: AppTheme.primary,
+                        selectedTileColor: AppTheme.primary.withValues(
+                          alpha: AppTheme.isDark(context) ? 0.20 : 0.12,
+                        ),
                         iconColor: selected
                             ? AppTheme.primary
-                            : AppTheme.textSecondary,
+                            : AppTheme.textSecondaryFor(context),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -152,8 +159,8 @@ class _SuperAppShellState extends State<SuperAppShell> {
                     }),
                     if (auth.canViewModule('reservas'))
                       ListTile(
-                        leading: const Icon(Icons.calendar_month_rounded),
-                        title: const Text('Reservas'),
+                        leading: Icon(Icons.calendar_month_rounded),
+                        title: Text('Reservas'),
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
@@ -219,7 +226,7 @@ class _SuperAppShellState extends State<SuperAppShell> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Acceso rápido',
                   style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                 ),
@@ -289,12 +296,13 @@ class _SuperAppShellState extends State<SuperAppShell> {
             ).push(MaterialPageRoute(builder: (_) => page));
           },
           borderRadius: BorderRadius.circular(12),
-          child: Ink(
+          child: Container(
             width: tileWidth,
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Theme.of(context).dividerColor),
+            decoration: AppTheme.neumorphicDecoration(
+              context,
+              borderRadius: BorderRadius.circular(14),
+              subtle: true,
             ),
             child: Row(
               children: [
@@ -303,10 +311,7 @@ class _SuperAppShellState extends State<SuperAppShell> {
                 Expanded(
                   child: Text(
                     label,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -326,15 +331,14 @@ class _SuperAppShellState extends State<SuperAppShell> {
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(
-              gradient: AppTheme.primaryGradient,
+            padding: const EdgeInsets.all(7),
+            decoration: AppTheme.neumorphicDecoration(
+              context,
               borderRadius: BorderRadius.circular(14),
-              boxShadow: AppTheme.glowShadow,
             ),
-            child: const Icon(
-              Icons.favorite_outline_rounded,
-              color: Colors.white,
-              size: 18,
+            child: SvgPicture.asset(
+              'assets/branding/cic_mark.svg',
+              fit: BoxFit.contain,
             ),
           ),
           const SizedBox(width: 10),
@@ -349,9 +353,12 @@ class _SuperAppShellState extends State<SuperAppShell> {
                   ),
                 ),
                 const SizedBox(height: 2),
-                const Text(
+                Text(
                   'Espacio de trabajo',
-                  style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                  style: TextStyle(
+                    color: AppTheme.textMutedFor(context),
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -365,15 +372,14 @@ class _SuperAppShellState extends State<SuperAppShell> {
     final auth = context.watch<AuthProvider>();
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.8),
+      decoration: AppTheme.neumorphicDecoration(
+        context,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Theme.of(context).dividerColor),
-        boxShadow: AppTheme.softShadow,
+        subtle: true,
       ),
       child: Row(
         children: [
-          CircleAvatar(radius: 14, child: Text(_initials(auth.userName))),
+          AppAvatar(name: auth.userName, size: 30),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -385,16 +391,5 @@ class _SuperAppShellState extends State<SuperAppShell> {
         ],
       ),
     );
-  }
-
-  String _initials(String name) {
-    final clean = name.trim();
-    if (clean.isEmpty) return 'U';
-    final parts = clean
-        .split(RegExp(r'\s+'))
-        .where((e) => e.isNotEmpty)
-        .toList();
-    if (parts.length == 1) return parts.first[0].toUpperCase();
-    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }
 }

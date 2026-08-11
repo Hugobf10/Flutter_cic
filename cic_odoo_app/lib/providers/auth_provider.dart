@@ -88,7 +88,9 @@ class AuthProvider extends ChangeNotifier {
   bool canEditModule(String moduleKey) {
     if (isAdmin) return true;
     if (moduleKey == 'planning') {
-      return canEditModule('goals') || canEditModule('action_plans') || canEditModule('chemicals');
+      return canEditModule('goals') ||
+          canEditModule('action_plans') ||
+          canEditModule('chemicals');
     }
     if (isPortalOnlyUser) {
       if (moduleKey == 'communications') {
@@ -169,7 +171,9 @@ class AuthProvider extends ChangeNotifier {
     }
     final modelReadAccess = _modelAccess[moduleKey];
     if (moduleKey == 'planning') {
-      return canViewModule('goals') || canViewModule('action_plans') || canViewModule('chemicals');
+      return canViewModule('goals') ||
+          canViewModule('action_plans') ||
+          canViewModule('chemicals');
     }
     if (modelReadAccess == false) return false;
     const permissionMap = {

@@ -30,7 +30,7 @@ class DocumentViewerScreen extends StatelessWidget {
           if (!_isPdf && !_isImage)
             IconButton(
               onPressed: () => OpenFilex.open(file.path),
-              icon: const Icon(Icons.open_in_new_rounded),
+              icon: Icon(Icons.open_in_new_rounded),
               tooltip: 'Abrir archivo',
             ),
         ],
@@ -55,18 +55,22 @@ class DocumentViewerScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.insert_drive_file_rounded, size: 48, color: AppTheme.textMuted),
+            Icon(
+              Icons.insert_drive_file_rounded,
+              size: 48,
+              color: AppTheme.textMutedFor(context),
+            ),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Vista previa no disponible para este formato.',
-              style: TextStyle(color: AppTheme.textSecondary),
+              style: TextStyle(color: AppTheme.textSecondaryFor(context)),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: () => OpenFilex.open(file.path),
-              icon: const Icon(Icons.open_in_new_rounded),
-              label: const Text('Abrir archivo'),
+              icon: Icon(Icons.open_in_new_rounded),
+              label: Text('Abrir archivo'),
             ),
           ],
         ),
@@ -74,4 +78,3 @@ class DocumentViewerScreen extends StatelessWidget {
     );
   }
 }
-

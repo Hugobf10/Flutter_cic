@@ -27,7 +27,8 @@ class SettingsScreen extends StatelessWidget {
             child: Row(
               children: [
                 Container(
-                  width: 56, height: 56,
+                  width: 56,
+                  height: 56,
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: AppTheme.radiusMd,
@@ -35,7 +36,11 @@ class SettingsScreen extends StatelessWidget {
                   child: Center(
                     child: Text(
                       _initials(auth.userName),
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 22),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 22,
+                      ),
                     ),
                   ),
                 ),
@@ -46,7 +51,7 @@ class SettingsScreen extends StatelessWidget {
                     children: [
                       Text(
                         auth.userName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -74,13 +79,15 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          _buildSectionTitle('Información de conexión'),
+          _buildSectionTitle(context, 'Información de conexión'),
           _buildTile(
+            context,
             Icons.dns_outlined,
             'Servidor',
             auth.serverUrl.isNotEmpty ? auth.serverUrl : AppConfig.odooBaseUrl,
           ),
           _buildTile(
+            context,
             Icons.storage_outlined,
             'Base de datos',
             auth.database.isNotEmpty
@@ -88,13 +95,15 @@ class SettingsScreen extends StatelessWidget {
                 : AppConfig.odooDatabaseName,
           ),
           _buildTile(
+            context,
             Icons.info_outline_rounded,
             'Versión de la app',
             AppConfig.appVersion,
           ),
           const SizedBox(height: 20),
-          _buildSectionTitle('Cuenta'),
+          _buildSectionTitle(context, 'Cuenta'),
           _buildActionTile(
+            context: context,
             icon: Icons.logout_rounded,
             title: 'Cerrar sesión',
             subtitle: 'Desconectarse de este dispositivo',
@@ -106,14 +115,27 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Text(title, style: const TextStyle(color: AppTheme.textMuted, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: AppTheme.textMutedFor(context),
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+        ),
+      ),
     );
   }
 
-  Widget _buildTile(IconData icon, String title, String value) {
+  Widget _buildTile(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String value,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: AppCard(
@@ -123,17 +145,21 @@ class SettingsScreen extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: AppTheme.surfaceElevated,
+                color: AppTheme.elevatedFor(context),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppTheme.textMuted, size: 18),
+              child: Icon(
+                icon,
+                color: AppTheme.textMutedFor(context),
+                size: 18,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
-                  color: AppTheme.textSecondary,
+                style: TextStyle(
+                  color: AppTheme.textSecondaryFor(context),
                   fontSize: 13,
                 ),
               ),
@@ -141,8 +167,8 @@ class SettingsScreen extends StatelessWidget {
             Flexible(
               child: Text(
                 value,
-                style: const TextStyle(
-                  color: AppTheme.textPrimary,
+                style: TextStyle(
+                  color: AppTheme.textPrimaryFor(context),
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -156,7 +182,14 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionTile({required IconData icon, required String title, required String subtitle, required Color color, required VoidCallback onTap}) {
+  Widget _buildActionTile({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: InkWell(
@@ -187,8 +220,8 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     Text(
                       subtitle,
-                      style: const TextStyle(
-                        color: AppTheme.textMuted,
+                      style: TextStyle(
+                        color: AppTheme.textMutedFor(context),
                         fontSize: 11,
                       ),
                     ),
@@ -210,16 +243,28 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppTheme.surfaceCard,
+        backgroundColor: AppTheme.cardFor(context),
         shape: RoundedRectangleBorder(borderRadius: AppTheme.radiusMd),
-        title: const Text('Cerrar sesión', style: TextStyle(color: AppTheme.textPrimary)),
-        content: const Text('¿Estás seguro de que deseas cerrar sesión?', style: TextStyle(color: AppTheme.textSecondary)),
+        title: Text(
+          'Cerrar sesión',
+          style: TextStyle(color: AppTheme.textPrimaryFor(context)),
+        ),
+        content: Text(
+          '¿Estás seguro de que deseas cerrar sesión?',
+          style: TextStyle(color: AppTheme.textSecondaryFor(context)),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancelar'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
-            onPressed: () { Navigator.pop(context); auth.logout(); },
-            child: const Text('Cerrar sesión'),
+            onPressed: () {
+              Navigator.pop(context);
+              auth.logout();
+            },
+            child: Text('Cerrar sesión'),
           ),
         ],
       ),

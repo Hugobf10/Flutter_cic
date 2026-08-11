@@ -13,11 +13,7 @@ class AuthUser {
 }
 
 class AuthResult {
-  const AuthResult({
-    required this.success,
-    this.user,
-    this.errorMessage,
-  });
+  const AuthResult({required this.success, this.user, this.errorMessage});
 
   final bool success;
   final AuthUser? user;

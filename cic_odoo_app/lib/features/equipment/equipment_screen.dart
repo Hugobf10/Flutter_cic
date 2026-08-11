@@ -56,9 +56,9 @@ class _EquipmentScreenState extends State<EquipmentScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Equipos'),
+        title: Text('Equipos'),
         actions: [
-          IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+          IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
         ],
       ),
       body: _loading
@@ -71,10 +71,10 @@ class _EquipmentScreenState extends State<EquipmentScreen> {
               ),
             )
           : _rows.isEmpty
-          ? const Center(
+          ? Center(
               child: Text(
                 'Sin equipos visibles.',
-                style: TextStyle(color: AppTheme.textMuted),
+                style: TextStyle(color: AppTheme.textMutedFor(context)),
               ),
             )
           : ListView.separated(
@@ -89,47 +89,50 @@ class _EquipmentScreenState extends State<EquipmentScreen> {
                 return Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppTheme.surfaceCard,
+                    color: AppTheme.cardFor(context),
                     borderRadius: AppTheme.radiusMd,
                     border: Border.all(
-                      color: AppTheme.divider.withValues(alpha: 0.6),
+                      color: AppTheme.dividerFor(
+                        context,
+                      ).withValues(alpha: 0.6),
                     ),
+                    boxShadow: AppTheme.subtleShadowFor(context),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         (it['name'] ?? '').toString(),
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                        style: TextStyle(fontWeight: FontWeight.w700),
                       ),
                       if ((it['codigo'] ?? '').toString().isNotEmpty)
                         Text(
                           'Código: ${it['codigo']}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppTheme.textSecondary,
+                            color: AppTheme.textSecondaryFor(context),
                           ),
                         ),
                       Text(
                         'Estado: ${it['estado'] ?? '-'}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppTheme.textSecondary,
+                          color: AppTheme.textSecondaryFor(context),
                         ),
                       ),
                       Text(
                         'Intervención: ${(it['requiere_intervencion'] == true) ? 'Sí' : 'No'}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppTheme.textMuted,
+                          color: AppTheme.textMutedFor(context),
                         ),
                       ),
                       if (unidad.isNotEmpty)
                         Text(
                           'Unidad: $unidad',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppTheme.textMuted,
+                            color: AppTheme.textMutedFor(context),
                           ),
                         ),
                     ],

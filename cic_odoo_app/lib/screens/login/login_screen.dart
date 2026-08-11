@@ -75,23 +75,26 @@ class _LoginScreenState extends State<LoginScreen>
     final compact = size.width < 720;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: compact ? 22 : 44,
-              vertical: 28,
-            ),
-            child: FadeTransition(
-              opacity: _fade,
-              child: SlideTransition(
-                position: _slide,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 980),
-                  child: compact
-                      ? _mobileLayout(auth: auth)
-                      : _desktopLayout(auth: auth),
+      backgroundColor: AppTheme.surfaceFor(context),
+      body: DecoratedBox(
+        decoration: BoxDecoration(gradient: AppTheme.heroGradientFor(context)),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: compact ? 22 : 44,
+                vertical: 28,
+              ),
+              child: FadeTransition(
+                opacity: _fade,
+                child: SlideTransition(
+                  position: _slide,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 980),
+                    child: compact
+                        ? _mobileLayout(auth: auth)
+                        : _desktopLayout(auth: auth),
+                  ),
                 ),
               ),
             ),
@@ -117,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _desktopLayout({required AuthProvider auth}) {
     return Row(
       children: [
-        const Expanded(child: _BrandPanel()),
+        Expanded(child: _BrandPanel()),
         const SizedBox(width: 42),
         Expanded(
           child: Column(
@@ -137,10 +140,9 @@ class _LoginScreenState extends State<LoginScreen>
     final loading = auth.state == AuthState.loading;
     return Container(
       padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: Colors.white,
+      decoration: AppTheme.neumorphicDecoration(
+        context,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppTheme.divider),
       ),
       child: Form(
         key: _formKey,
@@ -159,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen>
                   ),
                 ),
                 const SizedBox(width: 14),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -168,7 +170,7 @@ class _LoginScreenState extends State<LoginScreen>
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w800,
-                          color: AppTheme.textPrimary,
+                          color: AppTheme.textPrimaryFor(context),
                         ),
                       ),
                       SizedBox(height: 3),
@@ -176,7 +178,7 @@ class _LoginScreenState extends State<LoginScreen>
                         'Portal interno CIC',
                         style: TextStyle(
                           fontSize: 13,
-                          color: AppTheme.textSecondary,
+                          color: AppTheme.textSecondaryFor(context),
                         ),
                       ),
                     ],
@@ -210,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen>
               autofillHints: const [AutofillHints.password],
               decoration: InputDecoration(
                 labelText: 'Contraseña',
-                prefixIcon: const Icon(Icons.lock_outline_rounded),
+                prefixIcon: Icon(Icons.lock_outline_rounded),
                 suffixIcon: IconButton(
                   tooltip: _obscurePassword
                       ? 'Mostrar contraseña'
@@ -242,7 +244,7 @@ class _LoginScreenState extends State<LoginScreen>
                 onPressed: loading ? null : _handleLogin,
                 icon: loading
                     ? const AppLoadingIndicator(size: 18)
-                    : const Icon(Icons.arrow_forward_rounded),
+                    : Icon(Icons.arrow_forward_rounded),
                 label: Text(loading ? 'Entrando...' : 'Entrar'),
               ),
             ),
@@ -268,15 +270,15 @@ class _LoginScreenState extends State<LoginScreen>
                       ? Icons.keyboard_arrow_up_rounded
                       : Icons.keyboard_arrow_down_rounded,
                   size: 20,
-                  color: AppTheme.textSecondary,
+                  color: AppTheme.textSecondaryFor(context),
                 ),
                 const SizedBox(width: 4),
-                const Text(
+                Text(
                   'Configuración del servidor',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.textSecondary,
+                    color: AppTheme.textSecondaryFor(context),
                   ),
                 ),
               ],
@@ -348,22 +350,22 @@ class _BrandHeader extends StatelessWidget {
         Text(
           'Intranet CIC',
           textAlign: compact ? TextAlign.center : TextAlign.left,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 34,
             height: 1.02,
             fontWeight: FontWeight.w900,
             letterSpacing: -1.1,
-            color: AppTheme.textPrimary,
+            color: AppTheme.textPrimaryFor(context),
           ),
         ),
         const SizedBox(height: 10),
-        const Text(
+        Text(
           'Accede a documentos, reservas, compras y flujos internos desde una app nativa.',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 14,
             height: 1.45,
-            color: AppTheme.textSecondary,
+            color: AppTheme.textSecondaryFor(context),
           ),
         ),
       ],
@@ -378,10 +380,9 @@ class _BrandPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(34),
-      decoration: BoxDecoration(
-        color: Colors.white,
+      decoration: AppTheme.neumorphicDecoration(
+        context,
         borderRadius: BorderRadius.circular(34),
-        border: Border.all(color: AppTheme.divider),
       ),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -419,9 +420,11 @@ class _FeaturePill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F8FA),
+      decoration: AppTheme.neumorphicDecoration(
+        context,
+        color: AppTheme.elevatedFor(context),
         borderRadius: BorderRadius.circular(16),
+        subtle: true,
       ),
       child: Row(
         children: [
@@ -430,10 +433,10 @@ class _FeaturePill extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimary,
+                color: AppTheme.textPrimaryFor(context),
               ),
             ),
           ),
@@ -460,16 +463,12 @@ class _ErrorBox extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.error_outline_rounded,
-            color: AppTheme.danger,
-            size: 18,
-          ),
+          Icon(Icons.error_outline_rounded, color: AppTheme.danger, size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppTheme.danger,
                 fontSize: 12,
                 height: 1.35,
@@ -485,15 +484,22 @@ class _ErrorBox extends StatelessWidget {
 class _SecurityNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.lock_outline_rounded, size: 15, color: AppTheme.textMuted),
-        SizedBox(width: 6),
+        Icon(
+          Icons.lock_outline_rounded,
+          size: 15,
+          color: AppTheme.textMutedFor(context),
+        ),
+        const SizedBox(width: 6),
         Flexible(
           child: Text(
             'Tus permisos se sincronizan con Odoo Web.',
-            style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+            style: TextStyle(
+              fontSize: 12,
+              color: AppTheme.textMutedFor(context),
+            ),
           ),
         ),
       ],

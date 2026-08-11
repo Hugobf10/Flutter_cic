@@ -17,24 +17,34 @@ class AuthService {
   }
 
   Future<void> logout() async {
-    final provider = OdooPasswordAuth(odoo: _odoo, request: const AuthLoginRequest());
+    final provider = OdooPasswordAuth(
+      odoo: _odoo,
+      request: const AuthLoginRequest(),
+    );
     await provider.logout();
   }
 
   Future<bool> restoreSession() async {
-    final provider = OdooPasswordAuth(odoo: _odoo, request: const AuthLoginRequest());
+    final provider = OdooPasswordAuth(
+      odoo: _odoo,
+      request: const AuthLoginRequest(),
+    );
     return provider.restoreSession();
   }
 
   Future<AuthUser?> currentUser() async {
-    final provider = OdooPasswordAuth(odoo: _odoo, request: const AuthLoginRequest());
+    final provider = OdooPasswordAuth(
+      odoo: _odoo,
+      request: const AuthLoginRequest(),
+    );
     return provider.currentUser();
   }
 }
 
 /// Adaptador explícito para autenticación Odoo nativa (JSON-RPC /web/session/authenticate).
 class OdooAuthService {
-  OdooAuthService({AuthService? authService}) : _authService = authService ?? AuthService();
+  OdooAuthService({AuthService? authService})
+    : _authService = authService ?? AuthService();
 
   final AuthService _authService;
 

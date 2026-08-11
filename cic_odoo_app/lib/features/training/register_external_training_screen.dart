@@ -141,14 +141,14 @@ class _RegisterExternalTrainingScreenState
           AppCard(
             child: Row(
               children: [
-                const Icon(Icons.event_outlined),
+                Icon(Icons.event_outlined),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     _endDate == null
                         ? 'Fecha de finalización'
                         : _formatDate(_endDate!),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
                 TextButton(
@@ -164,7 +164,7 @@ class _RegisterExternalTrainingScreenState
                           );
                           if (date != null) setState(() => _endDate = date);
                         },
-                  child: const Text('Elegir'),
+                  child: Text('Elegir'),
                 ),
               ],
             ),
@@ -179,17 +179,17 @@ class _RegisterExternalTrainingScreenState
           AppCard(
             child: Row(
               children: [
-                const Icon(Icons.attach_file_rounded),
+                Icon(Icons.attach_file_rounded),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     _pickedCertificate?.name ?? 'Adjuntar certificado (PDF)',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
                 TextButton(
                   onPressed: _saving ? null : _pickCertificate,
-                  child: const Text('Subir'),
+                  child: Text('Subir'),
                 ),
               ],
             ),

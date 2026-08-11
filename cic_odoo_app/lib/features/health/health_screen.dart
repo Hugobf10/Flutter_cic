@@ -74,8 +74,8 @@ class _HealthScreenState extends State<HealthScreen> {
       title: 'Vigilancia de la salud',
       actions: [
         if (auth.canEditModule('health'))
-          IconButton(onPressed: _newForm, icon: const Icon(Icons.add_rounded)),
-        IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+          IconButton(onPressed: _newForm, icon: Icon(Icons.add_rounded)),
+        IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
       ],
       child: _loading
           ? const AppLoadingView()
@@ -103,7 +103,7 @@ class _HealthScreenState extends State<HealthScreen> {
                     ? AppTheme.warning
                     : estado == 'no_apto'
                     ? AppTheme.error
-                    : AppTheme.textMuted;
+                    : AppTheme.textMutedFor(context);
                 return AppCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,9 +113,7 @@ class _HealthScreenState extends State<HealthScreen> {
                           Expanded(
                             child: Text(
                               (it['name'] ?? 'Reconocimiento').toString(),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                              ),
+                              style: TextStyle(fontWeight: FontWeight.w700),
                             ),
                           ),
                           AppStatusChip(
@@ -127,16 +125,16 @@ class _HealthScreenState extends State<HealthScreen> {
                       const SizedBox(height: 6),
                       Text(
                         'Prevista: ${it['fecha_prevista'] ?? '-'}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppTheme.textSecondary,
+                          color: AppTheme.textSecondaryFor(context),
                         ),
                       ),
                       Text(
                         'Realización: ${it['fecha_realizacion'] ?? '-'}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppTheme.textSecondary,
+                          color: AppTheme.textSecondaryFor(context),
                         ),
                       ),
                     ],
@@ -235,14 +233,14 @@ class _HealthMultiStepFormState extends State<_HealthMultiStepForm> {
               if (_step > 0)
                 OutlinedButton(
                   onPressed: _saving ? null : details.onStepCancel,
-                  child: const Text('Atrás'),
+                  child: Text('Atrás'),
                 ),
             ],
           );
         },
         steps: [
           Step(
-            title: const Text('Fecha'),
+            title: Text('Fecha'),
             isActive: _step >= 0,
             content: AppCard(
               child: Row(
@@ -265,14 +263,14 @@ class _HealthMultiStepFormState extends State<_HealthMultiStepForm> {
                       );
                       if (date != null) setState(() => _plannedDate = date);
                     },
-                    child: const Text('Elegir'),
+                    child: Text('Elegir'),
                   ),
                 ],
               ),
             ),
           ),
           Step(
-            title: const Text('Estado'),
+            title: Text('Estado'),
             isActive: _step >= 1,
             content: DropdownButtonFormField<String>(
               initialValue: _estado,
@@ -296,7 +294,7 @@ class _HealthMultiStepFormState extends State<_HealthMultiStepForm> {
             ),
           ),
           Step(
-            title: const Text('Observaciones'),
+            title: Text('Observaciones'),
             isActive: _step >= 2,
             content: Column(
               children: [

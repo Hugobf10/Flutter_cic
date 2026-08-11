@@ -36,7 +36,7 @@ class PortalApiService {
       },
     );
     final items = response['items'];
-    if (items is! List) return const [];
+    if (items is! List) return [];
     return [...items.whereType<Map>().map(OdooValues.map)];
   }
 

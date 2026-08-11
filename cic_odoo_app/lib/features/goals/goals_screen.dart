@@ -198,23 +198,58 @@ class _GoalsScreenState extends State<GoalsScreen> {
       isScrollControlled: true,
       showDragHandle: true,
       builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + MediaQuery.of(ctx).viewInsets.bottom),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          8,
+          16,
+          16 + MediaQuery.of(ctx).viewInsets.bottom,
+        ),
         child: SingleChildScrollView(
           child: DynamicForm(
             submitLabel: 'Guardar objetivo',
             fields: [
-              DynamicFieldConfig(key: 'name', label: 'Nombre', required: true, initialValue: goal['name']),
-              DynamicFieldConfig(key: 'descripcion', label: 'Descripción', type: DynamicFieldType.multiline, maxLines: 3, initialValue: goal['descripcion']),
-              DynamicFieldConfig(key: 'indicador', label: 'Indicador', initialValue: goal['indicador']),
-              DynamicFieldConfig(key: 'valor_objetivo', label: 'Valor objetivo', initialValue: goal['valor_objetivo']),
-              DynamicFieldConfig(key: 'valor_real', label: 'Valor real', initialValue: goal['valor_real']),
               DynamicFieldConfig(
-                key: 'tipo', label: 'Tipo', type: DynamicFieldType.select,
-                initialValue: goal['tipo'] ?? 'calidad',
-                options: const [DynamicFieldOption(value: 'calidad', label: 'Calidad'), DynamicFieldOption(value: 'prl', label: 'PRL')],
+                key: 'name',
+                label: 'Nombre',
+                required: true,
+                initialValue: goal['name'],
               ),
               DynamicFieldConfig(
-                key: 'estado', label: 'Estado', type: DynamicFieldType.select,
+                key: 'descripcion',
+                label: 'Descripción',
+                type: DynamicFieldType.multiline,
+                maxLines: 3,
+                initialValue: goal['descripcion'],
+              ),
+              DynamicFieldConfig(
+                key: 'indicador',
+                label: 'Indicador',
+                initialValue: goal['indicador'],
+              ),
+              DynamicFieldConfig(
+                key: 'valor_objetivo',
+                label: 'Valor objetivo',
+                initialValue: goal['valor_objetivo'],
+              ),
+              DynamicFieldConfig(
+                key: 'valor_real',
+                label: 'Valor real',
+                initialValue: goal['valor_real'],
+              ),
+              DynamicFieldConfig(
+                key: 'tipo',
+                label: 'Tipo',
+                type: DynamicFieldType.select,
+                initialValue: goal['tipo'] ?? 'calidad',
+                options: const [
+                  DynamicFieldOption(value: 'calidad', label: 'Calidad'),
+                  DynamicFieldOption(value: 'prl', label: 'PRL'),
+                ],
+              ),
+              DynamicFieldConfig(
+                key: 'estado',
+                label: 'Estado',
+                type: DynamicFieldType.select,
                 initialValue: goal['estado'] ?? 'pendiente',
                 options: const [
                   DynamicFieldOption(value: 'pendiente', label: 'Pendiente'),
@@ -222,9 +257,25 @@ class _GoalsScreenState extends State<GoalsScreen> {
                   DynamicFieldOption(value: 'realizado', label: 'Realizado'),
                 ],
               ),
-              DynamicFieldConfig(key: 'fecha_inicio', label: 'Fecha de inicio', type: DynamicFieldType.date, initialValue: _dateValue(goal['fecha_inicio'])),
-              DynamicFieldConfig(key: 'fecha_fin', label: 'Fecha fin', type: DynamicFieldType.date, initialValue: _dateValue(goal['fecha_fin'])),
-              DynamicFieldConfig(key: 'observaciones', label: 'Observaciones', type: DynamicFieldType.multiline, maxLines: 3, initialValue: goal['observaciones']),
+              DynamicFieldConfig(
+                key: 'fecha_inicio',
+                label: 'Fecha de inicio',
+                type: DynamicFieldType.date,
+                initialValue: _dateValue(goal['fecha_inicio']),
+              ),
+              DynamicFieldConfig(
+                key: 'fecha_fin',
+                label: 'Fecha fin',
+                type: DynamicFieldType.date,
+                initialValue: _dateValue(goal['fecha_fin']),
+              ),
+              DynamicFieldConfig(
+                key: 'observaciones',
+                label: 'Observaciones',
+                type: DynamicFieldType.multiline,
+                maxLines: 3,
+                initialValue: goal['observaciones'],
+              ),
             ],
             onSubmit: (values) async {
               final payload = <String, dynamic>{
@@ -233,14 +284,26 @@ class _GoalsScreenState extends State<GoalsScreen> {
                 'indicador': values['indicador'],
                 'estado': values['estado'],
                 'observaciones': values['observaciones'],
-                if (values['valor_objetivo'].toString().trim().isNotEmpty) 'valor_objetivo': double.tryParse(values['valor_objetivo'].toString().replaceAll(',', '.')),
-                if (values['valor_real'].toString().trim().isNotEmpty) 'valor_real': double.tryParse(values['valor_real'].toString().replaceAll(',', '.')),
-                if (_datePayload(values['fecha_inicio']).isNotEmpty) 'fecha_inicio': _datePayload(values['fecha_inicio']),
-                if (_datePayload(values['fecha_fin']).isNotEmpty) 'fecha_fin': _datePayload(values['fecha_fin']),
+                if (values['valor_objetivo'].toString().trim().isNotEmpty)
+                  'valor_objetivo': double.tryParse(
+                    values['valor_objetivo'].toString().replaceAll(',', '.'),
+                  ),
+                if (values['valor_real'].toString().trim().isNotEmpty)
+                  'valor_real': double.tryParse(
+                    values['valor_real'].toString().replaceAll(',', '.'),
+                  ),
+                if (_datePayload(values['fecha_inicio']).isNotEmpty)
+                  'fecha_inicio': _datePayload(values['fecha_inicio']),
+                if (_datePayload(values['fecha_fin']).isNotEmpty)
+                  'fecha_fin': _datePayload(values['fecha_fin']),
                 'tipo': values['tipo'],
               };
               if (_odoo.isPortalSession) {
-                await _portalApi.action('goal_update', recordId: id, values: payload);
+                await _portalApi.action(
+                  'goal_update',
+                  recordId: id,
+                  values: payload,
+                );
               } else {
                 await _odoo.write('calidad.objetivo', id, payload);
               }
@@ -263,11 +326,8 @@ class _GoalsScreenState extends State<GoalsScreen> {
       title: 'Objetivos',
       actions: [
         if (auth.canEditModule('goals'))
-          IconButton(
-            onPressed: _createGoal,
-            icon: const Icon(Icons.add_rounded),
-          ),
-        IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+          IconButton(onPressed: _createGoal, icon: Icon(Icons.add_rounded)),
+        IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
       ],
       child: _loading
           ? const AppLoadingView()
@@ -291,14 +351,14 @@ class _GoalsScreenState extends State<GoalsScreen> {
                             CircularProgressIndicator(
                               value: progress,
                               strokeWidth: 8,
-                              backgroundColor: AppTheme.surfaceElevated,
+                              backgroundColor: AppTheme.elevatedFor(context),
                             ),
                             Center(
                               child: Text(
                                 '${(progress * 100).toStringAsFixed(0)}%',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w700,
-                                  color: AppTheme.textPrimary,
+                                  color: AppTheme.textPrimaryFor(context),
                                 ),
                               ),
                             ),
@@ -310,14 +370,16 @@ class _GoalsScreenState extends State<GoalsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Progreso global',
-                              style: TextStyle(color: AppTheme.textSecondary),
+                              style: TextStyle(
+                                color: AppTheme.textSecondaryFor(context),
+                              ),
                             ),
                             Text(
                               '$completed de ${_rows.length} objetivos',
-                              style: const TextStyle(
-                                color: AppTheme.textPrimary,
+                              style: TextStyle(
+                                color: AppTheme.textPrimaryFor(context),
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -339,10 +401,10 @@ class _GoalsScreenState extends State<GoalsScreen> {
                   // según el controlador/versión. Nunca dejemos que un valor
                   // válido de la API rompa el árbol de widgets.
                   final pct =
-                      OdooValues.number(goal['avance'])
-                              .clamp(0, 100)
-                              .toDouble() /
-                          100;
+                      OdooValues.number(
+                        goal['avance'],
+                      ).clamp(0, 100).toDouble() /
+                      100;
                   final estado = (goal['estado'] ?? 'pendiente').toString();
                   final color = estado == 'realizado'
                       ? AppTheme.success
@@ -360,18 +422,21 @@ class _GoalsScreenState extends State<GoalsScreen> {
                               Expanded(
                                 child: Text(
                                   (goal['name'] ?? '').toString(),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.w600,
-                                    color: AppTheme.textPrimary,
+                                    color: AppTheme.textPrimaryFor(context),
                                   ),
                                 ),
                               ),
-                              AppStatusChip(label: estado.replaceAll('_', ' '), color: color),
+                              AppStatusChip(
+                                label: estado.replaceAll('_', ' '),
+                                color: color,
+                              ),
                               if (auth.canEditModule('goals'))
                                 IconButton(
                                   tooltip: 'Editar',
                                   onPressed: () => _editGoal(goal),
-                                  icon: const Icon(Icons.edit_outlined, size: 19),
+                                  icon: Icon(Icons.edit_outlined, size: 19),
                                 ),
                             ],
                           ),

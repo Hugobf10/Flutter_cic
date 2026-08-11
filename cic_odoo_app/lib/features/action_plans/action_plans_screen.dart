@@ -199,25 +199,92 @@ class _ActionPlansScreenState extends State<ActionPlansScreen> {
   Future<void> _editPlan(Map<String, dynamic> row) async {
     final id = (row['id'] as num?)?.toInt();
     if (id == null) return;
-    final currentGoal = row['objetivo_id'] is List ? (row['objetivo_id'] as List).first : row['objetivo_id'];
+    final currentGoal = row['objetivo_id'] is List
+        ? (row['objetivo_id'] as List).first
+        : row['objetivo_id'];
     final edited = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + MediaQuery.of(ctx).viewInsets.bottom),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          8,
+          16,
+          16 + MediaQuery.of(ctx).viewInsets.bottom,
+        ),
         child: SingleChildScrollView(
           child: DynamicForm(
             submitLabel: 'Guardar plan',
             fields: [
-              DynamicFieldConfig(key: 'name', label: 'Nombre', required: true, initialValue: row['name']),
-              DynamicFieldConfig(key: 'descripcion', label: 'Descripción', type: DynamicFieldType.multiline, maxLines: 3, initialValue: row['descripcion']),
-              DynamicFieldConfig(key: 'tipo', label: 'Tipo', type: DynamicFieldType.select, initialValue: row['tipo'] ?? 'accion', options: const [DynamicFieldOption(value: 'accion', label: 'Acción'), DynamicFieldOption(value: 'preventiva', label: 'Preventiva')]),
-              DynamicFieldConfig(key: 'objetivo_id', label: 'Objetivo', type: DynamicFieldType.select, required: true, initialValue: currentGoal, options: _goals.map((g) => DynamicFieldOption(value: (g['id'] as num).toInt(), label: (g['name'] ?? '').toString())).toList()),
-              DynamicFieldConfig(key: 'estado', label: 'Estado', type: DynamicFieldType.select, initialValue: row['estado'] ?? 'pendiente', options: const [DynamicFieldOption(value: 'pendiente', label: 'Pendiente'), DynamicFieldOption(value: 'en_proceso', label: 'En proceso'), DynamicFieldOption(value: 'realizado', label: 'Realizado')]),
-              DynamicFieldConfig(key: 'fecha_inicio', label: 'Fecha de inicio', type: DynamicFieldType.date, initialValue: _dateValue(row['fecha_inicio'])),
-              DynamicFieldConfig(key: 'fecha_fin', label: 'Fecha fin', type: DynamicFieldType.date, initialValue: _dateValue(row['fecha_fin'])),
-              DynamicFieldConfig(key: 'observaciones', label: 'Observaciones', type: DynamicFieldType.multiline, maxLines: 3, initialValue: row['observaciones']),
+              DynamicFieldConfig(
+                key: 'name',
+                label: 'Nombre',
+                required: true,
+                initialValue: row['name'],
+              ),
+              DynamicFieldConfig(
+                key: 'descripcion',
+                label: 'Descripción',
+                type: DynamicFieldType.multiline,
+                maxLines: 3,
+                initialValue: row['descripcion'],
+              ),
+              DynamicFieldConfig(
+                key: 'tipo',
+                label: 'Tipo',
+                type: DynamicFieldType.select,
+                initialValue: row['tipo'] ?? 'accion',
+                options: const [
+                  DynamicFieldOption(value: 'accion', label: 'Acción'),
+                  DynamicFieldOption(value: 'preventiva', label: 'Preventiva'),
+                ],
+              ),
+              DynamicFieldConfig(
+                key: 'objetivo_id',
+                label: 'Objetivo',
+                type: DynamicFieldType.select,
+                required: true,
+                initialValue: currentGoal,
+                options: _goals
+                    .map(
+                      (g) => DynamicFieldOption(
+                        value: (g['id'] as num).toInt(),
+                        label: (g['name'] ?? '').toString(),
+                      ),
+                    )
+                    .toList(),
+              ),
+              DynamicFieldConfig(
+                key: 'estado',
+                label: 'Estado',
+                type: DynamicFieldType.select,
+                initialValue: row['estado'] ?? 'pendiente',
+                options: const [
+                  DynamicFieldOption(value: 'pendiente', label: 'Pendiente'),
+                  DynamicFieldOption(value: 'en_proceso', label: 'En proceso'),
+                  DynamicFieldOption(value: 'realizado', label: 'Realizado'),
+                ],
+              ),
+              DynamicFieldConfig(
+                key: 'fecha_inicio',
+                label: 'Fecha de inicio',
+                type: DynamicFieldType.date,
+                initialValue: _dateValue(row['fecha_inicio']),
+              ),
+              DynamicFieldConfig(
+                key: 'fecha_fin',
+                label: 'Fecha fin',
+                type: DynamicFieldType.date,
+                initialValue: _dateValue(row['fecha_fin']),
+              ),
+              DynamicFieldConfig(
+                key: 'observaciones',
+                label: 'Observaciones',
+                type: DynamicFieldType.multiline,
+                maxLines: 3,
+                initialValue: row['observaciones'],
+              ),
             ],
             onSubmit: (values) async {
               final payload = <String, dynamic>{
@@ -227,11 +294,17 @@ class _ActionPlansScreenState extends State<ActionPlansScreen> {
                 'objetivo_id': values['objetivo_id'],
                 'estado': values['estado'],
                 'observaciones': values['observaciones'],
-                if (_datePayload(values['fecha_inicio']).isNotEmpty) 'fecha_inicio': _datePayload(values['fecha_inicio']),
-                if (_datePayload(values['fecha_fin']).isNotEmpty) 'fecha_fin': _datePayload(values['fecha_fin']),
+                if (_datePayload(values['fecha_inicio']).isNotEmpty)
+                  'fecha_inicio': _datePayload(values['fecha_inicio']),
+                if (_datePayload(values['fecha_fin']).isNotEmpty)
+                  'fecha_fin': _datePayload(values['fecha_fin']),
               };
               if (_odoo.isPortalSession) {
-                await _portalApi.action('action_plan_update', recordId: id, values: payload);
+                await _portalApi.action(
+                  'action_plan_update',
+                  recordId: id,
+                  values: payload,
+                );
               } else {
                 await _odoo.write('calidad.plan.accion', id, payload);
               }
@@ -250,8 +323,8 @@ class _ActionPlansScreenState extends State<ActionPlansScreen> {
       title: 'Planes de acción',
       actions: [
         if (auth.canEditModule('action_plans'))
-          IconButton(onPressed: _newPlan, icon: const Icon(Icons.add_rounded)),
-        IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+          IconButton(onPressed: _newPlan, icon: Icon(Icons.add_rounded)),
+        IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
       ],
       child: _loading
           ? const AppLoadingView()
@@ -276,14 +349,16 @@ class _ActionPlansScreenState extends State<ActionPlansScreen> {
                     ? AppTheme.success
                     : estado == 'en_proceso'
                     ? AppTheme.warning
-                    : AppTheme.textMuted;
+                    : AppTheme.textMutedFor(context);
                 final objetivo = row['objetivo_id'] is List
                     ? row['objetivo_id'][1].toString()
                     : '-';
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: AppCard(
-                    onTap: auth.canEditModule('action_plans') ? () => _editPlan(row) : null,
+                    onTap: auth.canEditModule('action_plans')
+                        ? () => _editPlan(row)
+                        : null,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -292,9 +367,9 @@ class _ActionPlansScreenState extends State<ActionPlansScreen> {
                             Expanded(
                               child: Text(
                                 (row['name'] ?? '').toString(),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w700,
-                                  color: AppTheme.textPrimary,
+                                  color: AppTheme.textPrimaryFor(context),
                                 ),
                               ),
                             ),
@@ -312,23 +387,23 @@ class _ActionPlansScreenState extends State<ActionPlansScreen> {
                         const SizedBox(height: 6),
                         Text(
                           'Objetivo: $objetivo',
-                          style: const TextStyle(
-                            color: AppTheme.textSecondary,
+                          style: TextStyle(
+                            color: AppTheme.textSecondaryFor(context),
                             fontSize: 12,
                           ),
                         ),
                         Text(
                           'Fecha límite: ${(row['fecha_fin'] ?? '-').toString()}',
-                          style: const TextStyle(
-                            color: AppTheme.textSecondary,
+                          style: TextStyle(
+                            color: AppTheme.textSecondaryFor(context),
                             fontSize: 12,
                           ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           (row['descripcion'] ?? '').toString(),
-                          style: const TextStyle(
-                            color: AppTheme.textMuted,
+                          style: TextStyle(
+                            color: AppTheme.textMutedFor(context),
                             fontSize: 12,
                           ),
                         ),

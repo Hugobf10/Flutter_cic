@@ -123,7 +123,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
   }
 
   List<Map<String, dynamic>> _mapRows(dynamic raw) {
-    if (raw is! List) return const [];
+    if (raw is! List) return [];
     return raw
         .whereType<Map>()
         .map((row) => OdooValues.map(row))
@@ -137,7 +137,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
       child: AppScaffold(
         title: 'Reclutamiento',
         actions: [
-          IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+          IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
         ],
         child: _loading
             ? const AppLoadingView()
@@ -182,23 +182,27 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                                         children: [
                                           Text(
                                             (it['name'] ?? '').toString(),
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontWeight: FontWeight.w700,
                                             ),
                                           ),
                                           const SizedBox(height: 6),
                                           Text(
                                             'Departamento: $dept',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 12,
-                                              color: AppTheme.textSecondary,
+                                              color: AppTheme.textSecondaryFor(
+                                                context,
+                                              ),
                                             ),
                                           ),
                                           Text(
                                             'Vacantes: ${(it['no_of_recruitment'] ?? 0)}',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 12,
-                                              color: AppTheme.textSecondary,
+                                              color: AppTheme.textSecondaryFor(
+                                                context,
+                                              ),
                                             ),
                                           ),
                                         ],
@@ -241,7 +245,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                                                   (it['partner_name'] ??
                                                           'Candidato')
                                                       .toString(),
-                                                  style: const TextStyle(
+                                                  style: TextStyle(
                                                     fontWeight: FontWeight.w700,
                                                   ),
                                                 ),
@@ -249,7 +253,9 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                                               AppStatusChip(
                                                 label: 'Valoración: $priority',
                                                 color: priority == '0'
-                                                    ? AppTheme.textMuted
+                                                    ? AppTheme.textMutedFor(
+                                                        context,
+                                                      )
                                                     : priority == '1'
                                                     ? AppTheme.warning
                                                     : priority == '2'
@@ -261,24 +267,30 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                                           const SizedBox(height: 6),
                                           Text(
                                             'Puesto: $job',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 12,
-                                              color: AppTheme.textSecondary,
+                                              color: AppTheme.textSecondaryFor(
+                                                context,
+                                              ),
                                             ),
                                           ),
                                           Text(
                                             'Estado: $stage',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 12,
-                                              color: AppTheme.textSecondary,
+                                              color: AppTheme.textSecondaryFor(
+                                                context,
+                                              ),
                                             ),
                                           ),
                                           Text(
                                             (it['email_from'] ?? '-')
                                                 .toString(),
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 12,
-                                              color: AppTheme.textMuted,
+                                              color: AppTheme.textMutedFor(
+                                                context,
+                                              ),
                                             ),
                                           ),
                                           const SizedBox(height: 8),
@@ -287,11 +299,11 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                                             child: OutlinedButton.icon(
                                               onPressed: () =>
                                                   _rateCandidate(id, priority),
-                                              icon: const Icon(
+                                              icon: Icon(
                                                 Icons.star_rate_rounded,
                                                 size: 16,
                                               ),
-                                              label: const Text('Valorar'),
+                                              label: Text('Valorar'),
                                             ),
                                           ),
                                         ],
@@ -356,7 +368,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                     title: (candidate['partner_name'] ?? 'Candidato')
                         .toString(),
                     subtitle: stage,
-                    trailing: const Icon(Icons.chevron_right_rounded),
+                    trailing: Icon(Icons.chevron_right_rounded),
                   ),
                 );
               }),
@@ -436,7 +448,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
       case '3':
         return AppTheme.success;
       default:
-        return AppTheme.textMuted;
+        return AppTheme.textMutedFor(context);
     }
   }
 }

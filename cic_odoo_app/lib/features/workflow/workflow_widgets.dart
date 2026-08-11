@@ -31,16 +31,23 @@ class WorkflowStepperBar extends StatelessWidget {
                 height: 24,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: done || active ? AppTheme.primary : AppTheme.surfaceElevated,
+                  color: done || active
+                      ? AppTheme.primary
+                      : AppTheme.elevatedFor(context),
                   border: Border.all(
-                    color: done || active ? AppTheme.primary : AppTheme.divider,
+                    color: done || active
+                        ? AppTheme.primary
+                        : AppTheme.dividerFor(context),
                   ),
+                  boxShadow: AppTheme.subtleShadowFor(context),
                 ),
                 child: Center(
                   child: Text(
                     done ? '✓' : '${i + 1}',
                     style: TextStyle(
-                      color: done || active ? Colors.white : AppTheme.textMuted,
+                      color: done || active
+                          ? Colors.white
+                          : AppTheme.textMutedFor(context),
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
@@ -54,7 +61,9 @@ class WorkflowStepperBar extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 11,
-                  color: active ? AppTheme.primary : AppTheme.textMuted,
+                  color: active
+                      ? AppTheme.primary
+                      : AppTheme.textMutedFor(context),
                   fontWeight: active ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
@@ -86,7 +95,11 @@ class WorkflowStateChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700),
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

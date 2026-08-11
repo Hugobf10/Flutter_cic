@@ -86,7 +86,7 @@ class _PermissionsCenterScreenState extends State<PermissionsCenterScreen> {
     }
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Permisos y roles')),
+        appBar: AppBar(title: Text('Permisos y roles')),
         body: Center(child: Text(_error!)),
       );
     }
@@ -95,7 +95,7 @@ class _PermissionsCenterScreenState extends State<PermissionsCenterScreen> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Permisos y roles'),
+          title: Text('Permisos y roles'),
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Roles'),
@@ -141,7 +141,7 @@ class _PermissionsCenterScreenState extends State<PermissionsCenterScreen> {
                                 color: AppTheme.primary.withValues(alpha: 0.14),
                                 borderRadius: AppTheme.radiusSm,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.verified_user_rounded,
                                 size: 18,
                                 color: AppTheme.primary,
@@ -151,12 +151,10 @@ class _PermissionsCenterScreenState extends State<PermissionsCenterScreen> {
                             Expanded(
                               child: Text(
                                 role['name']?.toString() ?? 'Rol',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                ),
+                                style: TextStyle(fontWeight: FontWeight.w700),
                               ),
                             ),
-                            const Icon(Icons.chevron_right_rounded),
+                            Icon(Icons.chevron_right_rounded),
                           ],
                         ),
                       );
@@ -203,7 +201,7 @@ class _PermissionsCenterScreenState extends State<PermissionsCenterScreen> {
                                 Expanded(
                                   child: Text(
                                     item['name']?.toString() ?? 'Aprobación',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),

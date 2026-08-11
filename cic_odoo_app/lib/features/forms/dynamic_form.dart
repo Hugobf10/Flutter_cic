@@ -61,8 +61,11 @@ class _DynamicFormState extends State<DynamicForm> {
   void initState() {
     super.initState();
     for (final f in widget.fields) {
-      if (f.type == DynamicFieldType.text || f.type == DynamicFieldType.multiline) {
-        _controllers[f.key] = TextEditingController(text: f.initialValue?.toString() ?? '');
+      if (f.type == DynamicFieldType.text ||
+          f.type == DynamicFieldType.multiline) {
+        _controllers[f.key] = TextEditingController(
+          text: f.initialValue?.toString() ?? '',
+        );
       } else {
         _values[f.key] = f.initialValue;
       }
@@ -90,7 +93,9 @@ class _DynamicFormState extends State<DynamicForm> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: _submitting ? null : () => Navigator.of(context).maybePop(),
+                  onPressed: _submitting
+                      ? null
+                      : () => Navigator.of(context).maybePop(),
                   child: Text(widget.cancelLabel),
                 ),
               ),
@@ -136,7 +141,12 @@ class _DynamicFormState extends State<DynamicForm> {
             initialValue: _values[f.key],
             decoration: InputDecoration(labelText: f.label),
             items: f.options
-                .map((o) => DropdownMenuItem<dynamic>(value: o.value, child: Text(o.label)))
+                .map(
+                  (o) => DropdownMenuItem<dynamic>(
+                    value: o.value,
+                    child: Text(o.label),
+                  ),
+                )
                 .toList(),
             onChanged: (v) => _values[f.key] = v,
             validator: (v) {
@@ -166,7 +176,7 @@ class _DynamicFormState extends State<DynamicForm> {
                 );
                 if (picked != null) setState(() => _values[f.key] = picked);
               },
-              icon: const Icon(Icons.calendar_today_rounded, size: 16),
+              icon: Icon(Icons.calendar_today_rounded, size: 16),
               label: Text(label),
             ),
           ),
@@ -192,9 +202,9 @@ class _DynamicFormState extends State<DynamicForm> {
       if (mounted) Navigator.of(context).maybePop(true);
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(OdooService.prettyError(error))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(OdooService.prettyError(error))));
       }
     } finally {
       if (mounted) setState(() => _submitting = false);

@@ -724,7 +724,7 @@ class _ReservasScreenState extends State<ReservasScreen>
       }
       return Scaffold(
         backgroundColor: AppTheme.surfaceFor(context),
-        appBar: AppBar(title: const Text('Reservas')),
+        appBar: AppBar(title: Text('Reservas')),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -740,17 +740,17 @@ class _ReservasScreenState extends State<ReservasScreen>
     return Scaffold(
       backgroundColor: AppTheme.surfaceFor(context),
       appBar: AppBar(
-        title: const Text('Reservas'),
+        title: Text('Reservas'),
         actions: [
           if (auth.isInternalUser || auth.isAdmin)
             IconButton(
               onPressed: _scanReservationQr,
-              icon: const Icon(Icons.qr_code_scanner_rounded),
+              icon: Icon(Icons.qr_code_scanner_rounded),
               tooltip: 'Escanear QR de sala o equipo',
             ),
           IconButton(
             onPressed: _loadInitial,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: Icon(Icons.refresh_rounded),
           ),
         ],
         bottom: TabBar(
@@ -869,17 +869,17 @@ class _ReservasScreenState extends State<ReservasScreen>
     return Scaffold(
       backgroundColor: AppTheme.surfaceFor(context),
       appBar: AppBar(
-        title: const Text('Reservas'),
+        title: Text('Reservas'),
         actions: [
           if (auth.isInternalUser || auth.isAdmin)
             IconButton(
               onPressed: _scanReservationQr,
-              icon: const Icon(Icons.qr_code_scanner_rounded),
+              icon: Icon(Icons.qr_code_scanner_rounded),
               tooltip: 'Escanear QR de sala o equipo',
             ),
           IconButton(
             onPressed: _loadInitial,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: Icon(Icons.refresh_rounded),
           ),
         ],
         bottom: TabBar(
@@ -1038,27 +1038,27 @@ class _ReservasScreenState extends State<ReservasScreen>
           children: [
             Row(
               children: [
-                const Icon(Icons.qr_code_2_rounded, color: AppTheme.primary),
+                Icon(Icons.qr_code_2_rounded, color: AppTheme.primary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     label?.trim().isNotEmpty == true
                         ? 'Recurso seleccionado: $label'
                         : 'Recurso seleccionado por QR',
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+                    style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
                 TextButton(
                   onPressed: _clearReservationTarget,
-                  child: const Text('Limpiar'),
+                  child: Text('Limpiar'),
                 ),
               ],
             ),
             const SizedBox(height: 6),
             Text(
               'Mostrando disponibilidad y agenda para $dayLabel.',
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
+              style: TextStyle(
+                color: AppTheme.textSecondaryFor(context),
                 fontSize: 12,
               ),
             ),
@@ -1094,7 +1094,10 @@ class _ReservasScreenState extends State<ReservasScreen>
             variantId == null
                 ? 'Selecciona un microservicio o recurso para generar su QR.'
                 : 'Este QR abrirá la app directamente en el recurso seleccionado y mostrará siempre la disponibilidad del día actual.',
-            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+            style: TextStyle(
+              color: AppTheme.textSecondaryFor(context),
+              fontSize: 12,
+            ),
           ),
           if (variantId != null) ...[
             const SizedBox(height: 12),
@@ -1104,7 +1107,8 @@ class _ReservasScreenState extends State<ReservasScreen>
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: AppTheme.divider),
+                  border: Border.all(color: AppTheme.dividerFor(context)),
+                  boxShadow: AppTheme.subtleShadowFor(context),
                 ),
                 child: Column(
                   children: [
@@ -1114,25 +1118,25 @@ class _ReservasScreenState extends State<ReservasScreen>
                       backgroundColor: Colors.white,
                       eyeStyle: const QrEyeStyle(
                         eyeShape: QrEyeShape.square,
-                        color: AppTheme.textPrimary,
+                        color: Colors.black,
                       ),
                       dataModuleStyle: const QrDataModuleStyle(
                         dataModuleShape: QrDataModuleShape.square,
-                        color: AppTheme.textPrimary,
+                        color: Colors.black,
                       ),
                     ),
                     const SizedBox(height: 10),
                     Text(
                       variantName ?? 'Recurso',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                      style: TextStyle(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Servicio ${templateId ?? '-'} · Recurso $variantId',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppTheme.textMuted,
+                        color: AppTheme.textMutedFor(context),
                       ),
                     ),
                   ],
@@ -1142,7 +1146,10 @@ class _ReservasScreenState extends State<ReservasScreen>
             const SizedBox(height: 12),
             SelectableText(
               payload,
-              style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.textMutedFor(context),
+              ),
             ),
             const SizedBox(height: 12),
             Row(
@@ -1152,7 +1159,7 @@ class _ReservasScreenState extends State<ReservasScreen>
                     onPressed: _isExportingQr ? null : _exportCurrentQrPng,
                     icon: _isExportingQr
                         ? const AppLoadingIndicator(size: 16)
-                        : const Icon(Icons.download_rounded),
+                        : Icon(Icons.download_rounded),
                     label: Text(
                       _isExportingQr ? 'Exportando...' : 'Exportar PNG',
                     ),
@@ -1162,8 +1169,8 @@ class _ReservasScreenState extends State<ReservasScreen>
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: _isExportingQr ? null : _shareCurrentQrPng,
-                    icon: const Icon(Icons.share_rounded),
-                    label: const Text('Compartir'),
+                    icon: Icon(Icons.share_rounded),
+                    label: Text('Compartir'),
                   ),
                 ),
               ],
@@ -1172,9 +1179,12 @@ class _ReservasScreenState extends State<ReservasScreen>
           if (variant != null &&
               (variant['display_name'] ?? '').toString().trim().isNotEmpty) ...[
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Tip: genera el QR después de seleccionar el microservicio exacto en el paso 2.',
-              style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.textMutedFor(context),
+              ),
             ),
           ],
         ],
@@ -1210,22 +1220,29 @@ class _ReservasScreenState extends State<ReservasScreen>
           const SizedBox(height: 8),
           Text(
             'Comprueba desde la propia app qué partes del flujo de reservas permite este perfil por API.',
-            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+            style: TextStyle(
+              color: AppTheme.textSecondaryFor(context),
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 10),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppTheme.surfaceElevated,
+              color: AppTheme.elevatedFor(context),
               borderRadius: AppTheme.radiusSm,
-              border: Border.all(color: AppTheme.divider),
+              border: Border.all(color: AppTheme.dividerFor(context)),
+              boxShadow: AppTheme.subtleShadowFor(context),
             ),
             child: Text(
               'Día actual: ${_formatAgendaDay(_currentReservationDay())}\n'
               'Servicio: ${serviceLabel ?? '-'}\n'
               'Recurso: ${variantLabel ?? '-'}',
-              style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+              style: TextStyle(
+                color: AppTheme.textMutedFor(context),
+                fontSize: 12,
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -1238,7 +1255,7 @@ class _ReservasScreenState extends State<ReservasScreen>
                       : _runReservationApiDiagnostics,
                   icon: _isRunningApiChecks
                       ? const AppLoadingIndicator(size: 16)
-                      : const Icon(Icons.playlist_add_check_circle_rounded),
+                      : Icon(Icons.playlist_add_check_circle_rounded),
                   label: Text(
                     _isRunningApiChecks
                         ? 'Comprobando...'
@@ -1279,9 +1296,10 @@ class _ReservasScreenState extends State<ReservasScreen>
         width: double.infinity,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceElevated,
+          color: AppTheme.elevatedFor(context),
           borderRadius: AppTheme.radiusSm,
-          border: Border.all(color: AppTheme.divider),
+          border: Border.all(color: AppTheme.dividerFor(context)),
+          boxShadow: AppTheme.subtleShadowFor(context),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1294,16 +1312,16 @@ class _ReservasScreenState extends State<ReservasScreen>
                 children: [
                   Text(
                     result.label,
-                    style: const TextStyle(
-                      color: AppTheme.textPrimary,
+                    style: TextStyle(
+                      color: AppTheme.textPrimaryFor(context),
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     result.message,
-                    style: const TextStyle(
-                      color: AppTheme.textMuted,
+                    style: TextStyle(
+                      color: AppTheme.textMutedFor(context),
                       fontSize: 12,
                     ),
                   ),
@@ -1480,7 +1498,7 @@ class _ReservasScreenState extends State<ReservasScreen>
             children: [
               IconButton(
                 onPressed: () => _changeAgendaDay(-1),
-                icon: const Icon(Icons.chevron_left_rounded),
+                icon: Icon(Icons.chevron_left_rounded),
               ),
               Expanded(
                 child: Column(
@@ -1505,7 +1523,7 @@ class _ReservasScreenState extends State<ReservasScreen>
               ),
               IconButton(
                 onPressed: () => _changeAgendaDay(1),
-                icon: const Icon(Icons.chevron_right_rounded),
+                icon: Icon(Icons.chevron_right_rounded),
               ),
             ],
           ),
@@ -1621,9 +1639,9 @@ class _ReservasScreenState extends State<ReservasScreen>
                       const SizedBox(height: 4),
                       Text(
                         _formatHour(end),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppTheme.textSecondary,
+                          color: AppTheme.textSecondaryFor(context),
                         ),
                       ),
                     ],
@@ -1640,9 +1658,9 @@ class _ReservasScreenState extends State<ReservasScreen>
                           Expanded(
                             child: Text(
                               servicio,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w700,
-                                color: AppTheme.textPrimary,
+                                color: AppTheme.textPrimaryFor(context),
                               ),
                             ),
                           ),
@@ -1655,8 +1673,8 @@ class _ReservasScreenState extends State<ReservasScreen>
                       const SizedBox(height: 6),
                       Text(
                         contacto,
-                        style: const TextStyle(
-                          color: AppTheme.textSecondary,
+                        style: TextStyle(
+                          color: AppTheme.textSecondaryFor(context),
                           fontSize: 12,
                         ),
                       ),
@@ -1665,8 +1683,8 @@ class _ReservasScreenState extends State<ReservasScreen>
                         const SizedBox(height: 4),
                         Text(
                           'Tipo: ${OdooValues.many2oneLabel(r['session_type_id'], fallback: 'Sesión')}',
-                          style: const TextStyle(
-                            color: AppTheme.textMuted,
+                          style: TextStyle(
+                            color: AppTheme.textMutedFor(context),
                             fontSize: 12,
                           ),
                         ),
@@ -1676,8 +1694,8 @@ class _ReservasScreenState extends State<ReservasScreen>
                         const SizedBox(height: 4),
                         Text(
                           (r['motivo'] ?? '').toString(),
-                          style: const TextStyle(
-                            color: AppTheme.textMuted,
+                          style: TextStyle(
+                            color: AppTheme.textMutedFor(context),
                             fontSize: 12,
                           ),
                         ),
@@ -1754,13 +1772,14 @@ class _ReservasScreenState extends State<ReservasScreen>
         width: double.infinity,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceElevated,
+          color: AppTheme.elevatedFor(context),
           borderRadius: AppTheme.radiusSm,
-          border: Border.all(color: AppTheme.divider),
+          border: Border.all(color: AppTheme.dividerFor(context)),
+          boxShadow: AppTheme.subtleShadowFor(context),
         ),
         child: Text(
           message,
-          style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+          style: TextStyle(color: AppTheme.textMutedFor(context), fontSize: 12),
         ),
       ),
     );
@@ -1908,11 +1927,11 @@ class _ReservasScreenState extends State<ReservasScreen>
       gapless: true,
       eyeStyle: const QrEyeStyle(
         eyeShape: QrEyeShape.square,
-        color: AppTheme.textPrimary,
+        color: Colors.black,
       ),
       dataModuleStyle: const QrDataModuleStyle(
         dataModuleShape: QrDataModuleShape.square,
-        color: AppTheme.textPrimary,
+        color: Colors.black,
       ),
     );
     final byteData = await painter.toImageData(
@@ -1939,15 +1958,18 @@ class _ReservasScreenState extends State<ReservasScreen>
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceCard,
+        color: AppTheme.cardFor(context),
         borderRadius: AppTheme.radiusMd,
-        border: Border.all(color: AppTheme.divider.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: AppTheme.dividerFor(context).withValues(alpha: 0.5),
+        ),
+        boxShadow: AppTheme.subtleShadowFor(context),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (_editingReservationId != null) ...[
-            const Text(
+            Text(
               'Editando borrador',
               style: TextStyle(
                 color: AppTheme.primary,
@@ -1979,8 +2001,8 @@ class _ReservasScreenState extends State<ReservasScreen>
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: _prevStep,
-                    icon: const Icon(Icons.arrow_back_rounded),
-                    label: const Text('Atrás'),
+                    icon: Icon(Icons.arrow_back_rounded),
+                    label: Text('Atrás'),
                   ),
                 ),
               if (_wizardStep > 0) const SizedBox(width: 10),
@@ -1992,8 +2014,8 @@ class _ReservasScreenState extends State<ReservasScreen>
                   icon: _wizardStep == 3
                       ? (_isCreating
                             ? const AppLoadingIndicator(size: 16)
-                            : const Icon(Icons.check_circle_outline_rounded))
-                      : const Icon(Icons.arrow_forward_rounded),
+                            : Icon(Icons.check_circle_outline_rounded))
+                      : Icon(Icons.arrow_forward_rounded),
                   label: Text(
                     _wizardStep == 3
                         ? (_isCreating
@@ -2027,13 +2049,15 @@ class _ReservasScreenState extends State<ReservasScreen>
                 radius: 12,
                 backgroundColor: done || active
                     ? AppTheme.primary
-                    : AppTheme.surfaceElevated,
+                    : AppTheme.elevatedFor(context),
                 child: Text(
                   done ? '✓' : '${i + 1}',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: done || active ? Colors.white : AppTheme.textMuted,
+                    color: done || active
+                        ? Colors.white
+                        : AppTheme.textMutedFor(context),
                   ),
                 ),
               ),
@@ -2042,7 +2066,9 @@ class _ReservasScreenState extends State<ReservasScreen>
                 labels[i],
                 style: TextStyle(
                   fontSize: 11,
-                  color: active ? AppTheme.primary : AppTheme.textMuted,
+                  color: active
+                      ? AppTheme.primary
+                      : AppTheme.textMutedFor(context),
                   fontWeight: active ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
@@ -2066,11 +2092,11 @@ class _ReservasScreenState extends State<ReservasScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Paso 1: elige el servicio',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.textPrimaryFor(context),
                 ),
               ),
               const SizedBox(height: 8),
@@ -2106,11 +2132,11 @@ class _ReservasScreenState extends State<ReservasScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Paso 2: elige recurso',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.textPrimaryFor(context),
                 ),
               ),
               const SizedBox(height: 8),
@@ -2171,11 +2197,11 @@ class _ReservasScreenState extends State<ReservasScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Paso 3: elige horario',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.textPrimaryFor(context),
                 ),
               ),
               const SizedBox(height: 8),
@@ -2205,11 +2231,11 @@ class _ReservasScreenState extends State<ReservasScreen>
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'Horas disponibles',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.textPrimaryFor(context),
                 ),
               ),
               const SizedBox(height: 8),
@@ -2242,11 +2268,11 @@ class _ReservasScreenState extends State<ReservasScreen>
                 }).toList(),
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'Duración',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.textPrimaryFor(context),
                 ),
               ),
               const SizedBox(height: 8),
@@ -2295,15 +2321,16 @@ class _ReservasScreenState extends State<ReservasScreen>
                 width: double.infinity,
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.surfaceElevated,
+                  color: AppTheme.elevatedFor(context),
                   borderRadius: AppTheme.radiusSm,
-                  border: Border.all(color: AppTheme.divider),
+                  border: Border.all(color: AppTheme.dividerFor(context)),
+                  boxShadow: AppTheme.subtleShadowFor(context),
                 ),
                 child: Text(
                   'Resumen: ${selectedService?['name'] ?? '-'} · ${selectedVariant?['display_name'] ?? '-'}\n'
                   '${_fmt(_start!)} -> ${_fmt(_end!)} · ${_money(((hourlyPrice is num ? hourlyPrice.toDouble() : 0) * (_durationMinutes / 60)))}',
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
+                  style: TextStyle(
+                    color: AppTheme.textSecondaryFor(context),
                     fontSize: 12,
                   ),
                 ),
@@ -2331,8 +2358,8 @@ class _ReservasScreenState extends State<ReservasScreen>
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
+              style: TextStyle(
+                color: AppTheme.textSecondaryFor(context),
                 fontSize: 12,
                 height: 1.35,
               ),
@@ -2362,9 +2389,12 @@ class _ReservasScreenState extends State<ReservasScreen>
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceCard,
+        color: AppTheme.cardFor(context),
         borderRadius: AppTheme.radiusMd,
-        border: Border.all(color: AppTheme.divider.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: AppTheme.dividerFor(context).withValues(alpha: 0.5),
+        ),
+        boxShadow: AppTheme.subtleShadowFor(context),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2374,8 +2404,8 @@ class _ReservasScreenState extends State<ReservasScreen>
               Expanded(
                 child: Text(
                   servicio,
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
+                  style: TextStyle(
+                    color: AppTheme.textPrimaryFor(context),
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
@@ -2387,19 +2417,28 @@ class _ReservasScreenState extends State<ReservasScreen>
           const SizedBox(height: 6),
           Text(
             '$start  ->  $end',
-            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+            style: TextStyle(
+              color: AppTheme.textSecondaryFor(context),
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             'Duración: ${duracion.toStringAsFixed(1)}h  ·  Total: ${_money(total)}',
-            style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+            style: TextStyle(
+              color: AppTheme.textMutedFor(context),
+              fontSize: 12,
+            ),
           ),
           if (session.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 'Tipo: $session',
-                style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                style: TextStyle(
+                  color: AppTheme.textMutedFor(context),
+                  fontSize: 12,
+                ),
               ),
             ),
           if (motivo.isNotEmpty)
@@ -2407,7 +2446,10 @@ class _ReservasScreenState extends State<ReservasScreen>
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 'Motivo: $motivo',
-                style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                style: TextStyle(
+                  color: AppTheme.textMutedFor(context),
+                  fontSize: 12,
+                ),
               ),
             ),
           if (contacto.isNotEmpty)
@@ -2415,7 +2457,10 @@ class _ReservasScreenState extends State<ReservasScreen>
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 'Solicitante: $contacto',
-                style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                style: TextStyle(
+                  color: AppTheme.textMutedFor(context),
+                  fontSize: 12,
+                ),
               ),
             ),
           if (estado == 'borrador' && auth.canEditModule('reservas')) ...[
@@ -2425,13 +2470,13 @@ class _ReservasScreenState extends State<ReservasScreen>
               children: [
                 TextButton.icon(
                   onPressed: () => _editarReserva(r),
-                  icon: const Icon(Icons.edit_outlined),
-                  label: const Text('Editar'),
+                  icon: Icon(Icons.edit_outlined),
+                  label: Text('Editar'),
                 ),
                 TextButton.icon(
                   onPressed: () => _confirmarReserva(id),
-                  icon: const Icon(Icons.check_circle_outline_rounded),
-                  label: const Text('Confirmar'),
+                  icon: Icon(Icons.check_circle_outline_rounded),
+                  label: Text('Confirmar'),
                 ),
               ],
             ),
@@ -2442,8 +2487,8 @@ class _ReservasScreenState extends State<ReservasScreen>
               alignment: Alignment.centerRight,
               child: TextButton.icon(
                 onPressed: () => _cancelarReserva(id),
-                icon: const Icon(Icons.cancel_outlined),
-                label: const Text('Cancelar'),
+                icon: Icon(Icons.cancel_outlined),
+                label: Text('Cancelar'),
               ),
             ),
           ],
@@ -2594,7 +2639,9 @@ class _ReservasScreenState extends State<ReservasScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? AppTheme.danger : AppTheme.surfaceElevated,
+        backgroundColor: isError
+            ? AppTheme.danger
+            : Theme.of(context).colorScheme.inverseSurface,
       ),
     );
   }

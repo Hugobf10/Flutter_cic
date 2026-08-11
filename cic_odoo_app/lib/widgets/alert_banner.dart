@@ -49,6 +49,7 @@ class AlertBanner extends StatelessWidget {
           color: _color.withValues(alpha: 0.1),
           borderRadius: AppTheme.radiusSm,
           border: Border.all(color: _color.withValues(alpha: 0.3)),
+          boxShadow: AppTheme.subtleShadowFor(context),
         ),
         child: Row(
           children: [
@@ -65,8 +66,7 @@ class AlertBanner extends StatelessWidget {
               ),
             ),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: _color.withValues(alpha: 0.2),
                 borderRadius: AppTheme.radiusXl,

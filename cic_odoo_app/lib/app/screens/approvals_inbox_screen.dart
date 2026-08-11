@@ -124,13 +124,13 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Aprobaciones'),
+        title: Text('Aprobaciones'),
         actions: [
-          IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+          IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
         ],
       ),
       body: _items.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
                 child: Text(
@@ -173,9 +173,7 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
                           children: [
                             Text(
                               item.title,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                              ),
+                              style: TextStyle(fontWeight: FontWeight.w700),
                             ),
                             const SizedBox(height: 3),
                             Text(

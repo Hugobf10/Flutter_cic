@@ -203,7 +203,7 @@ class _ProductsTabState extends State<_ProductsTab> {
               const SizedBox(width: 8),
               IconButton.filledTonal(
                 onPressed: _scanSearch,
-                icon: const Icon(Icons.qr_code_scanner_rounded),
+                icon: Icon(Icons.qr_code_scanner_rounded),
                 tooltip: 'Escanear código',
               ),
             ],
@@ -282,10 +282,7 @@ class _ProductCard extends StatelessWidget {
               color: AppTheme.primary.withValues(alpha: 0.1),
               borderRadius: AppTheme.radiusSm,
             ),
-            child: const Icon(
-              Icons.inventory_2_rounded,
-              color: AppTheme.primary,
-            ),
+            child: Icon(Icons.inventory_2_rounded, color: AppTheme.primary),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -294,7 +291,7 @@ class _ProductCard extends StatelessWidget {
               children: [
                 Text(
                   (product['name'] ?? 'Producto').toString(),
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  style: TextStyle(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 3),
                 Text(
@@ -303,8 +300,8 @@ class _ProductCard extends StatelessWidget {
                     if (barcode.isNotEmpty) 'EAN $barcode',
                     if (price != null) '${_num(price).toStringAsFixed(2)} €',
                   ].join(' · '),
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
+                  style: TextStyle(
+                    color: AppTheme.textSecondaryFor(context),
                     fontSize: 12,
                   ),
                 ),
@@ -315,14 +312,14 @@ class _ProductCard extends StatelessWidget {
             label: product['purchase_ok'] == true ? 'Comprable' : 'Interno',
             color: product['purchase_ok'] == true
                 ? AppTheme.success
-                : AppTheme.textMuted,
+                : AppTheme.textMutedFor(context),
           ),
           if (onTap != null) ...[
             const SizedBox(width: 8),
-            const Icon(
+            Icon(
               Icons.edit_outlined,
               size: 18,
-              color: AppTheme.textMuted,
+              color: AppTheme.textMutedFor(context),
             ),
           ],
         ],
@@ -446,7 +443,7 @@ class _ProductFormScreenState extends State<_ProductFormScreen> {
       actions: [
         IconButton(
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.close_rounded),
+          icon: Icon(Icons.close_rounded),
         ),
       ],
       child: Form(
@@ -475,7 +472,7 @@ class _ProductFormScreenState extends State<_ProductFormScreen> {
               prefixIcon: Icons.qr_code_2_rounded,
               suffixIcon: IconButton(
                 onPressed: _scanBarcode,
-                icon: const Icon(Icons.qr_code_scanner_rounded),
+                icon: Icon(Icons.qr_code_scanner_rounded),
               ),
             ),
             const SizedBox(height: 10),
@@ -861,7 +858,7 @@ class _CreatePurchaseOrderScreenState
       actions: [
         IconButton(
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.close_rounded),
+          icon: Icon(Icons.close_rounded),
         ),
       ],
       child: _loading
@@ -1050,8 +1047,8 @@ class _DraftPurchaseLineCardState extends State<_DraftPurchaseLineCard> {
             alignment: Alignment.centerRight,
             child: TextButton.icon(
               onPressed: widget.onRemove,
-              icon: const Icon(Icons.delete_outline_rounded),
-              label: const Text('Quitar línea'),
+              icon: Icon(Icons.delete_outline_rounded),
+              label: Text('Quitar línea'),
             ),
           ),
         ],
@@ -1437,13 +1434,13 @@ class _ReceptionTabState extends State<_ReceptionTab> {
               const SizedBox(width: 8),
               IconButton.filledTonal(
                 onPressed: _pickInvoice,
-                icon: const Icon(Icons.upload_file_rounded),
+                icon: Icon(Icons.upload_file_rounded),
                 tooltip: 'Cargar factura',
               ),
               const SizedBox(width: 8),
               IconButton.filled(
                 onPressed: _scanOrderWithCamera,
-                icon: const Icon(Icons.document_scanner_rounded),
+                icon: Icon(Icons.document_scanner_rounded),
                 tooltip: 'Escanear con cámara',
               ),
             ],
@@ -1533,7 +1530,7 @@ class _OrderHeader extends StatelessWidget {
               color: AppTheme.success.withValues(alpha: 0.12),
               borderRadius: AppTheme.radiusSm,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.shopping_cart_checkout_rounded,
               color: AppTheme.success,
             ),
@@ -1545,13 +1542,13 @@ class _OrderHeader extends StatelessWidget {
               children: [
                 Text(
                   (order['name'] ?? 'Pedido').toString(),
-                  style: const TextStyle(fontWeight: FontWeight.w800),
+                  style: TextStyle(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   supplier,
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
+                  style: TextStyle(
+                    color: AppTheme.textSecondaryFor(context),
                     fontSize: 12,
                   ),
                 ),
@@ -1564,7 +1561,10 @@ class _OrderHeader extends StatelessWidget {
           ),
           if (onTap != null) ...[
             const SizedBox(width: 8),
-            const Icon(Icons.chevron_right_rounded, color: AppTheme.textMuted),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: AppTheme.textMutedFor(context),
+            ),
           ],
         ],
       ),
@@ -1698,7 +1698,7 @@ class _PurchaseOrderDetailScreenState
     return AppScaffold(
       title: OdooValues.string(order?['name'], fallback: 'Detalle del pedido'),
       actions: [
-        IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+        IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
       ],
       child: _loading
           ? const AppLoadingView(label: 'Cargando detalle...')
@@ -1721,12 +1721,12 @@ class _PurchaseOrderDetailScreenState
                 const SizedBox(height: 14),
                 Text(
                   'Fecha: ${OdooValues.string(order['date_order'], fallback: 'Sin fecha')}',
-                  style: const TextStyle(color: AppTheme.textSecondary),
+                  style: TextStyle(color: AppTheme.textSecondaryFor(context)),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   'Total: ${_formatQty(OdooValues.number(order['amount_total']))} ${OdooValues.many2oneLabel(order['currency_id'])}',
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  style: TextStyle(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 18),
                 const AppSectionHeader(title: 'Líneas'),
@@ -1787,11 +1787,14 @@ class _ReceiptLineCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(product, style: const TextStyle(fontWeight: FontWeight.w700)),
+          Text(product, style: TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
           Text(
             'Pedido: ${_formatQty(ordered)} $unit · Recibido: ${_formatQty(received)} $unit',
-            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+            style: TextStyle(
+              color: AppTheme.textSecondaryFor(context),
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 10),
           if (!readOnly &&

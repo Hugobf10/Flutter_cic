@@ -72,13 +72,13 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            gradient: AppTheme.cardGradient,
+            gradient: AppTheme.cardGradientFor(context),
             borderRadius: AppTheme.radiusMd,
             border: Border.all(
-              color: AppTheme.divider,
+              color: AppTheme.dividerFor(context).withValues(alpha: 0.72),
               width: 1,
             ),
-            boxShadow: AppTheme.softShadow,
+            boxShadow: AppTheme.raisedShadowFor(context),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,7 +98,9 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
                   if (widget.badge != null)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: _toneColor.withValues(alpha: 0.15),
                         borderRadius: AppTheme.radiusXl,
@@ -117,20 +119,20 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
               const SizedBox(height: 10),
               Text(
                 widget.value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.textPrimaryFor(context),
                   height: 1,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 widget.title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: AppTheme.textSecondary,
+                  color: AppTheme.textSecondaryFor(context),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -139,9 +141,9 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
                 const SizedBox(height: 4),
                 Text(
                   widget.helper!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
-                    color: AppTheme.textMuted,
+                    color: AppTheme.textMutedFor(context),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

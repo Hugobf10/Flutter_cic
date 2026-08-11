@@ -46,10 +46,14 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
       final rows = await _portalApi.section('incidents', limit: 200);
       final filtered = _filtroEstado == 'todas'
           ? rows
-          : rows.where((row) => row['estado']?.toString() == _filtroEstado).toList();
+          : rows
+                .where((row) => row['estado']?.toString() == _filtroEstado)
+                .toList();
       if (!mounted) return;
       setState(() {
-        _portalRows = filtered.map((row) => Map<String, dynamic>.from(row)).toList();
+        _portalRows = filtered
+            .map((row) => Map<String, dynamic>.from(row))
+            .toList();
         _portalLoading = false;
       });
     } catch (error) {
@@ -168,19 +172,16 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     return Scaffold(
-      backgroundColor: AppTheme.surface,
+      backgroundColor: AppTheme.surfaceFor(context),
       appBar: AppBar(
-        title: const Text('Incidencias'),
+        title: Text('Incidencias'),
         actions: [
           if (auth.canEditModule('incidents'))
             IconButton(
-              icon: const Icon(Icons.add_rounded),
+              icon: Icon(Icons.add_rounded),
               onPressed: _openCreateDialog,
             ),
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: _loadData,
-          ),
+          IconButton(icon: Icon(Icons.refresh_rounded), onPressed: _loadData),
         ],
       ),
       body: Column(
@@ -218,15 +219,17 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
               selectedColor: AppTheme.primary.withValues(alpha: 0.2),
               checkmarkColor: AppTheme.primary,
               labelStyle: TextStyle(
-                color: selected ? AppTheme.primary : AppTheme.textSecondary,
+                color: selected
+                    ? AppTheme.primary
+                    : AppTheme.textSecondaryFor(context),
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 fontSize: 13,
               ),
-              backgroundColor: AppTheme.surfaceCard,
+              backgroundColor: AppTheme.cardFor(context),
               side: BorderSide(
                 color: selected
                     ? AppTheme.primary.withValues(alpha: 0.5)
-                    : AppTheme.divider,
+                    : AppTheme.dividerFor(context),
               ),
               shape: RoundedRectangleBorder(borderRadius: AppTheme.radiusXl),
             ),
@@ -245,17 +248,25 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, color: AppTheme.danger, size: 40),
+            Icon(Icons.error_outline, color: AppTheme.danger, size: 40),
             const SizedBox(height: 8),
             Text(_portalError!, textAlign: TextAlign.center),
             const SizedBox(height: 12),
-            ElevatedButton(onPressed: _loadPortalData, child: const Text('Reintentar')),
+            ElevatedButton(
+              onPressed: _loadPortalData,
+              child: Text('Reintentar'),
+            ),
           ],
         ),
       );
     }
     if (_portalRows.isEmpty) {
-      return const Center(child: Text('No hay incidencias.', style: TextStyle(color: AppTheme.textMuted)));
+      return Center(
+        child: Text(
+          'No hay incidencias.',
+          style: TextStyle(color: AppTheme.textMutedFor(context)),
+        ),
+      );
     }
     return RefreshIndicator(
       onRefresh: _loadPortalData,
@@ -263,7 +274,10 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
         itemCount: _portalRows.length + 1,
         itemBuilder: (_, index) => index == 0
-            ? SectionHeader(title: '${_portalRows.length} incidencias', subtitle: 'De tu unidad, ordenadas por fecha')
+            ? SectionHeader(
+                title: '${_portalRows.length} incidencias',
+                subtitle: 'De tu unidad, ordenadas por fecha',
+              )
             : _buildCard(_portalRows[index - 1]),
       ),
     );
@@ -290,7 +304,7 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
         estadoColor = AppTheme.success;
         break;
       default:
-        estadoColor = AppTheme.textMuted;
+        estadoColor = AppTheme.textMutedFor(context);
     }
 
     return InkWell(
@@ -308,9 +322,12 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceCard,
+          color: AppTheme.cardFor(context),
           borderRadius: AppTheme.radiusMd,
-          border: Border.all(color: AppTheme.divider.withValues(alpha: 0.5)),
+          border: Border.all(
+            color: AppTheme.dividerFor(context).withValues(alpha: 0.5),
+          ),
+          boxShadow: AppTheme.subtleShadowFor(context),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -358,8 +375,8 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
                 const Spacer(),
                 Text(
                   inc['fecha']?.toString() ?? '',
-                  style: const TextStyle(
-                    color: AppTheme.textMuted,
+                  style: TextStyle(
+                    color: AppTheme.textMutedFor(context),
                     fontSize: 11,
                   ),
                 ),
@@ -368,8 +385,8 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
             const SizedBox(height: 10),
             Text(
               inc['name']?.toString() ?? '',
-              style: const TextStyle(
-                color: AppTheme.textPrimary,
+              style: TextStyle(
+                color: AppTheme.textPrimaryFor(context),
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -378,7 +395,10 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
               const SizedBox(height: 4),
               Text(
                 unidad,
-                style: const TextStyle(color: AppTheme.textMuted, fontSize: 11),
+                style: TextStyle(
+                  color: AppTheme.textMutedFor(context),
+                  fontSize: 11,
+                ),
               ),
             ],
             if (avance > 0) ...[
@@ -390,7 +410,7 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
                       borderRadius: AppTheme.radiusXl,
                       child: LinearProgressIndicator(
                         value: avance / 100,
-                        backgroundColor: AppTheme.divider,
+                        backgroundColor: AppTheme.dividerFor(context),
                         valueColor: AlwaysStoppedAnimation(
                           avance >= 100 ? AppTheme.success : AppTheme.primary,
                         ),
@@ -401,8 +421,8 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
                   const SizedBox(width: 8),
                   Text(
                     '${avance.toStringAsFixed(0)}%',
-                    style: const TextStyle(
-                      color: AppTheme.textSecondary,
+                    style: TextStyle(
+                      color: AppTheme.textSecondaryFor(context),
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),

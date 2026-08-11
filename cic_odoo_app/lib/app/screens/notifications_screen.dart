@@ -24,7 +24,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final auth = context.watch<AuthProvider>();
     final list = _applyFilter(appState.notifications);
     final unreadCount = appState.notifications.where((e) => e.unread).length;
-    final highCount = appState.notifications.where((e) => e.level == 'high').length;
+    final highCount = appState.notifications
+        .where((e) => e.level == 'high')
+        .length;
 
     return AppScaffold(
       title: 'Actividad',
@@ -107,18 +109,18 @@ class _NotificationsHero extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Centro de actividad',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              color: AppTheme.textPrimary,
+              color: AppTheme.textPrimaryFor(context),
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Aquí ves lo más reciente, lo importante y lo pendiente de revisar.',
-            style: TextStyle(color: AppTheme.textSecondary),
+            style: TextStyle(color: AppTheme.textSecondaryFor(context)),
           ),
           const SizedBox(height: 14),
           Row(
@@ -178,8 +180,8 @@ class _NotificationStat extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              color: AppTheme.textSecondary,
+            style: TextStyle(
+              color: AppTheme.textSecondaryFor(context),
               fontSize: 12,
             ),
           ),
@@ -230,7 +232,7 @@ class _NotificationCard extends StatelessWidget {
       title: item.title,
       subtitle: '${item.subtitle} · ${item.createdAtLabel}',
       trailing: item.unread
-          ? const Icon(Icons.circle, size: 10, color: AppTheme.primary)
+          ? Icon(Icons.circle, size: 10, color: AppTheme.primary)
           : null,
     );
   }

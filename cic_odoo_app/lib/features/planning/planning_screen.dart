@@ -18,32 +18,32 @@ class PlanningScreen extends StatelessWidget {
     final entries = auth.canViewModule('planning')
         ? <_PlanningEntry>[
             _PlanningEntry(
-          title: 'Objetivos',
-          subtitle: 'Consulta y edición de objetivos de calidad y PRL.',
-          icon: Icons.flag_outlined,
-          color: AppTheme.primary,
-          builder: () => const GoalsScreen(),
+              title: 'Objetivos',
+              subtitle: 'Consulta y edición de objetivos de calidad y PRL.',
+              icon: Icons.flag_outlined,
+              color: AppTheme.primary,
+              builder: () => const GoalsScreen(),
             ),
             _PlanningEntry(
-          title: 'Planes de acción',
-          subtitle: 'Acciones preventivas y planes ligados a objetivos.',
-          icon: Icons.task_alt_rounded,
-          color: AppTheme.warning,
-          builder: () => const ActionPlansScreen(),
+              title: 'Planes de acción',
+              subtitle: 'Acciones preventivas y planes ligados a objetivos.',
+              icon: Icons.task_alt_rounded,
+              color: AppTheme.warning,
+              builder: () => const ActionPlansScreen(),
             ),
             _PlanningEntry(
-          title: 'Químicos',
-          subtitle: 'Inventario, peligrosidad, caducidades y fichas.',
-          icon: Icons.science_outlined,
-          color: AppTheme.success,
-          builder: () => const ChemicalsScreen(),
+              title: 'Químicos',
+              subtitle: 'Inventario, peligrosidad, caducidades y fichas.',
+              icon: Icons.science_outlined,
+              color: AppTheme.success,
+              builder: () => const ChemicalsScreen(),
             ),
             _PlanningEntry(
-          title: 'Informe de químicos',
-          subtitle: 'Resumen operativo por tipo y peligrosidad.',
-          icon: Icons.analytics_outlined,
-          color: AppTheme.info,
-          builder: () => const ChemicalReportScreen(),
+              title: 'Informe de químicos',
+              subtitle: 'Resumen operativo por tipo y peligrosidad.',
+              icon: Icons.analytics_outlined,
+              color: AppTheme.info,
+              builder: () => const ChemicalReportScreen(),
             ),
           ]
         : const <_PlanningEntry>[];
@@ -53,7 +53,8 @@ class PlanningScreen extends StatelessWidget {
       child: entries.isEmpty
           ? const AppEmptyState(
               title: 'Sin acceso',
-              subtitle: 'No tienes permisos para ver ningún apartado de planificación.',
+              subtitle:
+                  'No tienes permisos para ver ningún apartado de planificación.',
               icon: Icons.lock_outline_rounded,
             )
           : ListView.separated(
@@ -63,9 +64,9 @@ class PlanningScreen extends StatelessWidget {
               itemBuilder: (context, index) {
                 final entry = entries[index];
                 return AppCard(
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => entry.builder()),
-                  ),
+                  onTap: () => Navigator.of(
+                    context,
+                  ).push(MaterialPageRoute(builder: (_) => entry.builder())),
                   child: Row(
                     children: [
                       Container(
@@ -84,23 +85,23 @@ class PlanningScreen extends StatelessWidget {
                           children: [
                             Text(
                               entry.title,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w700,
-                                color: AppTheme.textPrimary,
+                                color: AppTheme.textPrimaryFor(context),
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               entry.subtitle,
-                              style: const TextStyle(
-                                color: AppTheme.textSecondary,
+                              style: TextStyle(
+                                color: AppTheme.textSecondaryFor(context),
                                 fontSize: 12,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right_rounded),
+                      Icon(Icons.chevron_right_rounded),
                     ],
                   ),
                 );

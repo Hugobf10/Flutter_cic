@@ -6,10 +6,9 @@ class NativeOcrService {
   );
 
   Future<String> recognizeTextFromImage(String imagePath) async {
-    final text = await _channel.invokeMethod<String>(
-      'recognizeTextFromImage',
-      {'path': imagePath},
-    );
+    final text = await _channel.invokeMethod<String>('recognizeTextFromImage', {
+      'path': imagePath,
+    });
     return text ?? '';
   }
 }

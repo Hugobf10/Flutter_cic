@@ -55,7 +55,9 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
   Future<void> _runAction(int id, String method) async {
     try {
       await _portalApi.action(
-        method == 'action_desestimar' ? 'supplier_reject' : 'supplier_reactivate',
+        method == 'action_desestimar'
+            ? 'supplier_reject'
+            : 'supplier_reactivate',
         recordId: id,
       );
       await _load();
@@ -116,10 +118,10 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
           ),
         ),
       );
-      if (optionsError != null && optionsError!.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(optionsError!)),
-        );
+      if (optionsError != null && optionsError.isNotEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(optionsError)));
       }
       return;
     }
@@ -198,14 +200,14 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Proveedores'),
+        title: Text('Proveedores'),
         actions: [
           if (auth.canEditModule('suppliers'))
             IconButton(
               onPressed: _openCreateDialog,
-              icon: const Icon(Icons.add_rounded),
+              icon: Icon(Icons.add_rounded),
             ),
-          IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+          IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
         ],
       ),
       body: _error != null
@@ -294,7 +296,7 @@ class _SupplierCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     proveedor,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+                    style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
                 WorkflowStateChip(label: estado, color: color),
@@ -317,12 +319,12 @@ class _SupplierCard extends StatelessWidget {
                   if (estado == 'homologado')
                     OutlinedButton(
                       onPressed: () => onAction(id, 'action_desestimar'),
-                      child: const Text('Desestimar'),
+                      child: Text('Desestimar'),
                     ),
                   if (estado == 'desestimado')
                     OutlinedButton(
                       onPressed: () => onAction(id, 'action_reactivar'),
-                      child: const Text('Reactivar'),
+                      child: Text('Reactivar'),
                     ),
                 ],
               ),

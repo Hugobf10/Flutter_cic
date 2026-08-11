@@ -404,7 +404,7 @@ class OdooService {
         _buildKwParams(model, 'search_read', args: [domain], kwargs: kwargs),
       ),
     );
-    if (result == false || result == null) return const [];
+    if (result == false || result == null) return [];
     if (result is! List) {
       throw FormatException('Respuesta search_read inválida para $model.');
     }

@@ -9,18 +9,22 @@ class QualityCenterScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Calidad')),
+      appBar: AppBar(title: Text('Calidad')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         children: [
-          const Text(
+          Text(
             'Centro de calidad',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppTheme.textPrimary),
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.textPrimaryFor(context),
+            ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Gestiona comunicaciones y sugerencias relacionadas con calidad.',
-            style: TextStyle(color: AppTheme.textSecondary),
+            style: TextStyle(color: AppTheme.textSecondaryFor(context)),
           ),
           const SizedBox(height: 14),
           _entry(
@@ -51,9 +55,12 @@ class QualityCenterScreen extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceCard,
+          color: AppTheme.cardFor(context),
           borderRadius: AppTheme.radiusMd,
-          border: Border.all(color: AppTheme.divider.withValues(alpha: 0.6)),
+          border: Border.all(
+            color: AppTheme.dividerFor(context).withValues(alpha: 0.6),
+          ),
+          boxShadow: AppTheme.subtleShadowFor(context),
         ),
         child: Row(
           children: [
@@ -71,13 +78,28 @@ class QualityCenterScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimaryFor(context),
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textMutedFor(context),
+                    ),
+                  ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: AppTheme.textMuted),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: AppTheme.textMutedFor(context),
+            ),
           ],
         ),
       ),

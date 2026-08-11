@@ -47,7 +47,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
           'maintenance_last_request_date',
           'unidad_id',
         ],
-        order: 'requiere_intervencion desc, maintenance_open_request_count desc, name asc',
+        order:
+            'requiere_intervencion desc, maintenance_open_request_count desc, name asc',
         limit: 200,
       );
       final requests = await _odoo.searchRead(
@@ -85,8 +86,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final openRequests = _requests.where((row) => !_isClosed(row)).length;
-    final linkedEquipment =
-        _equipment.where((row) => row['maintenance_equipment_id'] is List).length;
+    final linkedEquipment = _equipment
+        .where((row) => row['maintenance_equipment_id'] is List)
+        .length;
     final pendingInterventions = _equipment
         .where((row) => row['requiere_intervencion'] == true)
         .length;
@@ -96,116 +98,109 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
       child: AppScaffold(
         title: 'Mantenimiento',
         actions: [
-          IconButton(
-            onPressed: _load,
-            icon: const Icon(Icons.refresh_rounded),
-          ),
+          IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
         ],
         child: _loading
             ? const AppLoadingView(label: 'Cargando mantenimiento...')
             : _error != null
-                ? AppEmptyState(
-                    title: 'No se pudo cargar mantenimiento',
-                    subtitle: _error!,
-                    icon: Icons.error_outline_rounded,
-                    action: AppButton.primary(
-                      label: 'Reintentar',
-                      onPressed: _load,
-                    ),
-                  )
-                : Column(
-                    children: [
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final width = constraints.maxWidth;
-                          final compact = width < 760;
+            ? AppEmptyState(
+                title: 'No se pudo cargar mantenimiento',
+                subtitle: _error!,
+                icon: Icons.error_outline_rounded,
+                action: AppButton.primary(
+                  label: 'Reintentar',
+                  onPressed: _load,
+                ),
+              )
+            : Column(
+                children: [
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final width = constraints.maxWidth;
+                      final compact = width < 760;
 
-                          final cards = [
-                            _MaintenanceStatCard(
-                              label: 'Solicitudes abiertas',
-                              value: openRequests.toString(),
-                              icon: Icons.build_circle_outlined,
-                              color: AppTheme.warning,
-                            ),
-                            _MaintenanceStatCard(
-                              label: 'Equipos vinculados',
-                              value: linkedEquipment.toString(),
-                              icon: Icons.sync_alt_rounded,
-                              color: AppTheme.primary,
-                            ),
-                            _MaintenanceStatCard(
-                              label: 'Pendientes de intervención',
-                              value: pendingInterventions.toString(),
-                              icon: Icons.warning_amber_rounded,
-                              color: AppTheme.danger,
-                            ),
-                          ];
+                      final cards = [
+                        _MaintenanceStatCard(
+                          label: 'Solicitudes abiertas',
+                          value: openRequests.toString(),
+                          icon: Icons.build_circle_outlined,
+                          color: AppTheme.warning,
+                        ),
+                        _MaintenanceStatCard(
+                          label: 'Equipos vinculados',
+                          value: linkedEquipment.toString(),
+                          icon: Icons.sync_alt_rounded,
+                          color: AppTheme.primary,
+                        ),
+                        _MaintenanceStatCard(
+                          label: 'Pendientes de intervención',
+                          value: pendingInterventions.toString(),
+                          icon: Icons.warning_amber_rounded,
+                          color: AppTheme.danger,
+                        ),
+                      ];
 
-                          if (compact) {
-                            return Column(
-                              children: [
-                                for (final card in cards) ...[
-                                  card,
-                                  const SizedBox(height: 10),
-                                ],
-                              ],
-                            );
-                          }
-
-                          return Row(
-                            children: [
-                              for (var i = 0; i < cards.length; i++) ...[
-                                Expanded(child: cards[i]),
-                                if (i < cards.length - 1)
-                                  const SizedBox(width: 10),
-                              ],
+                      if (compact) {
+                        return Column(
+                          children: [
+                            for (final card in cards) ...[
+                              card,
+                              const SizedBox(height: 10),
                             ],
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 14),
-                      AppCard(
-                        child: Row(
-                          children: [
-                            const Expanded(
-                              child: Text(
-                                'La vista usa `maintenance.request` y el enlace real con `calidad.equipo` del addon `calidad_equipos_mantenimiento`.',
-                                style: TextStyle(
-                                  color: AppTheme.textSecondary,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            AppStatusChip(
-                              label: auth.canEditModule('equipment')
-                                  ? 'Edición permitida en Odoo'
-                                  : 'Solo lectura',
-                              color: auth.canEditModule('equipment')
-                                  ? AppTheme.success
-                                  : AppTheme.textMuted,
-                            ),
                           ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const TabBar(
-                        tabs: [
-                          Tab(text: 'Solicitudes'),
-                          Tab(text: 'Equipos'),
+                        );
+                      }
+
+                      return Row(
+                        children: [
+                          for (var i = 0; i < cards.length; i++) ...[
+                            Expanded(child: cards[i]),
+                            if (i < cards.length - 1) const SizedBox(width: 10),
+                          ],
                         ],
-                      ),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            _buildRequests(),
-                            _buildEquipment(),
-                          ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  AppCard(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'La vista usa `maintenance.request` y el enlace real con `calidad.equipo` del addon `calidad_equipos_mantenimiento`.',
+                            style: TextStyle(
+                              color: AppTheme.textSecondaryFor(context),
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 10),
+                        AppStatusChip(
+                          label: auth.canEditModule('equipment')
+                              ? 'Edición permitida en Odoo'
+                              : 'Solo lectura',
+                          color: auth.canEditModule('equipment')
+                              ? AppTheme.success
+                              : AppTheme.textMutedFor(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const TabBar(
+                    tabs: [
+                      Tab(text: 'Solicitudes'),
+                      Tab(text: 'Equipos'),
                     ],
                   ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: TabBarView(
+                      children: [_buildRequests(), _buildEquipment()],
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -231,13 +226,13 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
         final owner = row['owner_user_id'] is List
             ? row['owner_user_id'][1].toString()
             : row['user_id'] is List
-                ? row['user_id'][1].toString()
-                : 'Sin responsable';
+            ? row['user_id'][1].toString()
+            : 'Sin responsable';
         final stage = row['stage_id'] is List
             ? row['stage_id'][1].toString()
             : _isClosed(row)
-                ? 'Cerrada'
-                : 'Abierta';
+            ? 'Cerrada'
+            : 'Abierta';
         final qualityEquipment = row['calidad_equipo_id'] is List
             ? row['calidad_equipo_id'][1].toString()
             : '';
@@ -252,9 +247,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                   Expanded(
                     child: Text(
                       (row['name'] ?? 'Solicitud de mantenimiento').toString(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.textPrimary,
+                        color: AppTheme.textPrimaryFor(context),
                       ),
                     ),
                   ),
@@ -271,14 +266,14 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               const SizedBox(height: 8),
               Text(
                 equipment,
-                style: const TextStyle(color: AppTheme.textSecondary),
+                style: TextStyle(color: AppTheme.textSecondaryFor(context)),
               ),
               if (qualityEquipment.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Text(
                   'Equipo de calidad: $qualityEquipment',
-                  style: const TextStyle(
-                    color: AppTheme.textMuted,
+                  style: TextStyle(
+                    color: AppTheme.textMutedFor(context),
                     fontSize: 12,
                   ),
                 ),
@@ -301,8 +296,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               const SizedBox(height: 8),
               Text(
                 'Solicitud: ${_formatValue(row['request_date'])}\nProgramada: ${_formatValue(row['schedule_date'])}\nCierre: ${_formatValue(row['close_date'])}',
-                style: const TextStyle(
-                  color: AppTheme.textSecondary,
+                style: TextStyle(
+                  color: AppTheme.textSecondaryFor(context),
                   fontSize: 12,
                 ),
               ),
@@ -310,8 +305,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                 const SizedBox(height: 8),
                 Text(
                   (row['description'] ?? '').toString().trim(),
-                  style: const TextStyle(
-                    color: AppTheme.textMuted,
+                  style: TextStyle(
+                    color: AppTheme.textMutedFor(context),
                     fontSize: 12,
                   ),
                 ),
@@ -341,7 +336,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
         final unit = row['unidad_id'] is List
             ? row['unidad_id'][1].toString()
             : '';
-        final openCount = (row['maintenance_open_request_count'] ?? 0).toString();
+        final openCount = (row['maintenance_open_request_count'] ?? 0)
+            .toString();
         final totalCount = (row['maintenance_request_count'] ?? 0).toString();
         final linked = row['maintenance_equipment_id'] is List;
 
@@ -355,9 +351,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                   Expanded(
                     child: Text(
                       (row['name'] ?? 'Equipo').toString(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.textPrimary,
+                        color: AppTheme.textPrimaryFor(context),
                       ),
                     ),
                   ),
@@ -375,23 +371,23 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               if ((row['codigo'] ?? '').toString().trim().isNotEmpty)
                 Text(
                   'Código: ${row['codigo']}',
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
+                  style: TextStyle(
+                    color: AppTheme.textSecondaryFor(context),
                     fontSize: 12,
                   ),
                 ),
               Text(
                 'Estado: ${_equipmentStateLabel((row['estado'] ?? '').toString())}',
-                style: const TextStyle(
-                  color: AppTheme.textSecondary,
+                style: TextStyle(
+                  color: AppTheme.textSecondaryFor(context),
                   fontSize: 12,
                 ),
               ),
               if (unit.isNotEmpty)
                 Text(
                   'Unidad: $unit',
-                  style: const TextStyle(
-                    color: AppTheme.textMuted,
+                  style: TextStyle(
+                    color: AppTheme.textMutedFor(context),
                     fontSize: 12,
                   ),
                 ),
@@ -402,7 +398,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                 children: [
                   AppStatusChip(
                     label: linked ? 'Vinculado a mantenimiento' : 'Sin vínculo',
-                    color: linked ? AppTheme.primary : AppTheme.textMuted,
+                    color: linked
+                        ? AppTheme.primary
+                        : AppTheme.textMutedFor(context),
                   ),
                   AppStatusChip(
                     label: '$openCount abiertas',
@@ -417,8 +415,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               const SizedBox(height: 8),
               Text(
                 'Última solicitud: ${_formatValue(row['maintenance_last_request_date'])}',
-                style: const TextStyle(
-                  color: AppTheme.textMuted,
+                style: TextStyle(
+                  color: AppTheme.textMutedFor(context),
                   fontSize: 12,
                 ),
               ),
@@ -456,7 +454,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
       case 'corrective':
         return AppTheme.danger;
       default:
-        return AppTheme.textMuted;
+        return AppTheme.textMutedFor(context);
     }
   }
 
@@ -508,16 +506,16 @@ class _MaintenanceStatCard extends StatelessWidget {
               children: [
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.textPrimaryFor(context),
                   ),
                 ),
                 Text(
                   label,
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
+                  style: TextStyle(
+                    color: AppTheme.textSecondaryFor(context),
                     fontSize: 12,
                   ),
                 ),

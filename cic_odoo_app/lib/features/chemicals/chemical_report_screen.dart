@@ -76,7 +76,7 @@ class _ChemicalReportScreenState extends State<ChemicalReportScreen> {
     }
     return AppScaffold(
       title: 'Informe de químicos',
-      actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))],
+      actions: [IconButton(onPressed: _load, icon: Icon(Icons.refresh))],
       child: _loading
           ? const AppLoadingView()
           : _error != null
@@ -89,11 +89,29 @@ class _ChemicalReportScreenState extends State<ChemicalReportScreen> {
               children: [
                 Row(
                   children: [
-                    Expanded(child: _metric('Total', _rows.length, Icons.science_outlined)),
+                    Expanded(
+                      child: _metric(
+                        'Total',
+                        _rows.length,
+                        Icons.science_outlined,
+                      ),
+                    ),
                     const SizedBox(width: 8),
-                    Expanded(child: _metric('Peligrosos', dangerous, Icons.warning_amber_rounded)),
+                    Expanded(
+                      child: _metric(
+                        'Peligrosos',
+                        dangerous,
+                        Icons.warning_amber_rounded,
+                      ),
+                    ),
                     const SizedBox(width: 8),
-                    Expanded(child: _metric('A reponer', lowStock, Icons.inventory_2_outlined)),
+                    Expanded(
+                      child: _metric(
+                        'A reponer',
+                        lowStock,
+                        Icons.inventory_2_outlined,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -105,7 +123,8 @@ class _ChemicalReportScreenState extends State<ChemicalReportScreen> {
                     padding: EdgeInsets.only(top: 20),
                     child: AppEmptyState(
                       title: 'Sin datos',
-                      subtitle: 'No hay químicos disponibles para este informe.',
+                      subtitle:
+                          'No hay químicos disponibles para este informe.',
                       icon: Icons.analytics_outlined,
                     ),
                   ),
@@ -121,8 +140,17 @@ class _ChemicalReportScreenState extends State<ChemicalReportScreen> {
         children: [
           Icon(icon, color: AppTheme.info),
           const SizedBox(height: 8),
-          Text('$value', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          Text(
+            '$value',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              color: AppTheme.textSecondaryFor(context),
+              fontSize: 12,
+            ),
+          ),
         ],
       ),
     );
@@ -134,17 +162,23 @@ class _ChemicalReportScreenState extends State<ChemicalReportScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+          Text(title, style: TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 10),
           if (values.isEmpty)
-            const Text('Sin datos', style: TextStyle(color: AppTheme.textMuted))
+            Text(
+              'Sin datos',
+              style: TextStyle(color: AppTheme.textMutedFor(context)),
+            )
           else
             ...values.entries.map(
               (entry) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
                   children: [
-                    SizedBox(width: 100, child: Text(entry.key.replaceAll('_', ' '))),
+                    SizedBox(
+                      width: 100,
+                      child: Text(entry.key.replaceAll('_', ' ')),
+                    ),
                     Expanded(
                       child: LinearProgressIndicator(
                         value: max == 0 ? 0 : entry.value / max,
@@ -152,7 +186,10 @@ class _ChemicalReportScreenState extends State<ChemicalReportScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text('${entry.value}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                    Text(
+                      '${entry.value}',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
                   ],
                 ),
               ),

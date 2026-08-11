@@ -73,7 +73,8 @@ class ModuleRegistry {
       icon: Icons.calendar_month_rounded,
       color: Color(0xFF4F46E5),
       requiredPermission: null,
-      description: 'Consulta disponibilidad y gestiona reservas de servicios y recursos',
+      description:
+          'Consulta disponibilidad y gestiona reservas de servicios y recursos',
       implemented: true,
     ),
     AppModule(
@@ -172,7 +173,8 @@ class ModuleRegistry {
       icon: Icons.build_circle_rounded,
       color: Color(0xFFF59E0B),
       requiredPermission: 'maintenance.view',
-      description: 'Solicitudes de mantenimiento y equipos enlazados con calidad',
+      description:
+          'Solicitudes de mantenimiento y equipos enlazados con calidad',
       implemented: true,
     ),
   ];

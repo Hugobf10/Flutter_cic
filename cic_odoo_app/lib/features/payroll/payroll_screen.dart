@@ -110,7 +110,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
     return AppScaffold(
       title: 'Nóminas',
       actions: [
-        IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+        IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
       ],
       child: Column(
         children: [

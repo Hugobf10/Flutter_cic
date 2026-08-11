@@ -199,7 +199,7 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
     }
     if (_error != null || _record == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Comunicación')),
+        appBar: AppBar(title: Text('Comunicación')),
         body: Center(child: Text(_error ?? 'No se encontró el registro.')),
       );
     }
@@ -211,13 +211,13 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detalle de comunicación'),
+        title: Text('Detalle de comunicación'),
         actions: [
           if (canEdit)
             IconButton(
               tooltip: 'Editar',
               onPressed: _edit,
-              icon: const Icon(Icons.edit_rounded),
+              icon: Icon(Icons.edit_rounded),
             ),
         ],
       ),
@@ -274,8 +274,8 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
               alignment: Alignment.centerLeft,
               child: OutlinedButton.icon(
                 onPressed: _uploadAttachment,
-                icon: const Icon(Icons.attach_file_rounded),
-                label: const Text('Subir archivo'),
+                icon: Icon(Icons.attach_file_rounded),
+                label: Text('Subir archivo'),
               ),
             ),
         ],
@@ -310,15 +310,13 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
 
   List<Widget> _attachmentTiles(dynamic raw) {
     if (raw is! List || raw.isEmpty) {
-      return const [
-        Text('Sin documentos', style: TextStyle(color: Colors.grey)),
-      ];
+      return [Text('Sin documentos', style: TextStyle(color: Colors.grey))];
     }
     return raw.whereType<List>().map((item) {
       final name = item.length > 1 ? item[1].toString() : 'Archivo';
       return ListTile(
         contentPadding: EdgeInsets.zero,
-        leading: const Icon(Icons.insert_drive_file_outlined),
+        leading: Icon(Icons.insert_drive_file_outlined),
         title: Text(name),
       );
     }).toList();

@@ -120,7 +120,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                   if (saved == true) _load();
                 },
-          icon: const Icon(Icons.edit_outlined),
+          icon: Icon(Icons.edit_outlined),
         ),
       ],
       child: _loading
@@ -172,8 +172,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     contentPadding: EdgeInsets.zero,
                     value: appState.themeMode == ThemeMode.dark,
                     onChanged: (_) => appState.toggleThemeMode(),
-                    title: const Text('Modo oscuro'),
-                    subtitle: const Text('Alternar tema claro / oscuro'),
+                    title: Text('Modo oscuro'),
+                    subtitle: Text('Alternar tema claro / oscuro'),
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -215,16 +215,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               color: AppTheme.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(
-              Icons.description_rounded,
-              color: AppTheme.primary,
-            ),
+            child: Icon(Icons.description_rounded, color: AppTheme.primary),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               cvId == null ? 'No hay CV cargado' : cvName,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
           if (cvId != null)
@@ -252,7 +249,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 }
               },
-              child: const Text('Ver'),
+              child: Text('Ver'),
             ),
         ],
       ),
@@ -282,10 +279,14 @@ class _InfoTile extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: AppTheme.surfaceElevated,
+                color: AppTheme.elevatedFor(context),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppTheme.textSecondary, size: 18),
+              child: Icon(
+                icon,
+                color: AppTheme.textSecondaryFor(context),
+                size: 18,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -358,7 +359,7 @@ class _ProfileHero extends StatelessWidget {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 22,
                     fontWeight: FontWeight.w700,

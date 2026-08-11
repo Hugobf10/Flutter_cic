@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ModulePlaceholderScreen extends StatelessWidget {
-  const ModulePlaceholderScreen({
-    super.key,
-    required this.title,
-  });
+  const ModulePlaceholderScreen({super.key, required this.title});
 
   final String title;
 
@@ -18,14 +15,11 @@ class ModulePlaceholderScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.construction_rounded, size: 44),
+              Icon(Icons.construction_rounded, size: 44),
               const SizedBox(height: 12),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
+              Text(title, style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Módulo en implementación.\nYa está registrado en la app y se activará con su flujo Odoo en la próxima entrega.',
                 textAlign: TextAlign.center,
               ),

@@ -66,7 +66,7 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
               gradient: AppTheme.cardGradientFor(context),
               borderRadius: AppTheme.radiusLg,
               border: Border.all(color: AppTheme.dividerFor(context)),
-              boxShadow: AppTheme.softShadow,
+              boxShadow: AppTheme.raisedShadowFor(context),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

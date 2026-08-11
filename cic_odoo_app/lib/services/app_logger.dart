@@ -7,11 +7,19 @@ import 'monitoring_service.dart';
 class AppLogger {
   AppLogger._();
 
-  static void info(String message, {Map<String, dynamic>? data, String scope = 'app'}) {
+  static void info(
+    String message, {
+    Map<String, dynamic>? data,
+    String scope = 'app',
+  }) {
     _log('INFO', message, data: data, scope: scope);
   }
 
-  static void warning(String message, {Map<String, dynamic>? data, String scope = 'app'}) {
+  static void warning(
+    String message, {
+    Map<String, dynamic>? data,
+    String scope = 'app',
+  }) {
     _log('WARN', message, data: data, scope: scope);
   }
 
@@ -22,7 +30,14 @@ class AppLogger {
     Map<String, dynamic>? data,
     String scope = 'app',
   }) {
-    _log('ERROR', message, data: data, scope: scope, error: error, stackTrace: stackTrace);
+    _log(
+      'ERROR',
+      message,
+      data: data,
+      scope: scope,
+      error: error,
+      stackTrace: stackTrace,
+    );
     if (error != null) {
       MonitoringService.captureException(
         error,
@@ -53,7 +68,9 @@ class AppLogger {
       stackTrace: stackTrace,
     );
     if (!kReleaseMode) {
-      debugPrint('[${payload['level']}] [$scope] $message ${data == null ? '' : jsonEncode(data)}');
+      debugPrint(
+        '[${payload['level']}] [$scope] $message ${data == null ? '' : jsonEncode(data)}',
+      );
     }
   }
 }

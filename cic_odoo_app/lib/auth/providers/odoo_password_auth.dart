@@ -3,10 +3,8 @@ import '../core/auth_models.dart';
 import '../core/auth_provider.dart';
 
 class OdooPasswordAuth implements AuthProvider {
-  OdooPasswordAuth({
-    required OdooService odoo,
-    required this.request,
-  }) : _odoo = odoo;
+  OdooPasswordAuth({required OdooService odoo, required this.request})
+    : _odoo = odoo;
 
   final OdooService _odoo;
   final AuthLoginRequest request;
@@ -18,8 +16,14 @@ class OdooPasswordAuth implements AuthProvider {
     final login = (request.login ?? '').trim();
     final password = request.password ?? '';
 
-    if (serverUrl.isEmpty || database.isEmpty || login.isEmpty || password.isEmpty) {
-      return const AuthResult(success: false, errorMessage: 'Completa servidor, base de datos, usuario y contraseña.');
+    if (serverUrl.isEmpty ||
+        database.isEmpty ||
+        login.isEmpty ||
+        password.isEmpty) {
+      return const AuthResult(
+        success: false,
+        errorMessage: 'Completa servidor, base de datos, usuario y contraseña.',
+      );
     }
 
     _odoo.init(baseUrl: serverUrl);
@@ -43,7 +47,9 @@ class OdooPasswordAuth implements AuthProvider {
     final info = _odoo.userInfo;
     if (info == null) return null;
     final partner = info['partner_id'];
-    final partnerId = partner is List && partner.isNotEmpty ? (partner.first as num).toInt() : 0;
+    final partnerId = partner is List && partner.isNotEmpty
+        ? (partner.first as num).toInt()
+        : 0;
     return AuthUser(
       userId: (info['uid'] as num?)?.toInt() ?? 0,
       partnerId: partnerId,

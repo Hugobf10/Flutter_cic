@@ -4,11 +4,7 @@ import '../../theme/app_theme.dart';
 import '../models/app_module.dart';
 
 class ModuleTile extends StatelessWidget {
-  const ModuleTile({
-    super.key,
-    required this.module,
-    required this.onTap,
-  });
+  const ModuleTile({super.key, required this.module, required this.onTap});
 
   final AppModule module;
   final VoidCallback onTap;
@@ -21,12 +17,12 @@ class ModuleTile extends StatelessWidget {
       child: Ink(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: AppTheme.cardGradient,
+          gradient: AppTheme.cardGradientFor(context),
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+            color: AppTheme.dividerFor(context).withValues(alpha: 0.72),
           ),
-          boxShadow: AppTheme.softShadow,
+          boxShadow: AppTheme.raisedShadowFor(context),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,10 +57,10 @@ class ModuleTile extends StatelessWidget {
             ),
             Text(
               module.title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 15,
-                color: AppTheme.textPrimary,
+                color: AppTheme.textPrimaryFor(context),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

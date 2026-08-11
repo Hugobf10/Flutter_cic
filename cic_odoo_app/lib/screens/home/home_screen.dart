@@ -50,16 +50,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<List<_WordPressPost>> _loadNews() async {
     final uri = Uri.tryParse(AppConfig.wordpressApiUrl);
-    if (uri == null) return const [_WordPressPost.mock];
+    if (uri == null) return [_WordPressPost.mock];
     try {
       final response = await http
           .get(uri)
           .timeout(const Duration(seconds: AppConfig.httpTimeoutSeconds));
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        return const [_WordPressPost.mock];
+        return [_WordPressPost.mock];
       }
       final decoded = jsonDecode(response.body);
-      if (decoded is! List) return const [_WordPressPost.mock];
+      if (decoded is! List) return [_WordPressPost.mock];
       final posts = decoded
           .whereType<Map>()
           .map((raw) => _WordPressPost.fromJson(Map<String, dynamic>.from(raw)))
@@ -67,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
           .toList();
       return [_WordPressPost.mock, ...posts].take(5).toList();
     } catch (_) {
-      return const [_WordPressPost.mock];
+      return [_WordPressPost.mock];
     }
   }
 
@@ -80,10 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return AppScaffold(
       title: 'CIC Salamanca',
       actions: [
-        IconButton(
-          onPressed: _onRefresh,
-          icon: const Icon(Icons.refresh_rounded),
-        ),
+        IconButton(onPressed: _onRefresh, icon: Icon(Icons.refresh_rounded)),
       ],
       child: RefreshIndicator(
         onRefresh: _onRefresh,
@@ -136,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     builder: (_) => const NotificationsScreen(),
                   ),
                 ),
-                child: const Text('Ver todo'),
+                child: Text('Ver todo'),
               ),
             ),
             _ActivityList(items: appState.notifications, auth: auth),
@@ -203,7 +200,7 @@ class _HomeHero extends StatelessWidget {
                 ),
                 child: Text(
                   '$day/$month',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
                   ),
@@ -272,19 +269,13 @@ class _HeroStat extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-          ),
+          Text(label, style: TextStyle(color: Colors.white70, fontSize: 12)),
           const SizedBox(height: 4),
           Text(
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-            ),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -381,15 +372,18 @@ class _QuickActions extends StatelessWidget {
                   const Spacer(),
                   Text(
                     a.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary,
+                      color: AppTheme.textPrimaryFor(context),
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
+                  Text(
                     'Abrir módulo',
-                    style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                    style: TextStyle(
+                      color: AppTheme.textMutedFor(context),
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -653,7 +647,7 @@ class _PendingList extends StatelessWidget {
                 color: AppTheme.primaryLight,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.analytics_rounded,
                 size: 18,
                 color: AppTheme.primary,
@@ -661,10 +655,10 @@ class _PendingList extends StatelessWidget {
             ),
             trailing: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimary,
+                color: AppTheme.textPrimaryFor(context),
               ),
             ),
           ),
@@ -730,16 +724,15 @@ class _AccessScopeBanner extends StatelessWidget {
       child: AppCard(
         child: Row(
           children: [
-            const Icon(
-              Icons.info_outline_rounded,
-              size: 18,
-              color: AppTheme.info,
-            ),
+            Icon(Icons.info_outline_rounded, size: 18, color: AppTheme.info),
             const SizedBox(width: 8),
-            const Expanded(
+            Expanded(
               child: Text(
                 'Algunas métricas globales no están disponibles para este perfil. La app seguirá mostrando solo la información permitida dentro de sus permisos actuales.',
-                style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                style: TextStyle(
+                  color: AppTheme.textSecondaryFor(context),
+                  fontSize: 12,
+                ),
               ),
             ),
           ],

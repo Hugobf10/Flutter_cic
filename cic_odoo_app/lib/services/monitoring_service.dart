@@ -7,13 +7,11 @@ class MonitoringService {
 
   static Future<void> init() async {
     if (!AppConfig.hasSentry) return;
-    await SentryFlutter.init(
-      (options) {
-        options.dsn = AppConfig.sentryDsn;
-        options.environment = AppConfig.sentryEnvironment;
-        options.tracesSampleRate = AppConfig.sentryTracesSampleRate;
-      },
-    );
+    await SentryFlutter.init((options) {
+      options.dsn = AppConfig.sentryDsn;
+      options.environment = AppConfig.sentryEnvironment;
+      options.tracesSampleRate = AppConfig.sentryTracesSampleRate;
+    });
   }
 
   static Future<void> captureException(
@@ -25,7 +23,9 @@ class MonitoringService {
     await Sentry.captureException(
       error,
       stackTrace: stackTrace,
-      hint: Hint.withMap(<String, dynamic>{...?(hint == null ? null : {'hint': hint})}),
+      hint: Hint.withMap(<String, dynamic>{
+        ...?(hint == null ? null : {'hint': hint}),
+      }),
     );
   }
 }

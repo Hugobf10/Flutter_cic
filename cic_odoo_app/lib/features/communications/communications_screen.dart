@@ -164,7 +164,10 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                   },
                 );
               } else {
-                await _portalApi.action('communication_create', values: payload);
+                await _portalApi.action(
+                  'communication_create',
+                  values: payload,
+                );
               }
             },
           ),
@@ -194,14 +197,14 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Comunicaciones'),
+        title: Text('Comunicaciones'),
         actions: [
           if (auth.canEditModule('communications'))
             IconButton(
               onPressed: _openCreateDialog,
-              icon: const Icon(Icons.add_rounded),
+              icon: Icon(Icons.add_rounded),
             ),
-          IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+          IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
         ],
       ),
       body: _error != null
@@ -219,14 +222,13 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                     spacing: 8,
                     children: [
                       ChoiceChip(
-                        label: const Text('Todas'),
+                        label: Text('Todas'),
                         selected: _filter == _CommunicationFilter.all,
-                        onSelected: (_) => setState(
-                          () => _filter = _CommunicationFilter.all,
-                        ),
+                        onSelected: (_) =>
+                            setState(() => _filter = _CommunicationFilter.all),
                       ),
                       ChoiceChip(
-                        label: const Text('Comunicaciones'),
+                        label: Text('Comunicaciones'),
                         selected:
                             _filter == _CommunicationFilter.communications,
                         onSelected: (_) => setState(
@@ -234,9 +236,8 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                         ),
                       ),
                       ChoiceChip(
-                        label: const Text('Sugerencias'),
-                        selected:
-                            _filter == _CommunicationFilter.suggestions,
+                        label: Text('Sugerencias'),
+                        selected: _filter == _CommunicationFilter.suggestions,
                         onSelected: (_) => setState(
                           () => _filter = _CommunicationFilter.suggestions,
                         ),
@@ -307,72 +308,72 @@ class _CommunicationCard extends StatelessWidget {
       'en_analisis' => AppTheme.info,
       'tratada' => const Color(0xFF8B5CF6),
       'respondida' => AppTheme.success,
-      'cerrada' => AppTheme.textMuted,
-      _ => AppTheme.textMuted,
+      'cerrada' => AppTheme.textMutedFor(context),
+      _ => AppTheme.textMutedFor(context),
     };
 
     return InkWell(
       borderRadius: AppTheme.radiusMd,
       onTap: onTap,
       child: Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: AppTheme.radiusMd,
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: AppTheme.radiusMd,
+          border: Border.all(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ),
-              WorkflowStateChip(label: estado, color: color),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '$tipo · $partner · $fecha',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          if (desc.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(desc, maxLines: 2, overflow: TextOverflow.ellipsis),
-          ],
-          const SizedBox(height: 10),
-          WorkflowStepperBar(stages: stages, currentKey: estado),
-          const SizedBox(height: 10),
-          if (canEdit)
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                if (estado == 'recibida')
-                  _ActionBtn(
-                    label: 'Analizar',
-                    onTap: () => onAction(id, 'action_marcar_en_analisis'),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(fontWeight: FontWeight.w700),
                   ),
-                if (estado == 'en_analisis')
-                  _ActionBtn(
-                    label: 'Marcar tratada',
-                    onTap: () => onAction(id, 'action_marcar_tratada'),
-                  ),
-                if (estado == 'tratada' || estado == 'respondida')
-                  _ActionBtn(
-                    label: 'Cerrar',
-                    onTap: () => onAction(id, 'action_cerrar'),
-                  ),
+                ),
+                WorkflowStateChip(label: estado, color: color),
               ],
             ),
-        ],
-      ),
+            const SizedBox(height: 6),
+            Text(
+              '$tipo · $partner · $fecha',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            if (desc.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(desc, maxLines: 2, overflow: TextOverflow.ellipsis),
+            ],
+            const SizedBox(height: 10),
+            WorkflowStepperBar(stages: stages, currentKey: estado),
+            const SizedBox(height: 10),
+            if (canEdit)
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (estado == 'recibida')
+                    _ActionBtn(
+                      label: 'Analizar',
+                      onTap: () => onAction(id, 'action_marcar_en_analisis'),
+                    ),
+                  if (estado == 'en_analisis')
+                    _ActionBtn(
+                      label: 'Marcar tratada',
+                      onTap: () => onAction(id, 'action_marcar_tratada'),
+                    ),
+                  if (estado == 'tratada' || estado == 'respondida')
+                    _ActionBtn(
+                      label: 'Cerrar',
+                      onTap: () => onAction(id, 'action_cerrar'),
+                    ),
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }

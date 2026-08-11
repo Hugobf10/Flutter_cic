@@ -56,7 +56,7 @@ class _PortalScreenState extends State<PortalScreen> {
     return AppScaffold(
       title: 'Portal',
       actions: [
-        IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+        IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
       ],
       child: _loading
           ? const AppLoadingView(label: 'Cargando portal...')
@@ -406,13 +406,10 @@ class _PortalMockNews extends StatelessWidget {
                   color: AppTheme.primary.withValues(alpha: 0.12),
                   borderRadius: AppTheme.radiusSm,
                 ),
-                child: const Icon(
-                  Icons.campaign_outlined,
-                  color: AppTheme.primary,
-                ),
+                child: Icon(Icons.campaign_outlined, color: AppTheme.primary),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -424,14 +421,14 @@ class _PortalMockNews extends StatelessWidget {
                     Text(
                       'Consulta tus documentos, reservas, formación y comunicaciones desde la aplicación.',
                       style: TextStyle(
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.textSecondaryFor(context),
                         fontSize: 13,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded),
+              Icon(Icons.chevron_right_rounded),
             ],
           ),
         ),
@@ -459,7 +456,7 @@ class _PortalMockNews extends StatelessWidget {
                 style: TextStyle(color: AppTheme.textSecondaryFor(context)),
               ),
               const SizedBox(height: 18),
-              const Text(
+              Text(
                 'Esta noticia es una demostración de cómo se mostrarán los comunicados, novedades y avisos importantes dentro de la aplicación.',
               ),
             ],
@@ -506,13 +503,15 @@ class _PortalHero extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       email,
-                      style: const TextStyle(color: AppTheme.textSecondary),
+                      style: TextStyle(
+                        color: AppTheme.textSecondaryFor(context),
+                      ),
                     ),
                     if (unidad.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
                         'Unidad: $unidad',
-                        style: const TextStyle(color: AppTheme.textMuted),
+                        style: TextStyle(color: AppTheme.textMutedFor(context)),
                       ),
                     ],
                   ],
@@ -573,15 +572,18 @@ class _PortalActionCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             action.title,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w700,
-              color: AppTheme.textPrimary,
+              color: AppTheme.textPrimaryFor(context),
             ),
           ),
           const SizedBox(height: 6),
           Text(
             action.subtitle,
-            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+            style: TextStyle(
+              color: AppTheme.textSecondaryFor(context),
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -606,16 +608,16 @@ class _PortalPermissionCard extends StatelessWidget {
               children: [
                 Text(
                   row.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.textPrimaryFor(context),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   row.subtitle,
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
+                  style: TextStyle(
+                    color: AppTheme.textSecondaryFor(context),
                     fontSize: 12,
                   ),
                 ),
@@ -628,12 +630,16 @@ class _PortalPermissionCard extends StatelessWidget {
             children: [
               AppStatusChip(
                 label: row.canView ? 'Ver' : 'Sin vista',
-                color: row.canView ? AppTheme.success : AppTheme.textMuted,
+                color: row.canView
+                    ? AppTheme.success
+                    : AppTheme.textMutedFor(context),
               ),
               const SizedBox(height: 8),
               AppStatusChip(
                 label: row.canEdit ? 'Editar' : 'Solo lectura',
-                color: row.canEdit ? AppTheme.info : AppTheme.textMuted,
+                color: row.canEdit
+                    ? AppTheme.info
+                    : AppTheme.textMutedFor(context),
               ),
             ],
           ),

@@ -65,9 +65,9 @@ class _NormativaScreenState extends State<NormativaScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Normativa'),
+        title: Text('Normativa'),
         actions: [
-          IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+          IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
         ],
       ),
       body: _loading
@@ -80,10 +80,10 @@ class _NormativaScreenState extends State<NormativaScreen> {
               ),
             )
           : _items.isEmpty
-          ? const Center(
+          ? Center(
               child: Text(
                 'Sin normativa disponible.',
-                style: TextStyle(color: AppTheme.textMuted),
+                style: TextStyle(color: AppTheme.textMutedFor(context)),
               ),
             )
           : ListView.separated(
@@ -98,11 +98,14 @@ class _NormativaScreenState extends State<NormativaScreen> {
                 return Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppTheme.surfaceCard,
+                    color: AppTheme.cardFor(context),
                     borderRadius: AppTheme.radiusMd,
                     border: Border.all(
-                      color: AppTheme.divider.withValues(alpha: 0.6),
+                      color: AppTheme.dividerFor(
+                        context,
+                      ).withValues(alpha: 0.6),
                     ),
+                    boxShadow: AppTheme.subtleShadowFor(context),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,32 +113,32 @@ class _NormativaScreenState extends State<NormativaScreen> {
                       if ((it['codigo'] ?? '').toString().isNotEmpty)
                         Text(
                           it['codigo'].toString(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: AppTheme.textMuted,
+                            color: AppTheme.textMutedFor(context),
                           ),
                         ),
                       Text(
                         (it['name'] ?? '').toString(),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.textPrimary,
+                          color: AppTheme.textPrimaryFor(context),
                         ),
                       ),
                       if ((it['fecha_publicacion'] ?? '').toString().isNotEmpty)
                         Text(
                           'Publicación: ${it['fecha_publicacion']}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppTheme.textSecondary,
+                            color: AppTheme.textSecondaryFor(context),
                           ),
                         ),
                       if (unidad.isNotEmpty)
                         Text(
                           'Unidad: $unidad',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppTheme.textMuted,
+                            color: AppTheme.textMutedFor(context),
                           ),
                         ),
                     ],

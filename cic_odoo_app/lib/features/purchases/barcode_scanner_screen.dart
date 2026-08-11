@@ -64,13 +64,13 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Escanear código'),
+        title: Text('Escanear código'),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
             onPressed: () => _controller.toggleTorch(),
-            icon: const Icon(Icons.flash_on_rounded),
+            icon: Icon(Icons.flash_on_rounded),
           ),
         ],
       ),

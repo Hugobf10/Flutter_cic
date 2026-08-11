@@ -51,37 +51,17 @@ class AppTheme {
   static List<BoxShadow> get softShadow => _lightRaisedShadow;
 
   static List<BoxShadow> get glowShadow => const [
-    BoxShadow(
-      color: Color(0x2B0191B9),
-      blurRadius: 24,
-      offset: Offset(0, 10),
-    ),
+    BoxShadow(color: Color(0x2B0191B9), blurRadius: 24, offset: Offset(0, 10)),
   ];
 
   static const List<BoxShadow> _lightRaisedShadow = [
-    BoxShadow(
-      color: Color(0xA8C4CCD7),
-      blurRadius: 18,
-      offset: Offset(8, 8),
-    ),
-    BoxShadow(
-      color: Color(0xF5FFFFFF),
-      blurRadius: 16,
-      offset: Offset(-7, -7),
-    ),
+    BoxShadow(color: Color(0xA8C4CCD7), blurRadius: 18, offset: Offset(8, 8)),
+    BoxShadow(color: Color(0xF5FFFFFF), blurRadius: 16, offset: Offset(-7, -7)),
   ];
 
   static const List<BoxShadow> _darkRaisedShadow = [
-    BoxShadow(
-      color: Color(0xB8000000),
-      blurRadius: 18,
-      offset: Offset(8, 8),
-    ),
-    BoxShadow(
-      color: Color(0x183F4A5E),
-      blurRadius: 15,
-      offset: Offset(-6, -6),
-    ),
+    BoxShadow(color: Color(0xB8000000), blurRadius: 18, offset: Offset(8, 8)),
+    BoxShadow(color: Color(0x183F4A5E), blurRadius: 15, offset: Offset(-6, -6)),
   ];
 
   static const LinearGradient primaryGradient = LinearGradient(
@@ -125,7 +105,8 @@ class AppTheme {
   static List<BoxShadow> raisedShadowFor(BuildContext context) =>
       isDark(context) ? _darkRaisedShadow : _lightRaisedShadow;
 
-  static List<BoxShadow> subtleShadowFor(BuildContext context) => isDark(context)
+  static List<BoxShadow> subtleShadowFor(BuildContext context) =>
+      isDark(context)
       ? const [
           BoxShadow(
             color: Color(0x8A000000),
@@ -197,10 +178,9 @@ class AppTheme {
     final muted = isDark ? _darkTextMuted : textMuted;
 
     final base = ThemeData(useMaterial3: true, brightness: brightness);
-    final txt = GoogleFonts.plusJakartaSansTextTheme(base.textTheme).apply(
-      bodyColor: text,
-      displayColor: text,
-    );
+    final txt = GoogleFonts.plusJakartaSansTextTheme(
+      base.textTheme,
+    ).apply(bodyColor: text, displayColor: text);
     final scheme = ColorScheme.fromSeed(
       seedColor: primary,
       brightness: brightness,
@@ -299,7 +279,10 @@ class AppTheme {
         filled: true,
         fillColor: elevated,
         isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 17,
+          vertical: 16,
+        ),
         labelStyle: TextStyle(color: textSub, fontWeight: FontWeight.w600),
         hintStyle: TextStyle(color: muted),
         prefixIconColor: muted,
@@ -355,13 +338,21 @@ class AppTheme {
         indicatorColor: primary.withValues(alpha: isDark ? 0.22 : 0.14),
         selectedIconTheme: const IconThemeData(color: primary),
         unselectedIconTheme: IconThemeData(color: muted),
-        selectedLabelTextStyle: TextStyle(color: primary, fontWeight: FontWeight.w700),
-        unselectedLabelTextStyle: TextStyle(color: muted, fontWeight: FontWeight.w600),
+        selectedLabelTextStyle: TextStyle(
+          color: primary,
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelTextStyle: TextStyle(
+          color: muted,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       tabBarTheme: TabBarThemeData(
         dividerColor: Colors.transparent,
         labelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
-        unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+        unselectedLabelStyle: GoogleFonts.plusJakartaSans(
+          fontWeight: FontWeight.w600,
+        ),
         labelColor: primary,
         unselectedLabelColor: muted,
         indicator: BoxDecoration(
@@ -391,7 +382,9 @@ class AppTheme {
           shape: buttonShape,
           textStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
           elevation: 7,
-          shadowColor: isDark ? Colors.black : primaryDark.withValues(alpha: 0.32),
+          shadowColor: isDark
+              ? Colors.black
+              : primaryDark.withValues(alpha: 0.32),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -405,7 +398,9 @@ class AppTheme {
           shape: buttonShape,
           textStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
           elevation: 7,
-          shadowColor: isDark ? Colors.black : primaryDark.withValues(alpha: 0.32),
+          shadowColor: isDark
+              ? Colors.black
+              : primaryDark.withValues(alpha: 0.32),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -464,7 +459,10 @@ class AppTheme {
           fontSize: 20,
           fontWeight: FontWeight.w800,
         ),
-        contentTextStyle: GoogleFonts.plusJakartaSans(color: textSub, height: 1.45),
+        contentTextStyle: GoogleFonts.plusJakartaSans(
+          color: textSub,
+          height: 1.45,
+        ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: card,
@@ -501,23 +499,28 @@ class AppTheme {
         space: 24,
       ),
       checkboxTheme: CheckboxThemeData(
-        fillColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected) ? primary : elevated),
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.selected) ? primary : elevated,
+        ),
         checkColor: const WidgetStatePropertyAll(Colors.white),
         side: BorderSide(color: border, width: 1.4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       ),
       radioTheme: RadioThemeData(
-        fillColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected) ? primary : muted),
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected) ? primary : muted,
+        ),
       ),
       switchTheme: SwitchThemeData(
-        thumbColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected) ? Colors.white : muted),
-        trackColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected)
-                ? primary
-                : elevated),
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.selected) ? Colors.white : muted,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.selected) ? primary : elevated,
+        ),
         trackOutlineColor: WidgetStatePropertyAll(border),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
@@ -528,12 +531,18 @@ class AppTheme {
       badgeTheme: BadgeThemeData(
         backgroundColor: danger,
         textColor: Colors.white,
-        textStyle: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w800),
+        textStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+        ),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: isDark ? _darkElevated : textPrimary,
-        contentTextStyle: GoogleFonts.plusJakartaSans(color: Colors.white, fontWeight: FontWeight.w600),
+        contentTextStyle: GoogleFonts.plusJakartaSans(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
         elevation: 10,
         shape: RoundedRectangleBorder(borderRadius: radiusSm),
       ),

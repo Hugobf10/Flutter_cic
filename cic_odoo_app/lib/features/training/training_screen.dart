@@ -90,9 +90,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
                 );
                 if (saved == true) _load();
               },
-              icon: const Icon(Icons.add_rounded),
+              icon: Icon(Icons.add_rounded),
             ),
-          IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+          IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
         ],
         child: Column(
           children: [
@@ -117,7 +117,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
                         ListView(
                           children: [
                             if (_limitedAccessMode) ...[
-                              const AppCard(
+                              AppCard(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -133,7 +133,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
                                             'Formación con acceso limitado',
                                             style: TextStyle(
                                               fontWeight: FontWeight.w700,
-                                              color: AppTheme.textPrimary,
+                                              color: AppTheme.textPrimaryFor(
+                                                context,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -143,7 +145,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
                                     Text(
                                       'Este perfil no puede consultar el historial completo de formaciones por API con sus permisos actuales.',
                                       style: TextStyle(
-                                        color: AppTheme.textSecondary,
+                                        color: AppTheme.textSecondaryFor(
+                                          context,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -223,9 +227,12 @@ class _TrainingScreenState extends State<TrainingScreen> {
                                               Expanded(
                                                 child: Text(
                                                   formacion,
-                                                  style: const TextStyle(
+                                                  style: TextStyle(
                                                     fontWeight: FontWeight.w700,
-                                                    color: AppTheme.textPrimary,
+                                                    color:
+                                                        AppTheme.textPrimaryFor(
+                                                          context,
+                                                        ),
                                                   ),
                                                 ),
                                               ),
@@ -241,17 +248,21 @@ class _TrainingScreenState extends State<TrainingScreen> {
                                           const SizedBox(height: 6),
                                           Text(
                                             'Fecha: ${it['fecha_realizacion'] ?? '-'}',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 12,
-                                              color: AppTheme.textSecondary,
+                                              color: AppTheme.textSecondaryFor(
+                                                context,
+                                              ),
                                             ),
                                           ),
                                           if (cert)
                                             Text(
                                               'Certificado adjunto',
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontSize: 12,
-                                                color: AppTheme.textMuted,
+                                                color: AppTheme.textMutedFor(
+                                                  context,
+                                                ),
                                               ),
                                             ),
                                         ],
@@ -286,18 +297,18 @@ class _TrainingScreenState extends State<TrainingScreen> {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
+              style: TextStyle(
+                color: AppTheme.textSecondaryFor(context),
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w700,
-              color: AppTheme.textPrimary,
+              color: AppTheme.textPrimaryFor(context),
             ),
           ),
         ],

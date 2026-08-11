@@ -23,8 +23,7 @@ class DashboardProvider extends ChangeNotifier {
   bool get permissionDenied => _permissionDenied;
 
   // Getters de conveniencia
-  List<dynamic> get kpis =>
-      (_dashboardData?['kpis'] as List<dynamic>?) ?? [];
+  List<dynamic> get kpis => (_dashboardData?['kpis'] as List<dynamic>?) ?? [];
   List<dynamic> get alerts =>
       (_dashboardData?['alerts'] as List<dynamic>?) ?? [];
   Map<String, dynamic>? get charts =>

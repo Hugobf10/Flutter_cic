@@ -49,7 +49,7 @@ class _PortalSectionScreenState extends State<PortalSectionScreen> {
     return AppScaffold(
       title: widget.title,
       actions: [
-        IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+        IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
       ],
       child: _loading
           ? const AppLoadingView(label: 'Cargando intranet...')

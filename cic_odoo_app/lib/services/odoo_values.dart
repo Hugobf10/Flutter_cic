@@ -60,7 +60,7 @@ class OdooValues {
   }
 
   static List<int> ids(dynamic value) {
-    if (value is! List) return const [];
+    if (value is! List) return [];
     return value.map(many2oneId).whereType<int>().toList(growable: false);
   }
 

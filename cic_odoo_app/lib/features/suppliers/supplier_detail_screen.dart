@@ -104,8 +104,12 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
                 'supplier_update',
                 recordId: widget.id,
                 values: {
-                  'fecha_homologacion': _dateString(values['fecha_homologacion']),
-                  'fecha_desestimacion': _dateString(values['fecha_desestimacion']),
+                  'fecha_homologacion': _dateString(
+                    values['fecha_homologacion'],
+                  ),
+                  'fecha_desestimacion': _dateString(
+                    values['fecha_desestimacion'],
+                  ),
                   'motivo_homologacion': values['motivo_homologacion'],
                   'motivo_desestimacion': values['motivo_desestimacion'],
                   'observaciones': values['observaciones'],
@@ -126,9 +130,9 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
       await _load();
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(OdooService.prettyError(error))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(OdooService.prettyError(error))));
       }
     }
   }
@@ -141,7 +145,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
     }
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Proveedor')),
+        appBar: AppBar(title: Text('Proveedor')),
         body: Center(child: Text(_error!)),
       );
     }
@@ -154,10 +158,10 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detalle proveedor'),
+        title: Text('Detalle proveedor'),
         actions: [
           if (auth.canEditModule('suppliers'))
-            IconButton(onPressed: _edit, icon: const Icon(Icons.edit_rounded)),
+            IconButton(onPressed: _edit, icon: Icon(Icons.edit_rounded)),
         ],
       ),
       body: ListView(
@@ -192,12 +196,12 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
                 if (estado == 'homologado')
                   OutlinedButton(
                     onPressed: () => _changeState('supplier_reject'),
-                    child: const Text('Desestimar'),
+                    child: Text('Desestimar'),
                   ),
                 if (estado == 'desestimado')
                   OutlinedButton(
                     onPressed: () => _changeState('supplier_reactivate'),
-                    child: const Text('Reactivar'),
+                    child: Text('Reactivar'),
                   ),
               ],
             ),
@@ -245,10 +249,10 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
   }
 
   String _stateLabel(String state) => switch (state) {
-        'homologado' => 'Homologado',
-        'desestimado' => 'Desestimado',
-        _ => state,
-      };
+    'homologado' => 'Homologado',
+    'desestimado' => 'Desestimado',
+    _ => state,
+  };
 
   String _many2oneLabel(dynamic value) {
     if (value is List && value.length > 1) return value[1].toString();

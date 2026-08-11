@@ -107,11 +107,7 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NeumorphicSurface(
-      padding: padding,
-      onTap: onTap,
-      child: child,
-    );
+    return NeumorphicSurface(padding: padding, onTap: onTap, child: child);
   }
 }
 
@@ -229,7 +225,7 @@ class AppSearchBar extends StatelessWidget {
       suffixIcon: controller.text.isEmpty
           ? null
           : IconButton(
-              icon: const Icon(Icons.close_rounded, size: 18),
+              icon: Icon(Icons.close_rounded, size: 18),
               onPressed: () {
                 controller.clear();
                 if (onChanged != null) onChanged!('');
@@ -595,7 +591,7 @@ class AppPdfCard extends StatelessWidget {
           color: AppTheme.error.withValues(alpha: 0.1),
           borderRadius: AppTheme.radiusSm,
         ),
-        child: const Icon(
+        child: Icon(
           Icons.picture_as_pdf_rounded,
           color: AppTheme.error,
           size: 18,
@@ -609,21 +605,18 @@ class AppPdfCard extends StatelessWidget {
               padding: const EdgeInsets.only(right: 6),
               child: Text(
                 amount!,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
               ),
             ),
           if (onPreview != null)
             IconButton(
               onPressed: onPreview,
-              icon: const Icon(Icons.visibility_outlined, size: 18),
+              icon: Icon(Icons.visibility_outlined, size: 18),
               tooltip: 'Previsualizar',
             ),
           IconButton(
             onPressed: onDownload,
-            icon: const Icon(Icons.download_rounded, size: 18),
+            icon: Icon(Icons.download_rounded, size: 18),
             tooltip: 'Descargar',
           ),
         ],
