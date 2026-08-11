@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -9,16 +10,18 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app/core/module_navigation.dart';
 import '../../app/models/app_notification.dart';
 import '../../app/providers/app_state_provider.dart';
+import '../../app/screens/modules_hub_screen.dart';
 import '../../app/screens/notifications_screen.dart';
+import '../../app/screens/profile_screen.dart';
 import '../../app/ui/app_components.dart';
 import '../../config/app_config.dart';
-import '../../features/goals/goals_screen.dart';
-import '../../features/payroll/payroll_screen.dart';
+import '../../features/purchases/purchases_screen.dart';
+import '../../features/quality/quality_center_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/dashboard_provider.dart';
-import '../documentos/documentos_screen.dart';
-import '../reservas/reservas_screen.dart';
+import '../../theme/app_motion.dart';
 import '../../theme/app_theme.dart';
+import '../personal/personal_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -78,53 +81,46 @@ class _HomeScreenState extends State<HomeScreen> {
     final appState = context.watch<AppStateProvider>();
 
     return AppScaffold(
-      title: 'CIC Salamanca',
-      actions: [
-        IconButton(onPressed: _onRefresh, icon: Icon(Icons.refresh_rounded)),
-      ],
+      title: 'Inicio',
+      showAppBar: false,
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 20),
       child: RefreshIndicator(
         onRefresh: _onRefresh,
         child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
           children: [
             _HomeHero(auth: auth, unreadCount: appState.unreadNotifications),
-            const SizedBox(height: 18),
-            const AppSectionHeader(
+            const SizedBox(height: 24),
+            _DashboardMetrics(
+              kpis: dashboard.kpis,
+              auth: auth,
+              loading:
+                  dashboard.state == DashboardState.loading &&
+                  dashboard.dashboardData == null,
+            ),
+            if (dashboard.state == DashboardState.error) ...[
+              const SizedBox(height: 12),
+              _DashboardStatusBanner(
+                message: dashboard.errorMessage ?? 'Error desconocido',
+                onRetry: _onRefresh,
+              ),
+            ],
+            const SizedBox(height: 26),
+            AppSectionHeader(
               title: 'Accesos rápidos',
-              subtitle: 'Tus secciones más usadas',
+              action: TextButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ModulesHubScreen()),
+                ),
+                icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                label: const Text('Ver todos'),
+              ),
             ),
             const _QuickActions(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             _NewsSection(newsFuture: _newsFuture),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             if (dashboard.permissionDenied) const _AccessScopeBanner(),
-            if (dashboard.state == DashboardState.loading &&
-                dashboard.dashboardData == null)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 40),
-                child: AppLoadingView(label: 'Cargando inicio...'),
-              )
-            else if (dashboard.state == DashboardState.error)
-              AppEmptyState(
-                title: 'No se pudo cargar el inicio',
-                subtitle: dashboard.errorMessage ?? 'Error desconocido',
-                icon: Icons.cloud_off_rounded,
-                action: SizedBox(
-                  width: 170,
-                  child: AppButton.primary(
-                    label: 'Reintentar',
-                    icon: Icons.refresh_rounded,
-                    onPressed: _onRefresh,
-                  ),
-                ),
-              )
-            else ...[
-              const AppSectionHeader(
-                title: 'Tu día',
-                subtitle: 'Lo más relevante ahora mismo',
-              ),
-              _PendingList(kpis: dashboard.kpis, auth: auth),
-            ],
-            const SizedBox(height: 14),
             AppSectionHeader(
               title: 'Actividad reciente',
               action: TextButton(
@@ -155,90 +151,96 @@ class _HomeHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = auth.userName.trim().isEmpty ? 'Usuario' : auth.userName;
     final firstName = name.split(' ').first;
-    final now = DateTime.now();
-    final day = now.day.toString().padLeft(2, '0');
-    final month = now.month.toString().padLeft(2, '0');
     final avatarBytes = _decodeAvatar(auth.profileImageBase64);
+    final hour = DateTime.now().hour;
+    final greeting = hour < 12
+        ? 'Buenos días'
+        : hour < 20
+        ? 'Buenas tardes'
+        : 'Buenas noches';
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: AppTheme.primaryGradient,
-        borderRadius: AppTheme.radiusLg,
-        boxShadow: AppTheme.glowShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Center(
-                  child: avatarBytes == null
-                      ? AppAvatar(name: name, size: 42)
-                      : CircleAvatar(
-                          radius: 21,
-                          backgroundImage: MemoryImage(avatarBytes),
-                        ),
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            SvgPicture.asset(
+              'assets/branding/cic_mark.svg',
+              width: 38,
+              height: 30,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'CIC',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontSize: 24,
+                letterSpacing: -0.8,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.textPrimaryFor(context),
               ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+            ),
+            const Spacer(),
+            SizedBox(
+              width: 48,
+              height: 48,
+              child: NeumorphicSurface(
+                padding: const EdgeInsets.all(11),
+                borderRadius: BorderRadius.circular(17),
+                subtle: true,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const NotificationsScreen(),
+                  ),
                 ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: AppTheme.radiusXl,
-                ),
-                child: Text(
-                  '$day/$month',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
+                child: Badge.count(
+                  count: unreadCount > 99 ? 99 : unreadCount,
+                  isLabelVisible: unreadCount > 0,
+                  child: Icon(
+                    Icons.notifications_none_rounded,
+                    color: AppTheme.textSecondaryFor(context),
+                    size: 23,
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Text(
-            'Hola, $firstName',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineMedium?.copyWith(color: Colors.white),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Todo tu espacio de trabajo en una sola app, limpio y directo.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.88),
             ),
-          ),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              Expanded(
-                child: _HeroStat(label: 'Usuario', value: auth.userLogin),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _HeroStat(
-                  label: 'Avisos',
-                  value: unreadCount.toString(),
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 50,
+              height: 50,
+              child: NeumorphicSurface(
+                padding: const EdgeInsets.all(3),
+                borderRadius: AppTheme.radiusXl,
+                subtle: true,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
                 ),
+                child: avatarBytes == null
+                    ? AppAvatar(name: name, size: 42)
+                    : CircleAvatar(
+                        radius: 21,
+                        backgroundImage: MemoryImage(avatarBytes),
+                      ),
               ),
-            ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 36),
+        Text(
+          '$greeting, $firstName',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            fontSize: 30,
+            letterSpacing: -0.9,
+            color: AppTheme.textPrimaryFor(context),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 7),
+        Text(
+          'Aquí tienes un resumen de lo importante.',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: AppTheme.textSecondaryFor(context),
+          ),
+        ),
+      ],
     );
   }
 
@@ -252,30 +254,201 @@ class _HomeHero extends StatelessWidget {
   }
 }
 
-class _HeroStat extends StatelessWidget {
-  const _HeroStat({required this.label, required this.value});
+class _DashboardMetrics extends StatelessWidget {
+  const _DashboardMetrics({
+    required this.kpis,
+    required this.auth,
+    required this.loading,
+  });
 
-  final String label;
-  final String value;
+  final List<dynamic> kpis;
+  final AuthProvider auth;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(18),
+    final definitions = <_MetricDefinition>[
+      const _MetricDefinition(
+        title: 'Incidencias',
+        moduleKey: 'incidents',
+        helper: 'Abiertas',
+        icon: Icons.warning_amber_rounded,
+        color: AppTheme.primary,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      const _MetricDefinition(
+        title: 'Reservas',
+        moduleKey: 'reservas',
+        helper: 'Hoy',
+        icon: Icons.calendar_month_rounded,
+        color: AppTheme.info,
+      ),
+      const _MetricDefinition(
+        title: 'Formación',
+        moduleKey: 'training',
+        helper: 'Pendientes',
+        icon: Icons.school_rounded,
+        color: AppTheme.accent,
+      ),
+    ].where((definition) => auth.canViewModule(definition.moduleKey)).toList();
+
+    if (definitions.isEmpty) {
+      return const AppEmptyState(
+        title: 'Todo al día',
+        subtitle: 'No hay indicadores disponibles para este perfil.',
+        icon: Icons.task_alt_rounded,
+      );
+    }
+
+    return Row(
+      children: List.generate(definitions.length, (index) {
+        final definition = definitions[index];
+        final kpi = _findKpi(definition.moduleKey);
+        final value = loading ? '···' : (kpi?['value'] ?? '—').toString();
+        final helper = (kpi?['helper'] ?? kpi?['subtitle'] ?? definition.helper)
+            .toString();
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(
+              right: index == definitions.length - 1 ? 0 : 10,
+            ),
+            child: AppReveal(
+              delay: Duration(
+                milliseconds: AppMotion.stagger.inMilliseconds * index,
+              ),
+              child: SizedBox(
+                height: 156,
+                child: AppCard(
+                  padding: const EdgeInsets.all(13),
+                  onTap: () => ModuleNavigation.openModule(
+                    context,
+                    auth: auth,
+                    moduleKey: definition.moduleKey,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          NeumorphicSurface(
+                            padding: const EdgeInsets.all(8),
+                            borderRadius: BorderRadius.circular(13),
+                            subtle: true,
+                            child: Icon(
+                              definition.icon,
+                              size: 19,
+                              color: definition.color,
+                            ),
+                          ),
+                          const Spacer(),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 18,
+                            color: AppTheme.textMutedFor(context),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      Text(
+                        definition.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppTheme.textSecondaryFor(context),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        value,
+                        style: TextStyle(
+                          color: AppTheme.textPrimaryFor(context),
+                          fontSize: 28,
+                          height: 1,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      Text(
+                        helper,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppTheme.textMutedFor(context),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  Map<String, dynamic>? _findKpi(String moduleKey) {
+    for (final raw in kpis) {
+      if (raw is! Map) continue;
+      final kpi = Map<String, dynamic>.from(raw);
+      if (ModuleNavigation.inferModuleKeyFromKpi(kpi) == moduleKey) return kpi;
+    }
+    return null;
+  }
+}
+
+class _MetricDefinition {
+  const _MetricDefinition({
+    required this.title,
+    required this.moduleKey,
+    required this.helper,
+    required this.icon,
+    required this.color,
+  });
+
+  final String title;
+  final String moduleKey;
+  final String helper;
+  final IconData icon;
+  final Color color;
+}
+
+class _DashboardStatusBanner extends StatelessWidget {
+  const _DashboardStatusBanner({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return NeumorphicSurface(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      subtle: true,
+      child: Row(
         children: [
-          Text(label, style: TextStyle(color: Colors.white70, fontSize: 12)),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+          const Icon(
+            Icons.cloud_off_rounded,
+            color: AppTheme.warning,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: AppTheme.textSecondaryFor(context),
+                fontSize: 12,
+              ),
+            ),
+          ),
+          IconButton(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            tooltip: 'Reintentar',
           ),
         ],
       ),
@@ -289,48 +462,47 @@ class _QuickActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final actions = <({String title, IconData icon, VoidCallback onTap})>[
-      if (auth.canViewModule('documents'))
-        (
-          title: 'Documentos',
-          icon: Icons.description_rounded,
-          onTap: () {
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const DocumentosScreen()));
-          },
-        ),
-      if (auth.canViewModule('reservas'))
-        (
-          title: 'Reservas',
-          icon: Icons.calendar_month_rounded,
-          onTap: () {
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const ReservasScreen()));
-          },
-        ),
-      if (auth.canViewModule('goals'))
-        (
-          title: 'Objetivos',
-          icon: Icons.track_changes_rounded,
-          onTap: () {
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const GoalsScreen()));
-          },
-        ),
-      if (auth.canViewModule('payroll'))
-        (
-          title: 'Nóminas',
-          icon: Icons.receipt_long_rounded,
-          onTap: () {
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const PayrollScreen()));
-          },
-        ),
-    ];
+    final actions =
+        <({String title, IconData icon, Color color, VoidCallback onTap})>[
+          if (auth.isInternalUser)
+            (
+              title: 'Personal',
+              icon: Icons.people_alt_rounded,
+              color: AppTheme.accent,
+              onTap: () => Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const PersonalScreen())),
+            ),
+          if (auth.canViewModule('documents'))
+            (
+              title: 'Documentos',
+              icon: Icons.description_rounded,
+              color: AppTheme.primary,
+              onTap: () => ModuleNavigation.openModule(
+                context,
+                auth: auth,
+                moduleKey: 'documents',
+              ),
+            ),
+          if (auth.canViewModule('purchases'))
+            (
+              title: 'Compras',
+              icon: Icons.shopping_cart_checkout_rounded,
+              color: AppTheme.info,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const PurchasesScreen()),
+              ),
+            ),
+          if (auth.canViewModule('communications'))
+            (
+              title: 'Calidad',
+              icon: Icons.verified_user_rounded,
+              color: AppTheme.success,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const QualityCenterScreen()),
+              ),
+            ),
+        ];
 
     if (actions.isEmpty) {
       return const AppEmptyState(
@@ -342,7 +514,8 @@ class _QuickActions extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, c) {
-        final cols = c.maxWidth < 560 ? 2 : 4;
+        final compact = c.maxWidth < 620;
+        final cols = compact ? 2 : 4;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -351,41 +524,44 @@ class _QuickActions extends StatelessWidget {
             crossAxisCount: cols,
             mainAxisSpacing: 10,
             crossAxisSpacing: 10,
-            childAspectRatio: 1.1,
+            childAspectRatio: compact ? 1.7 : 1.45,
           ),
           itemBuilder: (_, i) {
             final a = actions[i];
-            return AppCard(
-              onTap: a.onTap,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary.withValues(alpha: 0.12),
+            return AppReveal(
+              delay: Duration(
+                milliseconds: AppMotion.stagger.inMilliseconds * i,
+              ),
+              child: AppCard(
+                padding: const EdgeInsets.all(12),
+                onTap: a.onTap,
+                child: Row(
+                  children: [
+                    NeumorphicSurface(
+                      padding: const EdgeInsets.all(9),
                       borderRadius: BorderRadius.circular(14),
+                      subtle: true,
+                      child: Icon(a.icon, color: a.color, size: 21),
                     ),
-                    child: Icon(a.icon, color: AppTheme.primary, size: 20),
-                  ),
-                  const Spacer(),
-                  Text(
-                    a.title,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimaryFor(context),
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: Text(
+                        a.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimaryFor(context),
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Abrir módulo',
-                    style: TextStyle(
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 19,
                       color: AppTheme.textMutedFor(context),
-                      fontSize: 12,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },
@@ -395,15 +571,39 @@ class _QuickActions extends StatelessWidget {
   }
 }
 
-class _NewsSection extends StatelessWidget {
+class _NewsSection extends StatefulWidget {
   const _NewsSection({required this.newsFuture});
 
   final Future<List<_WordPressPost>> newsFuture;
 
   @override
+  State<_NewsSection> createState() => _NewsSectionState();
+}
+
+class _NewsSectionState extends State<_NewsSection> {
+  final PageController _controller = PageController(viewportFraction: 0.96);
+  int _page = 0;
+
+  @override
+  void didUpdateWidget(covariant _NewsSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.newsFuture == widget.newsFuture) return;
+    _page = 0;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _controller.hasClients) _controller.jumpToPage(0);
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<_WordPressPost>>(
-      future: newsFuture,
+      future: widget.newsFuture,
       builder: (context, snapshot) {
         final posts = snapshot.data ?? const <_WordPressPost>[];
         if (posts.isEmpty &&
@@ -413,73 +613,120 @@ class _NewsSection extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const AppSectionHeader(
-              title: 'Noticias',
-              subtitle: 'Últimas publicaciones del CIC',
-            ),
+            const AppSectionHeader(title: 'Novedades'),
             if (snapshot.connectionState == ConnectionState.waiting)
               const AppCard(
                 child: SizedBox(
-                  height: 72,
+                  height: 184,
                   child: AppLoadingView(label: 'Cargando noticias...'),
                 ),
               )
-            else
+            else ...[
               SizedBox(
-                height: 184,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
+                height: 218,
+                child: PageView.builder(
+                  controller: _controller,
+                  padEnds: false,
                   itemCount: posts.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 10),
+                  onPageChanged: (value) => setState(() => _page = value),
                   itemBuilder: (context, index) {
                     final post = posts[index];
-                    return SizedBox(
-                      width: 260,
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        right: index == posts.length - 1 ? 0 : 10,
+                      ),
                       child: AppCard(
+                        padding: const EdgeInsets.all(12),
                         onTap: () => _openNews(context, post),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
                           children: [
-                            if (post.imageUrl != null) ...[
-                              ClipRRect(
-                                borderRadius: AppTheme.radiusSm,
-                                child: Image.network(
-                                  post.imageUrl.toString(),
-                                  height: 62,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) =>
-                                      const SizedBox.shrink(),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                            ],
-                            Text(
-                              post.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: AppTheme.textPrimaryFor(context),
-                                fontWeight: FontWeight.w700,
+                            SizedBox(
+                              width: 116,
+                              height: double.infinity,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: _NewsVisual(post: post),
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              post.excerpt,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: AppTheme.textSecondaryFor(context),
-                                fontSize: 12,
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              'Leer más',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 12,
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 9,
+                                          vertical: 5,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.primary.withValues(
+                                            alpha: AppTheme.isDark(context)
+                                                ? 0.20
+                                                : 0.11,
+                                          ),
+                                          borderRadius: AppTheme.radiusXl,
+                                        ),
+                                        child: const Text(
+                                          'COMUNICADO',
+                                          style: TextStyle(
+                                            color: AppTheme.primary,
+                                            fontSize: 10,
+                                            letterSpacing: 0.7,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      Icon(
+                                        Icons.chevron_right_rounded,
+                                        color: AppTheme.textMutedFor(context),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    post.title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: AppTheme.textPrimaryFor(context),
+                                      fontSize: 16,
+                                      height: 1.25,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    post.excerpt,
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: AppTheme.textSecondaryFor(context),
+                                      fontSize: 12,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.calendar_today_outlined,
+                                        size: 13,
+                                        color: AppTheme.textMutedFor(context),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        post.dateLabel,
+                                        style: TextStyle(
+                                          color: AppTheme.textMutedFor(context),
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -489,6 +736,29 @@ class _NewsSection extends StatelessWidget {
                   },
                 ),
               ),
+              if (posts.length > 1) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(posts.length, (index) {
+                    final selected = index == _page;
+                    return AnimatedContainer(
+                      duration: AppMotion.adaptive(context, AppMotion.standard),
+                      curve: AppMotion.enterCurve,
+                      width: selected ? 18 : 7,
+                      height: 7,
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? AppTheme.primary
+                            : AppTheme.dividerFor(context),
+                        borderRadius: AppTheme.radiusXl,
+                      ),
+                    );
+                  }),
+                ),
+              ],
+            ],
           ],
         );
       },
@@ -543,6 +813,50 @@ class _NewsSection extends StatelessWidget {
   }
 }
 
+class _NewsVisual extends StatelessWidget {
+  const _NewsVisual({required this.post});
+
+  final _WordPressPost post;
+
+  @override
+  Widget build(BuildContext context) {
+    if (post.imageUrl != null) {
+      return Image.network(
+        post.imageUrl.toString(),
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => const _NewsFallback(),
+      );
+    }
+    return const _NewsFallback();
+  }
+}
+
+class _NewsFallback extends StatelessWidget {
+  const _NewsFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(gradient: AppTheme.primaryGradient),
+      child: Center(
+        child: Container(
+          width: 68,
+          height: 68,
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.15),
+            shape: BoxShape.circle,
+          ),
+          child: SvgPicture.asset(
+            'assets/branding/cic_mark.svg',
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _WordPressPost {
   const _WordPressPost({
     required this.title,
@@ -550,6 +864,7 @@ class _WordPressPost {
     required this.content,
     required this.link,
     required this.imageUrl,
+    required this.dateLabel,
   });
 
   final String title;
@@ -557,6 +872,7 @@ class _WordPressPost {
   final String content;
   final Uri? link;
   final Uri? imageUrl;
+  final String dateLabel;
 
   static const mock = _WordPressPost(
     title: 'Nueva intranet móvil del CIC',
@@ -566,6 +882,7 @@ class _WordPressPost {
         'La nueva intranet móvil reúne en un solo lugar la información y las gestiones disponibles para cada usuario.',
     link: null,
     imageUrl: null,
+    dateLabel: '11 ago 2026',
   );
 
   factory _WordPressPost.fromJson(Map<String, dynamic> json) {
@@ -579,7 +896,28 @@ class _WordPressPost {
       ),
       link: Uri.tryParse((json['link'] ?? '').toString()),
       imageUrl: _featuredImageUrl(json),
+      dateLabel: _formatDate(json['date']?.toString()),
     );
+  }
+
+  static String _formatDate(String? raw) {
+    final date = DateTime.tryParse(raw ?? '');
+    if (date == null) return 'CIC Salamanca';
+    const months = [
+      'ene',
+      'feb',
+      'mar',
+      'abr',
+      'may',
+      'jun',
+      'jul',
+      'ago',
+      'sep',
+      'oct',
+      'nov',
+      'dic',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   static Uri? _featuredImageUrl(Map<String, dynamic> json) {
@@ -599,72 +937,6 @@ class _WordPressPost {
         .replaceAll('&#8217;', "'")
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
-  }
-}
-
-class _PendingList extends StatelessWidget {
-  const _PendingList({required this.kpis, required this.auth});
-
-  final List<dynamic> kpis;
-  final AuthProvider auth;
-
-  @override
-  Widget build(BuildContext context) {
-    if (kpis.isEmpty) {
-      return const AppEmptyState(
-        title: 'Sin pendientes',
-        subtitle: 'No hay tareas críticas en este momento.',
-        icon: Icons.task_alt_rounded,
-      );
-    }
-
-    final top = kpis
-        .take(4)
-        .map((e) => Map<String, dynamic>.from(e as Map))
-        .toList();
-    return Column(
-      children: top.map((kpi) {
-        final value = (kpi['value'] ?? 0).toString();
-        final title = (kpi['title'] ?? 'Indicador').toString();
-        final helper = (kpi['helper'] ?? '').toString();
-        final moduleKey = ModuleNavigation.inferModuleKeyFromKpi(kpi);
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: AppListTile(
-            onTap: moduleKey == null
-                ? null
-                : () => ModuleNavigation.openModule(
-                    context,
-                    auth: auth,
-                    moduleKey: moduleKey,
-                  ),
-            title: title,
-            subtitle: helper.isEmpty ? 'Pendiente' : helper,
-            leading: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: AppTheme.primaryLight,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                Icons.analytics_rounded,
-                size: 18,
-                color: AppTheme.primary,
-              ),
-            ),
-            trailing: Text(
-              value,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimaryFor(context),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
   }
 }
 

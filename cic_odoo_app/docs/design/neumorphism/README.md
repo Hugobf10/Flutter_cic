@@ -25,4 +25,4 @@ Estos mockups sirven para validar la dirección visual antes de modificar la int
 - Texto casi blanco y acentos cian con contraste accesible.
 - Brillos y sombras contenidos para evitar un aspecto de neón.
 
-> Estado: concepto visual. El rediseño todavía no está implementado en la aplicación.
+> Estado: implementado. El Inicio reproduce la jerarquía aprobada en ambos modos y mantiene datos, permisos y navegación reales de Odoo.
