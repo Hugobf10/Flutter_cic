@@ -20,4 +20,25 @@ void main() {
       'La cantidad recibida supera la pendiente (3).',
     );
   });
+
+  test('authentication errors never expose internal server details', () {
+    const internalError =
+        'Exception: https://internal.example.test database=cic_private Traceback secret';
+
+    final message = OdooService.prettyAuthError(internalError);
+
+    expect(
+      message,
+      'No se pudo iniciar sesión. Revisa tus datos o inténtalo de nuevo más tarde.',
+    );
+    expect(message, isNot(contains('internal.example.test')));
+    expect(message, isNot(contains('cic_private')));
+  });
+
+  test('authentication network errors use a safe actionable message', () {
+    expect(
+      OdooService.prettyAuthError('SocketException: connection refused'),
+      'No se pudo conectar de forma segura. Comprueba tu conexión y vuelve a intentarlo.',
+    );
+  });
 }

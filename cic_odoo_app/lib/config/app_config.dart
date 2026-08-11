@@ -17,6 +17,13 @@ class AppConfig {
     defaultValue: '1.0.0',
   );
 
+  /// La configuración técnica del servidor permanece oculta en producción.
+  /// Solo las compilaciones de soporte que la necesiten deben habilitarla.
+  static const bool allowAdvancedLoginConfig = bool.fromEnvironment(
+    'ALLOW_ADVANCED_LOGIN_CONFIG',
+    defaultValue: false,
+  );
+
   static const String wordpressApiUrl = String.fromEnvironment(
     'WORDPRESS_API_URL',
     defaultValue:

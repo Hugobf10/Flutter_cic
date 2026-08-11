@@ -111,8 +111,18 @@ class OdooService {
     if (normalized.contains('accesserror')) {
       return 'No se pudo iniciar sesión en Odoo con esos datos.';
     }
+    if (normalized.contains('timeout') ||
+        normalized.contains('socket') ||
+        normalized.contains('connection') ||
+        normalized.contains('network') ||
+        normalized.contains('failed to fetch') ||
+        normalized.contains('xmlhttprequest')) {
+      return 'No se pudo conectar de forma segura. Comprueba tu conexión y vuelve a intentarlo.';
+    }
 
-    return prettyError(error);
+    // Un error de autenticación nunca debe exponer trazas, endpoints, nombres de
+    // base de datos ni mensajes internos del servidor en la pantalla pública.
+    return 'No se pudo iniciar sesión. Revisa tus datos o inténtalo de nuevo más tarde.';
   }
 
   static bool isPublicSession(Map<String, dynamic> info) {

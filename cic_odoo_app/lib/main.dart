@@ -52,7 +52,7 @@ Future<void> main() async {
       );
       AppLogger.info(
         'App iniciada',
-        data: {'app': AppConfig.appName, 'env': AppConfig.odooBaseUrl},
+        data: {'app': AppConfig.appName},
         scope: 'bootstrap',
       );
       runApp(const CicSalamancaApp());

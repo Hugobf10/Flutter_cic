@@ -354,17 +354,9 @@ class AuthProvider extends ChangeNotifier {
       _partnerProfile = const {};
       _portalCapabilities = const {};
       _state = AuthState.error;
-      final rawError = (result.errorMessage ?? '').toLowerCase();
-      final isLikelyCors =
-          kIsWeb &&
-          (rawError.contains('xmlhttprequest') ||
-              rawError.contains('failed to fetch') ||
-              rawError.contains('networkerror'));
-      _errorMessage = isLikelyCors
-          ? 'Bloqueo CORS del navegador: el servidor Odoo no permite peticiones desde localhost.'
-          : (result.errorMessage?.isNotEmpty == true
-                ? result.errorMessage
-                : 'Credenciales incorrectas o servidor no disponible.');
+      _errorMessage = result.errorMessage?.isNotEmpty == true
+          ? result.errorMessage
+          : 'No se pudo iniciar sesión. Revisa tus datos e inténtalo de nuevo.';
     }
     notifyListeners();
     return result.success;

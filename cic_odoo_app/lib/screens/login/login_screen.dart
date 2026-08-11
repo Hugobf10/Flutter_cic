@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/providers/app_state_provider.dart';
 import '../../app/ui/app_components.dart';
 import '../../config/app_config.dart';
 import '../../providers/auth_provider.dart';
+import '../../theme/app_motion.dart';
 import '../../theme/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -13,8 +15,7 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
-    with TickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _loginController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -26,31 +27,8 @@ class _LoginScreenState extends State<LoginScreen>
   bool _obscurePassword = true;
   bool _showAdvanced = false;
 
-  late final AnimationController _enterController;
-  late final Animation<double> _fade;
-  late final Animation<Offset> _slide;
-
-  @override
-  void initState() {
-    super.initState();
-    _enterController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 620),
-    );
-    _fade = CurvedAnimation(
-      parent: _enterController,
-      curve: Curves.easeOutCubic,
-    );
-    _slide = Tween<Offset>(begin: const Offset(0, 0.05), end: Offset.zero)
-        .animate(
-          CurvedAnimation(parent: _enterController, curve: Curves.easeOutCubic),
-        );
-    _enterController.forward();
-  }
-
   @override
   void dispose() {
-    _enterController.dispose();
     _loginController.dispose();
     _passwordController.dispose();
     _serverController.dispose();
@@ -60,6 +38,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
+    FocusManager.instance.primaryFocus?.unfocus();
     await context.read<AuthProvider>().login(
       login: _loginController.text.trim(),
       password: _passwordController.text,
@@ -71,64 +50,79 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final size = MediaQuery.of(context).size;
-    final compact = size.width < 720;
+    final appState = context.watch<AppStateProvider>();
 
     return Scaffold(
       backgroundColor: AppTheme.surfaceFor(context),
-      body: DecoratedBox(
+      body: Container(
         decoration: BoxDecoration(gradient: AppTheme.heroGradientFor(context)),
         child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(
-                horizontal: compact ? 22 : 44,
-                vertical: 28,
+          child: Stack(
+            children: [
+              Positioned(
+                top: 12,
+                right: 16,
+                child: _ThemeToggle(
+                  dark: AppTheme.isDark(context),
+                  onTap: appState.toggleThemeMode,
+                ),
               ),
-              child: FadeTransition(
-                opacity: _fade,
-                child: SlideTransition(
-                  position: _slide,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 980),
-                    child: compact
-                        ? _mobileLayout(auth: auth)
-                        : _desktopLayout(auth: auth),
+              Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 76, 20, 30),
+                  child: AppReveal(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1100),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          if (constraints.maxWidth < 760) {
+                            return _mobileLayout(auth);
+                          }
+                          return _desktopLayout(auth);
+                        },
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _mobileLayout({required AuthProvider auth}) {
+  Widget _mobileLayout(AuthProvider auth) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _BrandHeader(compact: true),
-        const SizedBox(height: 28),
-        _loginCard(auth: auth),
-        const SizedBox(height: 18),
-        _SecurityNote(),
+        const _BrandHeader(compact: true),
+        const SizedBox(height: 24),
+        _loginCard(auth),
+        const SizedBox(height: 14),
+        const _PrivacyNotice(),
+        const SizedBox(height: 14),
+        const _AccessHelp(),
       ],
     );
   }
 
-  Widget _desktopLayout({required AuthProvider auth}) {
+  Widget _desktopLayout(AuthProvider auth) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Expanded(child: _BrandPanel()),
-        const SizedBox(width: 42),
+        const Expanded(flex: 11, child: _BrandPanel()),
+        const SizedBox(width: 34),
         Expanded(
+          flex: 9,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _loginCard(auth: auth),
-              const SizedBox(height: 18),
-              _SecurityNote(),
+              _loginCard(auth),
+              const SizedBox(height: 14),
+              const _PrivacyNotice(),
+              const SizedBox(height: 14),
+              const _AccessHelp(),
             ],
           ),
         ),
@@ -136,181 +130,202 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _loginCard({required AuthProvider auth}) {
+  Widget _loginCard(AuthProvider auth) {
     final loading = auth.state == AuthState.loading;
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: AppTheme.neumorphicDecoration(
-        context,
-        borderRadius: BorderRadius.circular(28),
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: Image.asset(
-                    'assets/branding/cic_logo.png',
-                    width: 58,
-                    height: 58,
-                    fit: BoxFit.cover,
+    return NeumorphicSurface(
+      borderRadius: AppTheme.radiusLg,
+      padding: const EdgeInsets.all(24),
+      child: AutofillGroup(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const AppIconSurface(
+                    icon: Icons.lock_person_rounded,
+                    color: AppTheme.primary,
+                    size: 54,
+                    iconSize: 25,
                   ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Bienvenido',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.textPrimaryFor(context),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Accede a tu espacio',
+                          style: TextStyle(
+                            color: AppTheme.textPrimaryFor(context),
+                            fontSize: 23,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.4,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 3),
-                      Text(
-                        'Portal interno CIC',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppTheme.textSecondaryFor(context),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Usa las mismas credenciales que en Odoo Web.',
+                          style: TextStyle(
+                            color: AppTheme.textSecondaryFor(context),
+                            fontSize: 13,
+                            height: 1.4,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            TextFormField(
-              controller: _loginController,
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
-              autofillHints: const [
-                AutofillHints.username,
-                AutofillHints.email,
-              ],
-              decoration: const InputDecoration(
-                labelText: 'Correo corporativo',
-                hintText: 'tu.usuario@cicancer.org',
-                prefixIcon: Icon(Icons.mail_outline_rounded),
+                ],
               ),
-              validator: (value) => (value == null || value.trim().isEmpty)
-                  ? 'Introduce tu correo'
-                  : null,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _passwordController,
-              obscureText: _obscurePassword,
-              textInputAction: TextInputAction.done,
-              autofillHints: const [AutofillHints.password],
-              decoration: InputDecoration(
-                labelText: 'Contraseña',
-                prefixIcon: Icon(Icons.lock_outline_rounded),
-                suffixIcon: IconButton(
-                  tooltip: _obscurePassword
-                      ? 'Mostrar contraseña'
-                      : 'Ocultar contraseña',
-                  onPressed: () =>
-                      setState(() => _obscurePassword = !_obscurePassword),
-                  icon: Icon(
-                    _obscurePassword
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
+              const SizedBox(height: 24),
+              _LoginFieldSurface(
+                child: TextFormField(
+                  controller: _loginController,
+                  enabled: !loading,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [
+                    AutofillHints.username,
+                    AutofillHints.email,
+                  ],
+                  decoration: const InputDecoration(
+                    labelText: 'Correo corporativo',
+                    hintText: 'tu.usuario@cicancer.org',
+                    prefixIcon: Icon(Icons.alternate_email_rounded),
                   ),
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Introduce tu correo corporativo'
+                      : null,
                 ),
               ),
-              validator: (value) => (value == null || value.isEmpty)
-                  ? 'Introduce tu contraseña'
-                  : null,
-              onFieldSubmitted: (_) => _handleLogin(),
-            ),
-            const SizedBox(height: 12),
-            _advancedConfig(),
-            if (auth.state == AuthState.error && auth.errorMessage != null) ...[
+              const SizedBox(height: 13),
+              _LoginFieldSurface(
+                child: TextFormField(
+                  controller: _passwordController,
+                  enabled: !loading,
+                  obscureText: _obscurePassword,
+                  textInputAction: TextInputAction.done,
+                  autofillHints: const [AutofillHints.password],
+                  decoration: InputDecoration(
+                    labelText: 'Contraseña',
+                    prefixIcon: Icon(Icons.password_rounded),
+                    suffixIcon: IconButton(
+                      tooltip: _obscurePassword
+                          ? 'Mostrar contraseña'
+                          : 'Ocultar contraseña',
+                      onPressed: loading
+                          ? null
+                          : () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                      ),
+                    ),
+                  ),
+                  validator: (value) => (value == null || value.isEmpty)
+                      ? 'Introduce tu contraseña'
+                      : null,
+                  onFieldSubmitted: (_) => loading ? null : _handleLogin(),
+                ),
+              ),
+              if (AppConfig.allowAdvancedLoginConfig) ...[
+                const SizedBox(height: 10),
+                _advancedConfig(loading),
+              ],
+              if (auth.state == AuthState.error &&
+                  auth.errorMessage != null) ...[
+                const SizedBox(height: 14),
+                _ErrorBox(message: auth.errorMessage!),
+              ],
+              const SizedBox(height: 20),
+              SizedBox(
+                height: 54,
+                child: AppButton.primary(
+                  label: loading ? 'Verificando' : 'Entrar',
+                  icon: Icons.arrow_forward_rounded,
+                  loading: loading,
+                  onPressed: loading ? null : _handleLogin,
+                ),
+              ),
               const SizedBox(height: 14),
-              _ErrorBox(message: auth.errorMessage!),
-            ],
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 52,
-              child: FilledButton.icon(
-                onPressed: loading ? null : _handleLogin,
-                icon: loading
-                    ? const AppLoadingIndicator(size: 18)
-                    : Icon(Icons.arrow_forward_rounded),
-                label: Text(loading ? 'Entrando...' : 'Entrar'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.verified_user_outlined,
+                    size: 15,
+                    color: AppTheme.textMutedFor(context),
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      'Sesión cifrada y permisos sincronizados con Odoo.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppTheme.textMutedFor(context),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _advancedConfig() {
+  Widget _advancedConfig(bool loading) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () => setState(() => _showAdvanced = !_showAdvanced),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Row(
-              children: [
-                Icon(
-                  _showAdvanced
-                      ? Icons.keyboard_arrow_up_rounded
-                      : Icons.keyboard_arrow_down_rounded,
-                  size: 20,
-                  color: AppTheme.textSecondaryFor(context),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Configuración del servidor',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textSecondaryFor(context),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        AppChoicePill(
+          label: 'Configuración de soporte',
+          icon: Icons.tune_rounded,
+          selected: _showAdvanced,
+          onTap: loading
+              ? null
+              : () => setState(() => _showAdvanced = !_showAdvanced),
         ),
         AnimatedCrossFade(
           firstChild: const SizedBox.shrink(),
           secondChild: Padding(
-            padding: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.only(top: 12),
             child: Column(
               children: [
-                TextFormField(
-                  controller: _serverController,
-                  decoration: const InputDecoration(
-                    labelText: 'URL Odoo',
-                    prefixIcon: Icon(Icons.dns_outlined),
+                _LoginFieldSurface(
+                  child: TextFormField(
+                    controller: _serverController,
+                    enabled: !loading,
+                    decoration: const InputDecoration(
+                      labelText: 'Servidor autorizado',
+                      prefixIcon: Icon(Icons.dns_outlined),
+                    ),
+                    validator: (value) =>
+                        (value == null || value.trim().isEmpty)
+                        ? 'Introduce el servidor autorizado'
+                        : null,
                   ),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Introduce la URL'
-                      : null,
                 ),
                 const SizedBox(height: 10),
-                TextFormField(
-                  controller: _databaseController,
-                  decoration: const InputDecoration(
-                    labelText: 'Base de datos',
-                    prefixIcon: Icon(Icons.storage_outlined),
+                _LoginFieldSurface(
+                  child: TextFormField(
+                    controller: _databaseController,
+                    enabled: !loading,
+                    decoration: const InputDecoration(
+                      labelText: 'Entorno autorizado',
+                      prefixIcon: Icon(Icons.storage_outlined),
+                    ),
+                    validator: (value) =>
+                        (value == null || value.trim().isEmpty)
+                        ? 'Introduce el entorno autorizado'
+                        : null,
                   ),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Introduce la base de datos'
-                      : null,
                 ),
               ],
             ),
@@ -321,6 +336,31 @@ class _LoginScreenState extends State<LoginScreen>
           duration: const Duration(milliseconds: 220),
         ),
       ],
+    );
+  }
+}
+
+class _ThemeToggle extends StatelessWidget {
+  const _ThemeToggle({required this.dark, required this.onTap});
+
+  final bool dark;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: dark ? 'Usar modo claro' : 'Usar modo oscuro',
+      child: NeumorphicSurface(
+        onTap: onTap,
+        subtle: true,
+        borderRadius: AppTheme.radiusXl,
+        padding: const EdgeInsets.all(11),
+        child: Icon(
+          dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+          color: dark ? AppTheme.warning : AppTheme.primaryDark,
+          size: 21,
+        ),
+      ),
     );
   }
 }
@@ -337,35 +377,40 @@ class _BrandHeader extends StatelessWidget {
           ? CrossAxisAlignment.center
           : CrossAxisAlignment.start,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(26),
-          child: Image.asset(
-            'assets/branding/cic_logo.png',
-            width: compact ? 112 : 132,
-            height: compact ? 112 : 132,
-            fit: BoxFit.cover,
+        NeumorphicSurface(
+          subtle: true,
+          borderRadius: BorderRadius.circular(30),
+          padding: const EdgeInsets.all(8),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(23),
+            child: Image.asset(
+              'assets/branding/cic_logo.png',
+              width: compact ? 88 : 108,
+              height: compact ? 88 : 108,
+              fit: BoxFit.cover,
+            ),
           ),
         ),
         const SizedBox(height: 18),
         Text(
-          'Intranet CIC',
+          'Tu espacio CIC',
           textAlign: compact ? TextAlign.center : TextAlign.left,
           style: TextStyle(
-            fontSize: 34,
-            height: 1.02,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -1.1,
             color: AppTheme.textPrimaryFor(context),
+            fontSize: compact ? 31 : 40,
+            height: 1.03,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -1.2,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 9),
         Text(
-          'Accede a documentos, reservas, compras y flujos internos desde una app nativa.',
-          textAlign: TextAlign.center,
+          'Información, gestiones y seguimiento conectados con tu perfil.',
+          textAlign: compact ? TextAlign.center : TextAlign.left,
           style: TextStyle(
-            fontSize: 14,
-            height: 1.45,
             color: AppTheme.textSecondaryFor(context),
+            fontSize: compact ? 14 : 16,
+            height: 1.5,
           ),
         ),
       ],
@@ -378,31 +423,36 @@ class _BrandPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(34),
-      decoration: AppTheme.neumorphicDecoration(
-        context,
-        borderRadius: BorderRadius.circular(34),
-      ),
+    return NeumorphicSurface(
+      borderRadius: AppTheme.radiusLg,
+      padding: const EdgeInsets.all(32),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           _BrandHeader(compact: false),
-          SizedBox(height: 28),
-          _FeaturePill(
-            icon: Icons.verified_user_outlined,
-            label: 'Sesión segura con Odoo',
+          SizedBox(height: 26),
+          _ValueCard(
+            icon: Icons.dashboard_customize_rounded,
+            color: AppTheme.primary,
+            title: 'Todo lo importante, ordenado',
+            subtitle:
+                'Documentos, noticias, actividad y accesos en un mismo inicio.',
           ),
           SizedBox(height: 10),
-          _FeaturePill(
-            icon: Icons.folder_copy_outlined,
-            label: 'Documentos y permisos internos',
+          _ValueCard(
+            icon: Icons.task_alt_rounded,
+            color: AppTheme.success,
+            title: 'Gestiones conectadas',
+            subtitle: 'Reservas, incidencias y procesos actualizados con Odoo.',
           ),
           SizedBox(height: 10),
-          _FeaturePill(
-            icon: Icons.qr_code_scanner_rounded,
-            label: 'Compras con cámara y recepción',
+          _ValueCard(
+            icon: Icons.shield_outlined,
+            color: AppTheme.accent,
+            title: 'Acceso según tu perfil',
+            subtitle:
+                'Cada persona ve únicamente los módulos que tiene autorizados.',
           ),
         ],
       ),
@@ -410,34 +460,156 @@ class _BrandPanel extends StatelessWidget {
   }
 }
 
-class _FeaturePill extends StatelessWidget {
-  const _FeaturePill({required this.icon, required this.label});
+class _ValueCard extends StatelessWidget {
+  const _ValueCard({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+  });
 
   final IconData icon;
-  final String label;
+  final Color color;
+  final String title;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: AppTheme.neumorphicDecoration(
-        context,
-        color: AppTheme.elevatedFor(context),
-        borderRadius: BorderRadius.circular(16),
-        subtle: true,
-      ),
+    return NeumorphicSurface(
+      subtle: true,
+      showBorder: false,
+      padding: const EdgeInsets.all(13),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AppTheme.primary),
-          const SizedBox(width: 10),
+          AppIconSurface(icon: icon, color: color, size: 42, iconSize: 19),
+          const SizedBox(width: 11),
           Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimaryFor(context),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: AppTheme.textPrimaryFor(context),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: AppTheme.textSecondaryFor(context),
+                    fontSize: 11,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LoginFieldSurface extends StatelessWidget {
+  const _LoginFieldSurface({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return NeumorphicSurface(
+      subtle: true,
+      showBorder: false,
+      borderRadius: AppTheme.radiusMd,
+      child: ClipRRect(borderRadius: AppTheme.radiusMd, child: child),
+    );
+  }
+}
+
+class _PrivacyNotice extends StatelessWidget {
+  const _PrivacyNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AppIconSurface(
+            icon: Icons.privacy_tip_outlined,
+            color: AppTheme.success,
+            size: 42,
+            iconSize: 19,
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Privacidad desde el primer paso',
+                  style: TextStyle(
+                    color: AppTheme.textPrimaryFor(context),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Antes de identificarte no cargamos avisos, datos personales ni información de Odoo. Después verás solo lo autorizado para tu perfil.',
+                  style: TextStyle(
+                    color: AppTheme.textSecondaryFor(context),
+                    fontSize: 11,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccessHelp extends StatelessWidget {
+  const _AccessHelp();
+
+  @override
+  Widget build(BuildContext context) {
+    return NeumorphicSurface(
+      subtle: true,
+      showBorder: false,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.help_outline_rounded, color: AppTheme.primary, size: 19),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: '¿Problemas para entrar? ',
+                    style: TextStyle(
+                      color: AppTheme.textPrimaryFor(context),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  TextSpan(
+                    text:
+                        'Comprueba tus credenciales habituales y, si continúa, contacta con el responsable de tu cuenta CIC.',
+                    style: TextStyle(color: AppTheme.textSecondaryFor(context)),
+                  ),
+                ],
               ),
+              style: const TextStyle(fontSize: 11, height: 1.45),
             ),
           ),
         ],
@@ -453,56 +625,51 @@ class _ErrorBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppTheme.danger.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.danger.withValues(alpha: 0.25)),
+    return NeumorphicSurface(
+      subtle: true,
+      color: Color.alphaBlend(
+        AppTheme.danger.withValues(
+          alpha: AppTheme.isDark(context) ? 0.13 : 0.07,
+        ),
+        AppTheme.cardFor(context),
       ),
+      padding: const EdgeInsets.all(12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.error_outline_rounded, color: AppTheme.danger, size: 18),
-          const SizedBox(width: 8),
+          const AppIconSurface(
+            icon: Icons.error_outline_rounded,
+            color: AppTheme.danger,
+            size: 38,
+            iconSize: 18,
+          ),
+          const SizedBox(width: 9),
           Expanded(
-            child: Text(
-              message,
-              style: TextStyle(
-                color: AppTheme.danger,
-                fontSize: 12,
-                height: 1.35,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'No hemos podido verificar el acceso',
+                  style: TextStyle(
+                    color: AppTheme.danger,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  message,
+                  style: TextStyle(
+                    color: AppTheme.textSecondaryFor(context),
+                    fontSize: 11,
+                    height: 1.4,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _SecurityNote extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.lock_outline_rounded,
-          size: 15,
-          color: AppTheme.textMutedFor(context),
-        ),
-        const SizedBox(width: 6),
-        Flexible(
-          child: Text(
-            'Tus permisos se sincronizan con Odoo Web.',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppTheme.textMutedFor(context),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
