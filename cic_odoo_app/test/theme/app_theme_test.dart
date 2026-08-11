@@ -83,4 +83,57 @@ void main() {
     expect(find.byType(NeumorphicSurface), findsOneWidget);
     expect(find.byIcon(Icons.school_rounded), findsOneWidget);
   });
+
+  testWidgets('AppChoicePill mantiene selección y responde al toque', (
+    tester,
+  ) async {
+    var tapped = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: Scaffold(
+          body: AppChoicePill(
+            label: 'Importantes',
+            icon: Icons.priority_high_rounded,
+            selected: true,
+            onTap: () => tapped = true,
+          ),
+        ),
+      ),
+    );
+
+    final semantics = tester.widgetList<Semantics>(
+      find.ancestor(
+        of: find.text('Importantes'),
+        matching: find.byType(Semantics),
+      ),
+    );
+    expect(semantics.any((widget) => widget.properties.selected == true), true);
+    await tester.tap(find.text('Importantes'));
+    expect(tapped, isTrue);
+  });
+
+  testWidgets('AppInput conserva edición dentro de una superficie neumórfica', (
+    tester,
+  ) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: Scaffold(
+          body: AppInput(
+            controller: controller,
+            labelText: 'Buscar',
+            prefixIcon: Icons.search_rounded,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(NeumorphicSurface), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'calidad');
+    expect(controller.text, 'calidad');
+  });
 }

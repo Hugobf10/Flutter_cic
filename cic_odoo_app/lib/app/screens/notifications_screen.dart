@@ -42,11 +42,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildFilterChip('all', 'Todas'),
+                _buildFilterChip('all', 'Todas', Icons.all_inbox_rounded),
                 const SizedBox(width: 8),
-                _buildFilterChip('unread', 'No leídas'),
+                _buildFilterChip(
+                  'unread',
+                  'No leídas',
+                  Icons.mark_email_unread_rounded,
+                ),
                 const SizedBox(width: 8),
-                _buildFilterChip('high', 'Importantes'),
+                _buildFilterChip(
+                  'high',
+                  'Importantes',
+                  Icons.priority_high_rounded,
+                ),
               ],
             ),
           ),
@@ -72,11 +80,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildFilterChip(String key, String label) {
-    return ChoiceChip(
+  Widget _buildFilterChip(String key, String label, IconData icon) {
+    return AppChoicePill(
+      icon: icon,
       selected: _filter == key,
-      label: Text(label),
-      onSelected: (_) => setState(() => _filter = key),
+      label: label,
+      onTap: () => setState(() => _filter = key),
     );
   }
 
@@ -109,18 +118,37 @@ class _NotificationsHero extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Centro de actividad',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.textPrimaryFor(context),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Aquí ves lo más reciente, lo importante y lo pendiente de revisar.',
-            style: TextStyle(color: AppTheme.textSecondaryFor(context)),
+          Row(
+            children: [
+              const AppIconSurface(
+                icon: Icons.notifications_active_rounded,
+                color: AppTheme.primary,
+                size: 54,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Centro de actividad',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textPrimaryFor(context),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      'Lo reciente, importante y pendiente de revisar.',
+                      style: TextStyle(
+                        color: AppTheme.textSecondaryFor(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 14),
           Row(
@@ -169,12 +197,14 @@ class _NotificationStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return NeumorphicSurface(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
+      color: Color.alphaBlend(
+        color.withValues(alpha: AppTheme.isDark(context) ? 0.14 : 0.08),
+        AppTheme.cardFor(context),
       ),
+      borderRadius: BorderRadius.circular(16),
+      subtle: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -220,14 +250,13 @@ class _NotificationCard extends StatelessWidget {
         auth: auth,
         moduleKey: item.moduleKey,
       ),
-      leading: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(Icons.notifications_rounded, size: 18, color: color),
+      leading: AppIconSurface(
+        icon: item.level == 'high'
+            ? Icons.priority_high_rounded
+            : Icons.notifications_rounded,
+        color: color,
+        size: 40,
+        iconSize: 18,
       ),
       title: item.title,
       subtitle: '${item.subtitle} · ${item.createdAtLabel}',

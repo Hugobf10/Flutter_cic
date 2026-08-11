@@ -219,17 +219,86 @@ class AppInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      onChanged: onChanged,
-      onSubmitted: onSubmitted,
-      decoration: InputDecoration(
-        hintText: hintText,
-        labelText: labelText,
-        prefixIcon: prefixIcon == null ? null : Icon(prefixIcon),
-        suffixIcon: suffixIcon,
+    return NeumorphicSurface(
+      subtle: true,
+      showBorder: false,
+      borderRadius: AppTheme.radiusMd,
+      child: ClipRRect(
+        borderRadius: AppTheme.radiusMd,
+        child: TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          obscureText: obscureText,
+          onChanged: onChanged,
+          onSubmitted: onSubmitted,
+          decoration: InputDecoration(
+            hintText: hintText,
+            labelText: labelText,
+            prefixIcon: prefixIcon == null ? null : Icon(prefixIcon),
+            suffixIcon: suffixIcon,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class AppChoicePill extends StatelessWidget {
+  const AppChoicePill({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.icon,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected
+        ? AppTheme.primary
+        : AppTheme.textSecondaryFor(context);
+    final background = selected
+        ? Color.alphaBlend(
+            AppTheme.primary.withValues(
+              alpha: AppTheme.isDark(context) ? 0.18 : 0.10,
+            ),
+            AppTheme.cardFor(context),
+          )
+        : AppTheme.cardFor(context);
+    return Semantics(
+      label: label,
+      selected: selected,
+      button: true,
+      child: ExcludeSemantics(
+        child: NeumorphicSurface(
+          onTap: onTap,
+          color: background,
+          subtle: !selected,
+          borderRadius: AppTheme.radiusXl,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, color: color, size: 16),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 12,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -507,20 +576,11 @@ class AppEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: AppTheme.neumorphicDecoration(
-                context,
-                color: AppTheme.elevatedFor(context),
-                borderRadius: BorderRadius.circular(18),
-                subtle: true,
-              ),
-              child: Icon(
-                icon,
-                size: 26,
-                color: AppTheme.textMutedFor(context),
-              ),
+            AppIconSurface(
+              icon: icon,
+              color: AppTheme.textMutedFor(context),
+              size: 58,
+              iconSize: 26,
             ),
             const SizedBox(height: 12),
             Text(
@@ -703,18 +763,11 @@ class AppPdfCard extends StatelessWidget {
     return AppListTile(
       title: title,
       subtitle: subtitle,
-      leading: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: AppTheme.error.withValues(alpha: 0.1),
-          borderRadius: AppTheme.radiusSm,
-        ),
-        child: Icon(
-          Icons.picture_as_pdf_rounded,
-          color: AppTheme.error,
-          size: 18,
-        ),
+      leading: const AppIconSurface(
+        icon: Icons.picture_as_pdf_rounded,
+        color: AppTheme.error,
+        size: 40,
+        iconSize: 18,
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,

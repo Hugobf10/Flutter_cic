@@ -171,20 +171,18 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    return Scaffold(
-      backgroundColor: AppTheme.surfaceFor(context),
-      appBar: AppBar(
-        title: Text('Incidencias'),
-        actions: [
-          if (auth.canEditModule('incidents'))
-            IconButton(
-              icon: Icon(Icons.add_rounded),
-              onPressed: _openCreateDialog,
-            ),
-          IconButton(icon: Icon(Icons.refresh_rounded), onPressed: _loadData),
-        ],
-      ),
-      body: Column(
+    return AppScaffold(
+      title: 'Incidencias',
+      padding: EdgeInsets.zero,
+      actions: [
+        if (auth.canEditModule('incidents'))
+          IconButton(
+            icon: Icon(Icons.add_rounded),
+            onPressed: _openCreateDialog,
+          ),
+        IconButton(icon: Icon(Icons.refresh_rounded), onPressed: _loadData),
+      ],
+      child: Column(
         children: [
           _buildFilterChips(),
           Expanded(child: _buildPortalList()),
@@ -209,29 +207,19 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
           final selected = _filtroEstado == e.key;
           return Padding(
             padding: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
-            child: FilterChip(
-              label: Text(e.value),
+            child: AppChoicePill(
+              label: e.value,
+              icon: switch (e.key) {
+                'abierta' => Icons.error_outline_rounded,
+                'en_proceso' => Icons.pending_actions_rounded,
+                'cerrada' => Icons.check_circle_outline_rounded,
+                _ => Icons.all_inbox_rounded,
+              },
               selected: selected,
-              onSelected: (_) {
+              onTap: () {
                 setState(() => _filtroEstado = e.key);
                 _loadData();
               },
-              selectedColor: AppTheme.primary.withValues(alpha: 0.2),
-              checkmarkColor: AppTheme.primary,
-              labelStyle: TextStyle(
-                color: selected
-                    ? AppTheme.primary
-                    : AppTheme.textSecondaryFor(context),
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                fontSize: 13,
-              ),
-              backgroundColor: AppTheme.cardFor(context),
-              side: BorderSide(
-                color: selected
-                    ? AppTheme.primary.withValues(alpha: 0.5)
-                    : AppTheme.dividerFor(context),
-              ),
-              shape: RoundedRectangleBorder(borderRadius: AppTheme.radiusXl),
             ),
           );
         }).toList(),

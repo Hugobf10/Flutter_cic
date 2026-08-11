@@ -17,32 +17,14 @@ class SettingsScreen extends StatelessWidget {
       title: 'Ajustes',
       child: ListView(
         children: [
-          Container(
+          AppCard(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: AppTheme.primaryGradient,
-              borderRadius: AppTheme.radiusLg,
-              boxShadow: AppTheme.glowShadow,
-            ),
             child: Row(
               children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: AppTheme.radiusMd,
-                  ),
-                  child: Center(
-                    child: Text(
-                      _initials(auth.userName),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 22,
-                      ),
-                    ),
-                  ),
+                AppAvatar(
+                  name: auth.userName,
+                  size: 58,
+                  imageBase64: auth.profileImageBase64,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -52,7 +34,7 @@ class SettingsScreen extends StatelessWidget {
                       Text(
                         auth.userName,
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppTheme.textPrimaryFor(context),
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                         ),
@@ -61,16 +43,18 @@ class SettingsScreen extends StatelessWidget {
                       Text(
                         auth.userLogin,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.82),
+                          color: AppTheme.textSecondaryFor(context),
                           fontSize: 13,
                         ),
                       ),
-                      Text(
-                        'ID: ${auth.userId}',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          fontSize: 11,
-                        ),
+                      const SizedBox(height: 7),
+                      AppStatusChip(
+                        label: auth.isPortalOnlyUser
+                            ? 'Usuario portal'
+                            : 'Usuario interno · ID ${auth.userId}',
+                        color: auth.isPortalOnlyUser
+                            ? AppTheme.accent
+                            : AppTheme.success,
                       ),
                     ],
                   ),
@@ -116,18 +100,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildSectionTitle(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Text(
-        title,
-        style: TextStyle(
-          color: AppTheme.textMutedFor(context),
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.8,
-        ),
-      ),
-    );
+    return AppSectionHeader(title: title);
   }
 
   Widget _buildTile(
@@ -141,18 +114,11 @@ class SettingsScreen extends StatelessWidget {
       child: AppCard(
         child: Row(
           children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: AppTheme.elevatedFor(context),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: AppTheme.textMutedFor(context),
-                size: 18,
-              ),
+            AppIconSurface(
+              icon: icon,
+              color: AppTheme.primary,
+              size: 40,
+              iconSize: 18,
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -192,48 +158,40 @@ class SettingsScreen extends StatelessWidget {
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: InkWell(
+      child: AppCard(
         onTap: onTap,
-        borderRadius: AppTheme.radiusMd,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.06),
-            borderRadius: AppTheme.radiusMd,
-            border: Border.all(color: color.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: color, size: 22),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: color,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            AppIconSurface(icon: icon, color: color, size: 42, iconSize: 20),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
                     ),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: AppTheme.textMutedFor(context),
-                        fontSize: 11,
-                      ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: AppTheme.textMutedFor(context),
+                      fontSize: 11,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: color.withValues(alpha: 0.5),
-              ),
-            ],
-          ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: color.withValues(alpha: 0.5),
+            ),
+          ],
         ),
       ),
     );
@@ -269,12 +227,5 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _initials(String name) {
-    if (name.isEmpty) return '?';
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    return parts[0][0].toUpperCase();
   }
 }

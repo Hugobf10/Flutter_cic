@@ -192,27 +192,29 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
       };
     }).toList();
     if (_loading) {
-      return const Scaffold(body: AppLoadingView());
+      return const AppScaffold(
+        title: 'Comunicaciones',
+        child: AppLoadingView(),
+      );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Comunicaciones'),
-        actions: [
-          if (auth.canEditModule('communications'))
-            IconButton(
-              onPressed: _openCreateDialog,
-              icon: Icon(Icons.add_rounded),
-            ),
-          IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
-        ],
-      ),
-      body: _error != null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(_error!),
-              ),
+    return AppScaffold(
+      title: 'Comunicaciones',
+      padding: EdgeInsets.zero,
+      actions: [
+        if (auth.canEditModule('communications'))
+          IconButton(
+            onPressed: _openCreateDialog,
+            icon: Icon(Icons.add_rounded),
+          ),
+        IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
+      ],
+      child: _error != null
+          ? AppEmptyState(
+              title: 'No se pudieron cargar las comunicaciones',
+              subtitle: _error!,
+              icon: Icons.cloud_off_rounded,
+              action: AppButton.primary(label: 'Reintentar', onPressed: _load),
             )
           : Column(
               children: [
@@ -220,25 +222,29 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 2),
                   child: Wrap(
                     spacing: 8,
+                    runSpacing: 8,
                     children: [
-                      ChoiceChip(
-                        label: Text('Todas'),
+                      AppChoicePill(
+                        label: 'Todas',
+                        icon: Icons.all_inbox_rounded,
                         selected: _filter == _CommunicationFilter.all,
-                        onSelected: (_) =>
+                        onTap: () =>
                             setState(() => _filter = _CommunicationFilter.all),
                       ),
-                      ChoiceChip(
-                        label: Text('Comunicaciones'),
+                      AppChoicePill(
+                        label: 'Comunicaciones',
+                        icon: Icons.campaign_rounded,
                         selected:
                             _filter == _CommunicationFilter.communications,
-                        onSelected: (_) => setState(
+                        onTap: () => setState(
                           () => _filter = _CommunicationFilter.communications,
                         ),
                       ),
-                      ChoiceChip(
-                        label: Text('Sugerencias'),
+                      AppChoicePill(
+                        label: 'Sugerencias',
+                        icon: Icons.lightbulb_outline_rounded,
                         selected: _filter == _CommunicationFilter.suggestions,
-                        onSelected: (_) => setState(
+                        onTap: () => setState(
                           () => _filter = _CommunicationFilter.suggestions,
                         ),
                       ),
