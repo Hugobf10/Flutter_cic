@@ -17,9 +17,9 @@ class _PermissionsCenterScreenState extends State<PermissionsCenterScreen> {
   bool _loading = true;
   String? _error;
   String? _rolesError;
-  String? _approvalsError;
+  String? _trackingError;
   List<Map<String, dynamic>> _roles = [];
-  List<Map<String, dynamic>> _approvals = [];
+  List<Map<String, dynamic>> _tracking = [];
 
   @override
   void initState() {
@@ -32,7 +32,7 @@ class _PermissionsCenterScreenState extends State<PermissionsCenterScreen> {
       _loading = true;
       _error = null;
       _rolesError = null;
-      _approvalsError = null;
+      _trackingError = null;
     });
 
     try {
@@ -49,7 +49,7 @@ class _PermissionsCenterScreenState extends State<PermissionsCenterScreen> {
     }
 
     try {
-      final approvals = await _odoo.searchRead(
+      final tracking = await _odoo.searchRead(
         'calidad.incidencia',
         fields: ['name', 'estado', 'fecha'],
         domain: [
@@ -62,183 +62,298 @@ class _PermissionsCenterScreenState extends State<PermissionsCenterScreen> {
         order: 'id desc',
         limit: 20,
       );
-      _approvals = approvals
+      _tracking = tracking
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList();
     } catch (e) {
-      _approvalsError = OdooService.prettyError(e);
-      _approvals = [];
+      _trackingError = OdooService.prettyError(e);
+      _tracking = [];
     }
 
-    if (_roles.isEmpty && _approvals.isEmpty) {
-      _error = _rolesError ?? _approvalsError;
+    if (_roles.isEmpty && _tracking.isEmpty) {
+      _error = _rolesError ?? _trackingError;
     }
 
-    if (mounted) {
-      setState(() => _loading = false);
-    }
+    if (mounted) setState(() => _loading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(body: AppLoadingView());
-    }
-    if (_error != null) {
-      return Scaffold(
-        appBar: AppBar(title: Text('Permisos y roles')),
-        body: Center(child: Text(_error!)),
-      );
-    }
+    final open = _tracking
+        .where((row) => row['estado']?.toString() == 'abierta')
+        .length;
+    final inProgress = _tracking
+        .where((row) => row['estado']?.toString() == 'en_proceso')
+        .length;
 
     return DefaultTabController(
       length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('Permisos y roles'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Roles'),
-              Tab(text: 'Aprobaciones'),
-            ],
+      child: AppScaffold(
+        title: 'Permisos y roles',
+        actions: [
+          IconButton(
+            tooltip: 'Actualizar',
+            onPressed: _loading ? null : _load,
+            icon: Icon(Icons.refresh_rounded),
           ),
-        ),
-        body: TabBarView(
-          children: [
-            _roles.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        _rolesError ?? 'No hay roles disponibles para mostrar.',
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                    itemCount: _roles.length,
-                    separatorBuilder: (_, index) => const SizedBox(height: 8),
-                    itemBuilder: (_, i) {
-                      final role = _roles[i];
-                      return Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: AppTheme.radiusMd,
-                          border: Border.all(
-                            color: Theme.of(
-                              context,
-                            ).dividerColor.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 34,
-                              height: 34,
-                              decoration: BoxDecoration(
-                                color: AppTheme.primary.withValues(alpha: 0.14),
-                                borderRadius: AppTheme.radiusSm,
-                              ),
-                              child: Icon(
-                                Icons.verified_user_rounded,
-                                size: 18,
-                                color: AppTheme.primary,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                role['name']?.toString() ?? 'Rol',
-                                style: TextStyle(fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                            Icon(Icons.chevron_right_rounded),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-            _approvals.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        _approvalsError ?? 'No hay aprobaciones activas.',
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                    itemCount: _approvals.length,
-                    separatorBuilder: (_, index) => const SizedBox(height: 8),
-                    itemBuilder: (_, i) {
-                      final item = _approvals[i];
-                      final state = item['estado']?.toString() ?? 'pendiente';
-                      final color = state == 'abierta'
-                          ? AppTheme.danger
-                          : state == 'en_proceso'
-                          ? AppTheme.warning
-                          : AppTheme.info;
-                      return Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: AppTheme.radiusMd,
-                          border: Border.all(
-                            color: Theme.of(
-                              context,
-                            ).dividerColor.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    item['name']?.toString() ?? 'Aprobación',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 3,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: color.withValues(alpha: 0.14),
-                                    borderRadius: AppTheme.radiusXl,
-                                  ),
-                                  child: Text(
-                                    state,
-                                    style: TextStyle(
-                                      color: color,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              item['fecha']?.toString() ?? '',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+        ],
+        appBarBottom: const TabBar(
+          tabs: [
+            Tab(icon: Icon(Icons.admin_panel_settings_rounded), text: 'Roles'),
+            Tab(icon: Icon(Icons.fact_check_rounded), text: 'Seguimiento'),
           ],
         ),
+        child: _loading
+            ? const AppLoadingView(label: 'Cargando permisos y roles')
+            : _error != null
+            ? AppEmptyState(
+                title: 'No se pudo cargar la administración',
+                subtitle: _error!,
+                icon: Icons.admin_panel_settings_outlined,
+                action: AppButton.primary(
+                  label: 'Reintentar',
+                  onPressed: _load,
+                ),
+              )
+            : Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _PermissionMetric(
+                          label: 'Perfiles',
+                          value: _roles.length.toString(),
+                          icon: Icons.verified_user_rounded,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _PermissionMetric(
+                          label: 'Abiertas',
+                          value: open.toString(),
+                          icon: Icons.error_outline_rounded,
+                          color: AppTheme.danger,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _PermissionMetric(
+                          label: 'En proceso',
+                          value: inProgress.toString(),
+                          icon: Icons.pending_actions_rounded,
+                          color: AppTheme.warning,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: TabBarView(
+                      children: [_buildRoles(), _buildTracking()],
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
+
+  Widget _buildRoles() {
+    if (_roles.isEmpty) {
+      return AppEmptyState(
+        title: 'Sin perfiles disponibles',
+        subtitle:
+            _rolesError ??
+            'Odoo no ha devuelto perfiles de permisos para mostrar.',
+        icon: _rolesError == null
+            ? Icons.manage_accounts_outlined
+            : Icons.lock_outline_rounded,
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.only(bottom: 28),
+      itemCount: _roles.length + 1,
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return const AppSectionHeader(
+            title: 'Perfiles configurados',
+            subtitle: 'Roles de acceso definidos en calidad.perfil.',
+          );
+        }
+        final role = _roles[index - 1];
+        final id = (role['id'] as num?)?.toInt();
+        return AppListTile(
+          title: _display(role['name'], fallback: 'Rol sin nombre'),
+          subtitle: id == null
+              ? 'Perfil de permisos'
+              : 'Perfil de permisos · #$id',
+          leading: const AppIconSurface(
+            icon: Icons.verified_user_rounded,
+            color: AppTheme.primary,
+            size: 44,
+            iconSize: 20,
+          ),
+          trailing: const AppStatusChip(
+            label: 'Configurado',
+            color: AppTheme.success,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTracking() {
+    if (_tracking.isEmpty) {
+      return AppEmptyState(
+        title: 'Sin incidencias activas',
+        subtitle:
+            _trackingError ??
+            'No hay incidencias abiertas o en proceso que requieran seguimiento.',
+        icon: _trackingError == null
+            ? Icons.task_alt_rounded
+            : Icons.lock_outline_rounded,
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.only(bottom: 28),
+      itemCount: _tracking.length + 1,
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return const AppSectionHeader(
+            title: 'Seguimiento administrativo',
+            subtitle:
+                'Incidencias abiertas o en proceso visibles para este usuario.',
+          );
+        }
+        return _TrackingCard(item: _tracking[index - 1]);
+      },
+    );
+  }
+}
+
+class _PermissionMetric extends StatelessWidget {
+  const _PermissionMetric({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppIconSurface(icon: icon, color: color, size: 36, iconSize: 17),
+          const SizedBox(height: 9),
+          Text(
+            value,
+            style: TextStyle(
+              color: AppTheme.textPrimaryFor(context),
+              fontSize: 21,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: AppTheme.textSecondaryFor(context),
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TrackingCard extends StatelessWidget {
+  const _TrackingCard({required this.item});
+
+  final Map<String, dynamic> item;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = (item['estado'] ?? 'pendiente').toString();
+    final open = state == 'abierta';
+    final color = open ? AppTheme.danger : AppTheme.warning;
+    final stateLabel = open ? 'Abierta' : 'En proceso';
+    final date = _display(item['fecha']);
+
+    return AppCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppIconSurface(
+            icon: open
+                ? Icons.report_problem_rounded
+                : Icons.pending_actions_rounded,
+            color: color,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _display(item['name'], fallback: 'Incidencia'),
+                        style: TextStyle(
+                          color: AppTheme.textPrimaryFor(context),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    AppStatusChip(label: stateLabel, color: color),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today_rounded,
+                      color: AppTheme.textMutedFor(context),
+                      size: 14,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      date == '-' ? 'Sin fecha registrada' : date,
+                      style: TextStyle(
+                        color: AppTheme.textSecondaryFor(context),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _display(dynamic value, {String fallback = '-'}) {
+  final text = value?.toString().trim() ?? '';
+  return text.isEmpty || text == 'false' || text == 'null' ? fallback : text;
 }

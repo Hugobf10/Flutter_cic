@@ -235,11 +235,36 @@ class _SuperAppShellState extends State<SuperAppShell> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Acceso rápido',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const AppIconSurface(
+                      icon: Icons.bolt_rounded,
+                      color: AppTheme.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Acceso rápido',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            'Crea y revisa elementos sin perder el contexto.',
+                            style: TextStyle(
+                              color: AppTheme.textSecondaryFor(context),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 16),
                 Wrap(
                   spacing: 10,
                   runSpacing: 10,
@@ -297,34 +322,36 @@ class _SuperAppShellState extends State<SuperAppShell> {
         final tileWidth = screenWidth >= 720
             ? 180.0
             : ((screenWidth - 48) / 2).clamp(140.0, 220.0);
-        return InkWell(
+        return NeumorphicSurface(
+          width: tileWidth,
+          subtle: true,
           onTap: () {
             Navigator.of(context).pop();
             Navigator.of(
               this.context,
             ).push(MaterialPageRoute(builder: (_) => page));
           },
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            width: tileWidth,
-            padding: const EdgeInsets.all(12),
-            decoration: AppTheme.neumorphicDecoration(
-              context,
-              borderRadius: BorderRadius.circular(14),
-              subtle: true,
-            ),
-            child: Row(
-              children: [
-                Icon(icon, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              AppIconSurface(
+                icon: icon,
+                color: AppTheme.primary,
+                size: 36,
+                iconSize: 17,
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: AppTheme.textPrimaryFor(context),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
