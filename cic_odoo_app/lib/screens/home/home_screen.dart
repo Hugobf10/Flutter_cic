@@ -921,7 +921,7 @@ class _WordPressPost {
 
   static String _formatDate(String? raw) {
     final date = DateTime.tryParse(raw ?? '');
-    if (date == null) return 'CIC Salamanca';
+    if (date == null) return 'CICAPP';
     const months = [
       'ene',
       'feb',

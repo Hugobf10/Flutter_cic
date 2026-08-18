@@ -1,6 +1,6 @@
 {
-    "name": "cic_odoo_app",
-    "short_name": "cic_odoo_app",
+    "name": "CICAPP",
+    "short_name": "CICAPP",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

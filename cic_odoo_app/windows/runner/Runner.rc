@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.cicancer" "\0"
-            VALUE "FileDescription", "cic_odoo_app" "\0"
+            VALUE "FileDescription", "CICAPP" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "cic_odoo_app" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.cicancer. All rights reserved." "\0"
             VALUE "OriginalFilename", "cic_odoo_app.exe" "\0"
-            VALUE "ProductName", "cic_odoo_app" "\0"
+            VALUE "ProductName", "CICAPP" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

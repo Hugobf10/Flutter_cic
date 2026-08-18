@@ -383,7 +383,7 @@ class _SuperAppShellState extends State<SuperAppShell> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'CIC Salamanca',
+                  'CICAPP',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),

@@ -9,7 +9,7 @@ class AppConfig {
 
   static const String appName = String.fromEnvironment(
     'APP_NAME',
-    defaultValue: 'CIC Salamanca',
+    defaultValue: 'CICAPP',
   );
 
   static const String appVersion = String.fromEnvironment(
