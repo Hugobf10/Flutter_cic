@@ -35,6 +35,14 @@ class PurchasesApiService {
     'line_quantities': lineQuantities,
   });
 
+  Future<Map<String, dynamic>> invoiceDocument({
+    required int orderId,
+    required int invoiceId,
+  }) => _call('/my/calidad/mobile/purchases/invoice', {
+    'order_id': orderId,
+    'invoice_id': invoiceId,
+  });
+
   Future<Map<String, dynamic>> _call(
     String path,
     Map<String, dynamic> params,

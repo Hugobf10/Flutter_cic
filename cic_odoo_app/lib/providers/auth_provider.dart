@@ -69,6 +69,8 @@ class AuthProvider extends ChangeNotifier {
       isAdmin || isInternalUser || hasIntranetAccess || hasPortalAppAccess;
   Map<String, Map<String, bool>> get portalCapabilities =>
       Map<String, Map<String, bool>>.unmodifiable(_portalCapabilities);
+  bool get canCompleteTraining =>
+      isAdmin || _portalCapabilities['training']?['complete'] == true;
 
   Map<String, bool> get portalPermissions => {
     'Incidencias': canViewModule('incidents'),
@@ -563,10 +565,15 @@ class AuthProvider extends ChangeNotifier {
       if (raw is Map) {
         _portalCapabilities = raw.map((key, value) {
           final map = OdooValues.map(value);
-          return MapEntry(key.toString(), <String, bool>{
-            'view': OdooValues.boolValue(map['view']),
-            'edit': OdooValues.boolValue(map['edit']),
-          });
+          return MapEntry(
+            key.toString(),
+            map.map(
+              (capability, enabled) => MapEntry(
+                capability.toString(),
+                OdooValues.boolValue(enabled),
+              ),
+            ),
+          );
         });
       }
       final partner = OdooValues.map(bootstrap['partner']);

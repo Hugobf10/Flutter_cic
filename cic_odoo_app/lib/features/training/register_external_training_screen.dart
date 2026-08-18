@@ -50,6 +50,14 @@ class _RegisterExternalTrainingScreenState
       );
       return;
     }
+    if (_endDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Indica la fecha de finalización de la formación.'),
+        ),
+      );
+      return;
+    }
     setState(() => _saving = true);
     try {
       if (_odoo.isPortalSession) {
@@ -68,7 +76,9 @@ class _RegisterExternalTrainingScreenState
         );
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Formación registrada correctamente.')),
+          const SnackBar(
+            content: Text('Formación enviada para validación de Calidad.'),
+          ),
         );
         Navigator.of(context).pop(true);
         return;
@@ -76,9 +86,9 @@ class _RegisterExternalTrainingScreenState
       final trainingId = await _odoo.create('calidad.formacion', {
         'name': _titleCtrl.text.trim(),
         'origen': 'externa',
-        'tipo': 'externa',
-        'tipo_formacion': 'externa',
-        if (_endDate != null) 'fecha_fin': _formatDate(_endDate!),
+        'tipo': 'calidad',
+        'tipo_formacion': 'obligatoria',
+        if (_endDate != null) 'fecha_prevista': _formatDate(_endDate!),
         if (_entityCtrl.text.trim().isNotEmpty)
           'descripcion': 'Entidad: ${_entityCtrl.text.trim()}',
       });
@@ -86,9 +96,9 @@ class _RegisterExternalTrainingScreenState
       final attendanceId = await _odoo.create('calidad.formacion.asistencia', {
         'formacion_id': trainingId,
         'partner_id': auth.partnerId,
-        'estado': 'realizado',
         if (_hoursCtrl.text.trim().isNotEmpty)
-          'horas_realizadas': double.tryParse(_hoursCtrl.text.trim()) ?? 0,
+          'observaciones':
+              'Duración declarada: ${_hoursCtrl.text.trim()} horas.',
       });
 
       if (_pickedCertificate != null) {
@@ -100,7 +110,9 @@ class _RegisterExternalTrainingScreenState
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Formación registrada correctamente.')),
+        const SnackBar(
+          content: Text('Formación enviada para validación de Calidad.'),
+        ),
       );
       Navigator.of(context).pop(true);
     } catch (e) {

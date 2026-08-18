@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
@@ -5,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 import '../../app/ui/app_components.dart';
+import '../../app/screens/document_viewer_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/app_permission_service.dart';
 import '../../services/attachment_service.dart';
@@ -1274,9 +1277,16 @@ class _ReceptionTabState extends State<_ReceptionTab> {
               final quantity = _parseDecimal(
                 _receivedCtrls[lineId]?.text ?? '0',
               );
+              final pending =
+                  (_num(line['product_qty']) - _num(line['qty_received']))
+                      .clamp(0, double.infinity);
               return lineId == null
                   ? null
-                  : {'line_id': lineId, 'quantity': quantity};
+                  : {
+                      'line_id': lineId,
+                      'quantity': quantity,
+                      'pending': pending,
+                    };
             })
             .whereType<Map<String, dynamic>>()
             .where((line) => _num(line['quantity']) > 0)
@@ -1284,11 +1294,30 @@ class _ReceptionTabState extends State<_ReceptionTab> {
         if (quantities.isEmpty) {
           throw Exception('Indica una cantidad recibida mayor que cero.');
         }
-        await _purchasesApi.receive(orderId, quantities);
+        final invalid = quantities.where((line) {
+          return _num(line['quantity']) > _num(line['pending']) + 0.000001;
+        }).toList();
+        if (invalid.isNotEmpty) {
+          throw Exception(
+            'Una cantidad supera la pendiente real del pedido. Revisa las líneas antes de guardar.',
+          );
+        }
+        for (final line in quantities) {
+          line.remove('pending');
+        }
+        final payload = await _purchasesApi.receive(orderId, quantities);
+        final result = OdooValues.map(payload['result']);
+        final remaining = result['remaining'] is List
+            ? result['remaining'] as List
+            : const <dynamic>[];
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Recepción guardada y validada en Odoo.'),
+          SnackBar(
+            content: Text(
+              remaining.isEmpty
+                  ? 'Recepción guardada y validada en Odoo.'
+                  : 'Recepción parcial guardada. Queda pendiente: ${remaining.join(', ')}.',
+            ),
           ),
         );
         await _loadOrder();
@@ -1491,6 +1520,7 @@ class _ReceptionTabState extends State<_ReceptionTab> {
                 ),
               ),
             ),
+            _PurchaseInvoices(order: order),
             const SizedBox(height: 8),
             if (auth.canEditModule('purchases'))
               AppButton.primary(
@@ -1748,6 +1778,7 @@ class _PurchaseOrderDetailScreenState
                       ),
                     ),
                   ),
+                _PurchaseInvoices(order: order),
                 if (canConfirm) ...[
                   const SizedBox(height: 8),
                   AppButton.primary(
@@ -1807,6 +1838,166 @@ class _ReceiptLineCard extends StatelessWidget {
               ),
               prefixIcon: Icons.inventory_rounded,
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PurchaseInvoices extends StatelessWidget {
+  const _PurchaseInvoices({required this.order});
+
+  final Map<String, dynamic> order;
+
+  @override
+  Widget build(BuildContext context) {
+    final orderId = OdooValues.intValue(order['id']);
+    final rawInvoices = order['invoices'];
+    final invoices = rawInvoices is List
+        ? rawInvoices.whereType<Map>().map(OdooValues.map).toList()
+        : const <Map<String, dynamic>>[];
+    if (orderId == null || invoices.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AppSectionHeader(
+            title: 'Facturas',
+            subtitle: 'Consulta la factura de proveedor asociada al pedido.',
+          ),
+          ...invoices.map(
+            (invoice) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _PurchaseInvoiceCard(orderId: orderId, invoice: invoice),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PurchaseInvoiceCard extends StatefulWidget {
+  const _PurchaseInvoiceCard({required this.orderId, required this.invoice});
+
+  final int orderId;
+  final Map<String, dynamic> invoice;
+
+  @override
+  State<_PurchaseInvoiceCard> createState() => _PurchaseInvoiceCardState();
+}
+
+class _PurchaseInvoiceCardState extends State<_PurchaseInvoiceCard> {
+  final PurchasesApiService _purchasesApi = PurchasesApiService();
+  final AttachmentService _attachments = AttachmentService();
+  bool _opening = false;
+
+  Future<void> _open() async {
+    final invoiceId = OdooValues.intValue(widget.invoice['id']);
+    if (invoiceId == null || _opening) return;
+    setState(() => _opening = true);
+    try {
+      final payload = await _purchasesApi.invoiceDocument(
+        orderId: widget.orderId,
+        invoiceId: invoiceId,
+      );
+      final encoded = OdooValues.string(payload['content']);
+      if (encoded.isEmpty) throw StateError('La factura no contiene un PDF.');
+      final name = OdooValues.string(
+        payload['name'],
+        fallback: 'factura-$invoiceId.pdf',
+      );
+      final local = await _attachments.writeBytesToTemporary(
+        name: name,
+        bytes: base64Decode(encoded),
+        folderName: 'facturas',
+      );
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => DocumentViewerScreen(
+            file: local,
+            title: name,
+            mimeType: OdooValues.string(
+              payload['mimetype'],
+              fallback: 'application/pdf',
+            ),
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'No se pudo abrir la factura: ${OdooService.prettyError(error)}',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _opening = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final title = OdooValues.string(
+      widget.invoice['name'],
+      fallback: OdooValues.string(widget.invoice['ref'], fallback: 'Factura'),
+    );
+    final reference = OdooValues.string(widget.invoice['ref']);
+    final date = OdooValues.string(widget.invoice['invoice_date']);
+    final total = _formatQty(OdooValues.number(widget.invoice['amount_total']));
+    final currency = OdooValues.many2oneLabel(widget.invoice['currency_id']);
+    return AppCard(
+      onTap: _opening ? null : _open,
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withValues(alpha: 0.1),
+              borderRadius: AppTheme.radiusSm,
+            ),
+            child: Icon(Icons.picture_as_pdf_rounded, color: AppTheme.primary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  [
+                    if (reference.isNotEmpty && reference != title) reference,
+                    if (date.isNotEmpty) date,
+                    '$total $currency',
+                  ].join(' · '),
+                  style: TextStyle(
+                    color: AppTheme.textSecondaryFor(context),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _opening
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Icon(
+                  Icons.open_in_new_rounded,
+                  color: AppTheme.textMutedFor(context),
+                ),
         ],
       ),
     );
