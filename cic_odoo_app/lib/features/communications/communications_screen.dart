@@ -98,7 +98,48 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
   }
 
   Future<void> _openCreateDialog() async {
-    final partnerId = context.read<AuthProvider>().partnerId;
+    final auth = context.read<AuthProvider>();
+    final partnerId = auth.partnerId;
+    var unitOptions = <DynamicFieldOption>[];
+    var postOptions = <DynamicFieldOption>[];
+    if (auth.isInternalUser) {
+      try {
+        final response = await _portalApi.action(
+          'communication_recipient_options',
+        );
+        final rawUnits = response['units'] is List
+            ? response['units'] as List
+            : const <dynamic>[];
+        final rawPosts = response['posts'] is List
+            ? response['posts'] as List
+            : const <dynamic>[];
+        unitOptions = rawUnits.whereType<Map>().map((item) {
+          final row = Map<String, dynamic>.from(item);
+          return DynamicFieldOption(
+            value: (row['id'] as num).toInt(),
+            label: row['name']?.toString() ?? 'Unidad',
+          );
+        }).toList();
+        postOptions = rawPosts.whereType<Map>().map((item) {
+          final row = Map<String, dynamic>.from(item);
+          return DynamicFieldOption(
+            value: (row['id'] as num).toInt(),
+            label: row['name']?.toString() ?? 'Puesto funcional',
+          );
+        }).toList();
+      } catch (error) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'No se pueden cargar los destinatarios: ${OdooService.prettyError(error)}',
+            ),
+          ),
+        );
+        return;
+      }
+    }
+    if (!mounted) return;
     final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -113,15 +154,19 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
           ),
           child: DynamicForm(
             submitLabel: 'Crear comunicación',
-            fields: const [
-              DynamicFieldConfig(key: 'name', label: 'Título', required: true),
+            fields: [
+              const DynamicFieldConfig(
+                key: 'name',
+                label: 'Título',
+                required: true,
+              ),
               DynamicFieldConfig(
                 key: 'tipo',
                 label: 'Tipo',
                 type: DynamicFieldType.select,
                 required: true,
                 initialValue: 'comunicacion',
-                options: [
+                options: const [
                   DynamicFieldOption(
                     value: 'comunicacion',
                     label: 'Comunicación',
@@ -129,19 +174,33 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                   DynamicFieldOption(value: 'sugerencia', label: 'Sugerencia'),
                 ],
               ),
-              DynamicFieldConfig(
+              const DynamicFieldConfig(
                 key: 'fecha',
                 label: 'Fecha',
                 type: DynamicFieldType.date,
                 required: true,
               ),
-              DynamicFieldConfig(
+              const DynamicFieldConfig(
                 key: 'descripcion',
                 label: 'Descripción',
                 type: DynamicFieldType.multiline,
                 required: true,
                 maxLines: 4,
               ),
+              if (auth.isInternalUser)
+                DynamicFieldConfig(
+                  key: 'destino_unidad_ids',
+                  label: 'Unidades destinatarias',
+                  type: DynamicFieldType.multiSelect,
+                  options: unitOptions,
+                ),
+              if (auth.isInternalUser)
+                DynamicFieldConfig(
+                  key: 'destino_puesto_ids',
+                  label: 'Puestos funcionales destinatarios',
+                  type: DynamicFieldType.multiSelect,
+                  options: postOptions,
+                ),
             ],
             onSubmit: (values) async {
               final date = values['fecha'] as DateTime?;
@@ -154,6 +213,10 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                 'descripcion': values['descripcion'],
                 'partner_id': partnerId,
                 if (date != null) 'fecha': '$y-$m-$d',
+                if (auth.isInternalUser)
+                  'destino_unidad_ids': values['destino_unidad_ids'] ?? [],
+                if (auth.isInternalUser)
+                  'destino_puesto_ids': values['destino_puesto_ids'] ?? [],
               };
               if (values['tipo'] == 'sugerencia') {
                 await _portalApi.action(

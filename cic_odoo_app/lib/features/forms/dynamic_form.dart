@@ -31,7 +31,7 @@ class DynamicFieldOption {
   final String label;
 }
 
-enum DynamicFieldType { text, multiline, date, select }
+enum DynamicFieldType { text, multiline, date, select, multiSelect }
 
 class DynamicForm extends StatefulWidget {
   const DynamicForm({
@@ -154,6 +154,49 @@ class _DynamicFormState extends State<DynamicForm> {
               if (v == null) return 'Campo obligatorio';
               return null;
             },
+          ),
+        );
+      case DynamicFieldType.multiSelect:
+        final selected = (_values[f.key] is List)
+            ? List<dynamic>.from(_values[f.key] as List)
+            : <dynamic>[];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: FormField<List<dynamic>>(
+            initialValue: selected,
+            validator: (value) {
+              if (!f.required) return null;
+              if (value == null || value.isEmpty) return 'Campo obligatorio';
+              return null;
+            },
+            builder: (field) => InputDecorator(
+              decoration: InputDecoration(
+                labelText: f.label,
+                errorText: field.errorText,
+              ),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: f.options.map((option) {
+                  final isSelected = selected.contains(option.value);
+                  return FilterChip(
+                    label: Text(option.label),
+                    selected: isSelected,
+                    onSelected: (checked) {
+                      setState(() {
+                        if (checked) {
+                          selected.add(option.value);
+                        } else {
+                          selected.remove(option.value);
+                        }
+                        _values[f.key] = selected;
+                        field.didChange(selected);
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
           ),
         );
       case DynamicFieldType.date:

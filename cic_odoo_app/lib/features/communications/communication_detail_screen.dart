@@ -255,6 +255,15 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
                     'Enviar respuesta',
                     'communication_send_response',
                   ),
+                if (record['notificacion_enviada'] != true &&
+                    (_many2oneLabels(record['destino_unidad_ids']).isNotEmpty ||
+                        _many2oneLabels(
+                          record['destino_puesto_ids'],
+                        ).isNotEmpty))
+                  _actionButton(
+                    'Enviar notificación',
+                    'communication_send_notification',
+                  ),
                 if ((state == 'tratada' || state == 'respondida') &&
                     state != 'cerrada')
                   _actionButton('Cerrar', 'communication_close'),
@@ -265,6 +274,7 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
           _section('Análisis', record['analisis']),
           _section('Tratamiento previsto', record['tratamiento']),
           _section('Respuesta', record['respuesta']),
+          _recipientSummary(record),
           const SizedBox(height: 12),
           Text('Documentos', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 4),
@@ -306,6 +316,46 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
         ],
       ),
     );
+  }
+
+  Widget _recipientSummary(Map<String, dynamic> record) {
+    final units = _many2oneLabels(record['destino_unidad_ids']);
+    final posts = _many2oneLabels(record['destino_puesto_ids']);
+    final sent = record['notificacion_enviada'] == true;
+    if (units.isEmpty && posts.isEmpty && !sent) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Destinatarios', style: Theme.of(context).textTheme.titleMedium),
+          if (units.isNotEmpty) _recipientLine('Unidades', units),
+          if (posts.isNotEmpty) _recipientLine('Puestos funcionales', posts),
+          Text(
+            sent
+                ? 'Notificación enviada por correo y disponible en la aplicación.'
+                : 'Notificación pendiente de envío.',
+            style: TextStyle(color: Colors.grey.shade700),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _recipientLine(String title, List<String> values) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 5),
+      child: Text('$title: ${values.join(', ')}'),
+    );
+  }
+
+  List<String> _many2oneLabels(dynamic raw) {
+    if (raw is! List) return const [];
+    return raw
+        .whereType<List>()
+        .where((item) => item.length > 1)
+        .map((item) => item[1].toString())
+        .toList();
   }
 
   List<Widget> _attachmentTiles(dynamic raw) {
