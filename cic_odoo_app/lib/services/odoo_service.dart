@@ -141,6 +141,20 @@ class OdooService {
     return null;
   }
 
+  /// Keeps the session cookie identifier while refreshing the user metadata.
+  ///
+  /// Odoo's `/web/session/get_session_info` payload normally omits `id`.
+  /// Rebuilding an [OdooSession] directly from that payload would therefore
+  /// replace a valid session id with an empty value, preventing restoration on
+  /// the next app launch.
+  static OdooSession withActiveSessionId(
+    OdooSession sessionInfo,
+    String activeSessionId,
+  ) {
+    final id = activeSessionId.trim();
+    return id.isEmpty ? sessionInfo : sessionInfo.updateSessionId(id);
+  }
+
   /// Inicializa el cliente con la URL de Odoo.
   void init({String? baseUrl, OdooSession? session}) {
     _client = OdooClient(
@@ -350,7 +364,9 @@ class OdooService {
       // Keep the restored session if a custom Odoo controller omits an
       // optional session_info field. The session cookie is still valid.
       try {
-        _session = OdooSession.fromSessionInfo(info);
+        final refreshedSession = OdooSession.fromSessionInfo(info);
+        final activeSessionId = _client.sessionId?.id ?? _session?.id ?? '';
+        _session = withActiveSessionId(refreshedSession, activeSessionId);
       } catch (e) {
         AppLogger.warning(
           'session_info válido, pero incompleto para reconstruir OdooSession',
