@@ -69,6 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'cv_attachment_id',
         'cv_attachment_name',
         'image_1920',
+        'comunicaciones_canal_notificacion',
       ];
       try {
         _partner = await _odoo.read(

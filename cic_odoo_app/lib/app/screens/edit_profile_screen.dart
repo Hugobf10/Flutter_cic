@@ -30,6 +30,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late final TextEditingController _mobileCtrl;
   late final TextEditingController _positionCtrl;
   late final TextEditingController _notesCtrl;
+  late String _communicationChannel;
 
   bool _saving = false;
   String? _cvName;
@@ -59,6 +60,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _notesCtrl = TextEditingController(
       text: (widget.partnerData['comment'] ?? '').toString(),
     );
+    const allowedChannels = {'odoo', 'email', 'ambos'};
+    final configuredChannel = widget
+        .partnerData['comunicaciones_canal_notificacion']
+        ?.toString();
+    _communicationChannel = allowedChannels.contains(configuredChannel)
+        ? configuredChannel!
+        : 'ambos';
   }
 
   @override
@@ -114,6 +122,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             'email': _emailCtrl.text.trim(),
             'phone': _phoneCtrl.text.trim(),
             'mobile': _mobileCtrl.text.trim(),
+            'comunicaciones_canal_notificacion': _communicationChannel,
             if (_avatarData != null) 'image_data': _avatarData,
             if (_cvData != null) 'cv_data': _cvData,
             if (_cvName != null) 'cv_name': _cvName,
@@ -127,6 +136,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           'mobile': _mobileCtrl.text.trim(),
           'function': _positionCtrl.text.trim(),
           'comment': _notesCtrl.text.trim(),
+          'comunicaciones_canal_notificacion': _communicationChannel,
           if (_avatarData != null) 'image_1920': _avatarData,
           if (_cvData != null) 'cv_attachment_name': _cvName ?? 'CV.pdf',
           if (_cvData != null) 'cv_attachment_data': _cvData,
@@ -198,6 +208,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             controller: _notesCtrl,
             labelText: 'Notas',
             prefixIcon: Icons.notes_rounded,
+          ),
+          const SizedBox(height: 10),
+          DropdownButtonFormField<String>(
+            initialValue: _communicationChannel,
+            decoration: const InputDecoration(
+              labelText: 'Canal de comunicaciones',
+              prefixIcon: Icon(Icons.notifications_outlined),
+            ),
+            items: const [
+              DropdownMenuItem(
+                value: 'odoo',
+                child: Text('Solo Odoo e intranet'),
+              ),
+              DropdownMenuItem(
+                value: 'email',
+                child: Text('Solo correo electrónico'),
+              ),
+              DropdownMenuItem(
+                value: 'ambos',
+                child: Text('Odoo/intranet y correo electrónico'),
+              ),
+            ],
+            onChanged: _saving
+                ? null
+                : (value) =>
+                      setState(() => _communicationChannel = value ?? 'ambos'),
           ),
           const SizedBox(height: 16),
           const AppSectionHeader(title: 'Currículum'),
