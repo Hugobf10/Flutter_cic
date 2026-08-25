@@ -160,7 +160,9 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  bool get canSendCommunications => canEditModule('communications');
+  bool get canSendCommunications =>
+      canEditModule('communications') ||
+      _portalCapabilities['communications']?['send'] == true;
 
   bool canViewModule(String moduleKey) {
     if (isAdmin) return true;
