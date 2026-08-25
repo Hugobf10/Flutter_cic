@@ -66,7 +66,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ?.toString();
     _communicationChannel = allowedChannels.contains(configuredChannel)
         ? configuredChannel!
-        : 'ambos';
+        : 'odoo';
   }
 
   @override
@@ -233,7 +233,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             onChanged: _saving
                 ? null
                 : (value) =>
-                      setState(() => _communicationChannel = value ?? 'ambos'),
+                      setState(() => _communicationChannel = value ?? 'odoo'),
           ),
           const SizedBox(height: 16),
           const AppSectionHeader(title: 'Currículum'),
