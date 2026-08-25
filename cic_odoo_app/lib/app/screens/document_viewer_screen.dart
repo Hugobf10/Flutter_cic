@@ -12,11 +12,13 @@ class DocumentViewerScreen extends StatelessWidget {
     required this.file,
     required this.title,
     required this.mimeType,
+    this.allowExternalOpen = true,
   });
 
   final File file;
   final String title;
   final String mimeType;
+  final bool allowExternalOpen;
 
   bool get _isPdf => mimeType.toLowerCase().contains('pdf');
   bool get _isImage => mimeType.toLowerCase().startsWith('image/');
@@ -27,7 +29,7 @@ class DocumentViewerScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(title),
         actions: [
-          if (!_isPdf && !_isImage)
+          if (allowExternalOpen && !_isPdf && !_isImage)
             IconButton(
               onPressed: () => OpenFilex.open(file.path),
               icon: Icon(Icons.open_in_new_rounded),
@@ -67,11 +69,18 @@ class DocumentViewerScreen extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: () => OpenFilex.open(file.path),
-              icon: Icon(Icons.open_in_new_rounded),
-              label: Text('Abrir archivo'),
-            ),
+            if (allowExternalOpen)
+              ElevatedButton.icon(
+                onPressed: () => OpenFilex.open(file.path),
+                icon: Icon(Icons.open_in_new_rounded),
+                label: Text('Abrir archivo'),
+              )
+            else
+              Text(
+                'Este documento solo puede consultarse como PDF o imagen.',
+                style: TextStyle(color: AppTheme.textMutedFor(context)),
+                textAlign: TextAlign.center,
+              ),
           ],
         ),
       ),

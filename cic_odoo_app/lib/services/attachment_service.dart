@@ -78,14 +78,20 @@ class AttachmentService {
     required String defaultName,
     String? portalSection,
     int? portalRecordId,
+    String? portalFieldName,
+    bool forcePortal = false,
   }) async {
-    await AppPermissionService.requestDownloads();
-    final data =
-        portalSection != null && portalRecordId != null && _odoo.isPortalSession
+    final usePortal =
+        portalSection != null &&
+        portalRecordId != null &&
+        (forcePortal || _odoo.isPortalSession);
+    if (!forcePortal) await AppPermissionService.requestDownloads();
+    final data = usePortal
         ? await _portalApi.attachment(
             section: portalSection,
             recordId: portalRecordId,
             attachmentId: attachmentId,
+            fieldName: portalFieldName,
           )
         : await _odoo.read(
             'ir.attachment',
@@ -97,7 +103,11 @@ class AttachmentService {
     final raw = (data['datas'] ?? '').toString();
     if (raw.isEmpty) throw Exception('El adjunto no contiene datos.');
     final bytes = base64Decode(raw);
-    final file = await _writeCacheFile(name: name, bytes: bytes);
+    final file = await _writeCacheFile(
+      name: name,
+      bytes: bytes,
+      temporaryOnly: forcePortal,
+    );
     return LocalDocument(file: file, name: name, mimeType: mime);
   }
 
@@ -120,6 +130,7 @@ class AttachmentService {
   Future<File> _writeCacheFile({
     required String name,
     required Uint8List bytes,
+    bool temporaryOnly = false,
   }) async {
     final cleanName = sanitizeFileName(name);
     try {
@@ -130,6 +141,7 @@ class AttachmentService {
       await file.writeAsBytes(bytes, flush: true);
       return file;
     } catch (_) {
+      if (temporaryOnly) rethrow;
       final dir = await getApplicationDocumentsDirectory();
       await dir.create(recursive: true);
       final file = File('${dir.path}/$cleanName');

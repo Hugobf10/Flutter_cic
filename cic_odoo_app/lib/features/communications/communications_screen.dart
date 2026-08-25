@@ -265,7 +265,7 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
       title: 'Comunicaciones',
       padding: EdgeInsets.zero,
       actions: [
-        if (auth.canEditModule('communications'))
+        if (auth.canSendCommunications)
           IconButton(
             onPressed: _openCreateDialog,
             icon: Icon(Icons.add_rounded),

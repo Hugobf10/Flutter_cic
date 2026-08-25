@@ -64,7 +64,7 @@ class ModuleRegistry {
       icon: Icons.person_search_rounded,
       color: Color(0xFF8E66FF),
       requiredPermission: 'recruitment.view',
-      description: 'Procesos de selección y seguimiento de candidaturas',
+      description: 'Consulta de convocatorias y candidaturas asignadas',
       implemented: true,
     ),
     AppModule(

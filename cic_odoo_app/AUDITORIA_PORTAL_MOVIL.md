@@ -24,7 +24,7 @@ La fuente de verdad es `calidad_portal` y los modulos que extienden sus rutas. L
 | Sugerencias | `/my/calidad/sugerencias`, `calidad.comunicacion` | `SuggestionsScreen` y accion movil | Alta solo si el servidor la permite |
 | Publicaciones | `/my/calidad/publicaciones`, `pubmed.publication` | `PortalSectionScreen(publications)` | Solo propias salvo grupo gestor |
 | Reservas | `/my/reservas`, `reserva.reserva`, `product.template` reservable | `ReservasScreen` | Servicios, variantes, agenda, alta, confirmacion y QR |
-| Reclutamiento | `/my/calidad/reclutamiento`, `hr.job` por entrevistador | `RecruitmentScreen` | Solo si el servidor devuelve puestos del usuario |
+| Reclutamiento | `/my/calidad/reclutamiento`, `hr.job` por entrevistador o responsable | `RecruitmentScreen` | Solo convocatoria asignada; candidaturas y documentos en visualización temporal, sin descarga, compartir ni edición |
 | Nominas | `/my/calidad/nominas`, `payroll.document.partner_id` | `PayrollScreen` | Solo documentos propios y adjuntos autorizados |
 | QR | Datos reales de servicio/reserva, generado localmente | `ReservasScreen` | PNG temporal real para compartir iOS/Android |
 | Compras | `purchase.order`, `product.product`, `purchase.order.line`, stock | `PurchasesScreen` | Exclusivo interno mediante API de `cic_modulo_compras` |

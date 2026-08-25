@@ -33,7 +33,7 @@ class _HealthScreenState extends State<HealthScreen> {
       _error = null;
     });
     try {
-      final rows = _odoo.isPortalSession
+      final currentRows = _odoo.isPortalSession
           ? await _portalApi.section('health', limit: 120)
           : await _odoo.searchRead(
               'calidad.salud.reconocimiento',
@@ -48,7 +48,34 @@ class _HealthScreenState extends State<HealthScreen> {
               order: 'fecha_prevista desc, id desc',
               limit: 120,
             );
-      _rows = rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+
+      // The historical CIC module uses cic.salud.registro.  It is exposed
+      // through the restricted mobile endpoint so a person can only see
+      // their own historical records, just as in the intranet portal.
+      var historyRows = <dynamic>[];
+      try {
+        historyRows = await _portalApi.section('health_history', limit: 120);
+      } catch (_) {
+        // The historical module is optional in existing installations.
+      }
+
+      _rows = [
+        ...currentRows.map(
+          (row) => <String, dynamic>{
+            ...Map<String, dynamic>.from(row as Map),
+            '_healthSource': 'current',
+          },
+        ),
+        ...historyRows.map(
+          (row) => <String, dynamic>{
+            ...Map<String, dynamic>.from(row as Map),
+            '_healthSource': 'history',
+          },
+        ),
+      ];
+      _rows.sort(
+        (left, right) => _recordDate(right).compareTo(_recordDate(left)),
+      );
     } catch (e) {
       _error = OdooService.prettyError(e);
     }
@@ -96,14 +123,18 @@ class _HealthScreenState extends State<HealthScreen> {
               separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (_, i) {
                 final it = _rows[i];
-                final estado = (it['estado'] ?? '-').toString();
-                final color = estado == 'apto'
-                    ? AppTheme.success
-                    : estado == 'apto_limitaciones'
-                    ? AppTheme.warning
-                    : estado == 'no_apto'
-                    ? AppTheme.error
-                    : AppTheme.textMutedFor(context);
+                final historical = it['_healthSource'] == 'history';
+                final estado =
+                    (historical ? it['salud_apto'] : it['estado'])
+                        ?.toString() ??
+                    '-';
+                final color = _statusColor(estado, historical, context);
+                final date = historical
+                    ? it['salud_fecha_reconocimiento']
+                    : it['fecha_realizacion'] ?? it['fecha_prevista'];
+                final title = historical
+                    ? 'Reconocimiento histórico CIC'
+                    : (it['name'] ?? 'Reconocimiento').toString();
                 return AppCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,31 +143,36 @@ class _HealthScreenState extends State<HealthScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              (it['name'] ?? 'Reconocimiento').toString(),
+                              title,
                               style: TextStyle(fontWeight: FontWeight.w700),
                             ),
                           ),
                           AppStatusChip(
-                            label: estado.replaceAll('_', ' '),
+                            label: _statusLabel(estado),
                             color: color,
                           ),
                         ],
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Prevista: ${it['fecha_prevista'] ?? '-'}',
+                        historical
+                            ? 'Reconocimiento: ${date ?? '-'}'
+                            : 'Prevista: ${it['fecha_prevista'] ?? '-'}\n'
+                                  'Realización: ${it['fecha_realizacion'] ?? '-'}',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppTheme.textSecondaryFor(context),
                         ),
                       ),
-                      Text(
-                        'Realización: ${it['fecha_realizacion'] ?? '-'}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.textSecondaryFor(context),
+                      if (historical &&
+                          (it['salud_empresa']?.toString().isNotEmpty ?? false))
+                        Text(
+                          it['salud_empresa'].toString(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.textSecondaryFor(context),
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 );
@@ -144,6 +180,39 @@ class _HealthScreenState extends State<HealthScreen> {
             ),
     );
   }
+
+  String _recordDate(Map<String, dynamic> record) {
+    final historical = record['_healthSource'] == 'history';
+    return (historical
+                ? record['salud_fecha_reconocimiento']
+                : record['fecha_realizacion'] ?? record['fecha_prevista'])
+            ?.toString() ??
+        '';
+  }
+
+  Color _statusColor(String status, bool historical, BuildContext context) {
+    if (historical) {
+      return switch (status) {
+        'si' => AppTheme.success,
+        'no' => AppTheme.error,
+        'pendiente' => AppTheme.warning,
+        _ => AppTheme.textMutedFor(context),
+      };
+    }
+    return switch (status) {
+      'apto' => AppTheme.success,
+      'apto_limitaciones' => AppTheme.warning,
+      'no_apto' => AppTheme.error,
+      _ => AppTheme.textMutedFor(context),
+    };
+  }
+
+  String _statusLabel(String status) => switch (status) {
+    'si' => 'Apto',
+    'no' => 'No apto',
+    'no_realizado' => 'No realizado',
+    _ => status.replaceAll('_', ' '),
+  };
 }
 
 class _HealthMultiStepForm extends StatefulWidget {

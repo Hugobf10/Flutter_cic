@@ -207,6 +207,7 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
     final record = _record!;
     final state = (record['estado'] ?? 'recibida').toString();
     final canEdit = auth.canEditModule('communications');
+    final canSend = auth.canSendCommunications;
     final responseSent = record['respuesta_enviada'] == true;
 
     return Scaffold(
@@ -255,21 +256,23 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
                     'Enviar respuesta',
                     'communication_send_response',
                   ),
-                if (record['notificacion_enviada'] != true &&
-                    (_many2oneLabels(record['destino_unidad_ids']).isNotEmpty ||
-                        _many2oneLabels(
-                          record['destino_puesto_ids'],
-                        ).isNotEmpty))
-                  _actionButton(
-                    'Enviar notificación',
-                    'communication_send_notification',
-                  ),
                 if ((state == 'tratada' || state == 'respondida') &&
                     state != 'cerrada')
                   _actionButton('Cerrar', 'communication_close'),
               ],
             ),
           ],
+          if (canSend &&
+              record['notificacion_enviada'] != true &&
+              (_many2oneLabels(record['destino_unidad_ids']).isNotEmpty ||
+                  _many2oneLabels(record['destino_puesto_ids']).isNotEmpty))
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: _actionButton(
+                'Enviar notificación',
+                'communication_send_notification',
+              ),
+            ),
           _section('Descripción', record['descripcion']),
           _section('Análisis', record['analisis']),
           _section('Tratamiento previsto', record['tratamiento']),

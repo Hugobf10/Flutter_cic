@@ -74,6 +74,7 @@ class PortalApiService {
     required String section,
     required int recordId,
     int? attachmentId,
+    String? fieldName,
   }) {
     return _call(
       '/my/calidad/mobile/attachment',
@@ -81,6 +82,9 @@ class PortalApiService {
         'section': section,
         'record_id': recordId,
         ...?(attachmentId == null ? null : {'attachment_id': attachmentId}),
+        ...?(fieldName == null || fieldName.trim().isEmpty
+            ? null
+            : {'field_name': fieldName.trim()}),
       },
     );
   }
