@@ -13,7 +13,7 @@ class AppMotion {
 
   static const Curve enterCurve = Curves.easeOutCubic;
   static const Curve exitCurve = Curves.easeInCubic;
-  static const Curve emphasizedCurve = Curves.easeOutBack;
+  static const Curve emphasizedCurve = Curves.easeOutCubic;
 
   static bool reduceMotion(BuildContext context) {
     return MediaQuery.maybeOf(context)?.disableAnimations ?? false;
@@ -85,13 +85,14 @@ class _AppRevealState extends State<AppReveal>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_started) return;
-    _started = true;
-
     if (AppMotion.reduceMotion(context)) {
+      _timer?.cancel();
       _controller.value = 1;
+      _started = true;
       return;
     }
+    if (_started) return;
+    _started = true;
     if (widget.delay == Duration.zero) {
       _controller.forward();
     } else {

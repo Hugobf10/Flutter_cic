@@ -5,6 +5,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:odoo_rpc/odoo_rpc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
+import '../config/server_policy.dart';
+import 'rpc_executor.dart';
 import 'app_logger.dart';
 import 'odoo_values.dart';
 
@@ -33,6 +35,8 @@ class OdooService {
 
   static const _kSessionJson = 'odoo_session_json';
   static const _kSessionUserInfoJson = 'odoo_user_info_json';
+  // Legacy keys are kept only so old insecure snapshots can be deleted during
+  // migration. Session identifiers must never be restored from preferences.
   static const _kSessionJsonPrefs = 'odoo_session_json_prefs';
   static const _kSessionUserInfoJsonPrefs = 'odoo_user_info_json_prefs';
 
@@ -157,10 +161,17 @@ class OdooService {
 
   /// Inicializa el cliente con la URL de Odoo.
   void init({String? baseUrl, OdooSession? session}) {
+    final url = (baseUrl ?? AppConfig.odooBaseUrl).trim();
+    if (!ServerPolicy.isSecureOrigin(url)) {
+      throw ArgumentError('El servidor debe ser una dirección HTTPS válida.');
+    }
+    if (_initialized) _client.close();
     _client = OdooClient(
-      (baseUrl ?? AppConfig.odooBaseUrl).trim(),
+      url,
       sessionId: session,
     );
+    _session = session;
+    _userInfo = null;
     _initialized = true;
     AppLogger.info(
       'Cliente Odoo inicializado',
@@ -229,6 +240,19 @@ class OdooService {
 
   /// Cierra la sesión y borra tokens/sesión persistida.
   Future<void> logout() async {
+    if (_initialized && isAuthenticated) {
+      try {
+        await _client.callRPC('/web/session/destroy', 'call', {}).timeout(
+          const Duration(seconds: 5),
+        );
+      } catch (_) {
+        // Offline logout still clears every local copy of the session.
+      }
+    }
+    if (_initialized) {
+      _client.close();
+      _initialized = false;
+    }
     _session = null;
     _userInfo = null;
     final prefs = await SharedPreferences.getInstance();
@@ -258,11 +282,10 @@ class OdooService {
 
     final sessionJson = jsonEncode(_session!.toJson());
     final userInfoJson = _userInfo == null ? '' : jsonEncode(_userInfo);
-    // Fallback siempre disponible (incluido macOS sin entitlement de keychain).
-    await prefs.setString(_kSessionJsonPrefs, sessionJson);
-    await prefs.setString(_kSessionUserInfoJsonPrefs, userInfoJson);
-
-    // Intento de persistencia segura: si falla, seguimos con fallback sin romper login.
+    // Remove snapshots written by older builds before storing the current
+    // session exclusively in the OS-protected keychain/keystore.
+    await prefs.remove(_kSessionJsonPrefs);
+    await prefs.remove(_kSessionUserInfoJsonPrefs);
     try {
       await _secureStorage.write(key: _kSessionJson, value: sessionJson);
       await _secureStorage.write(
@@ -270,18 +293,34 @@ class OdooService {
         value: userInfoJson,
       );
     } catch (e) {
-      AppLogger.warning(
-        'Secure storage no disponible; usando fallback en SharedPreferences',
-        data: {'error': e.toString()},
-        scope: 'odoo.auth',
+      try {
+        await _secureStorage.delete(key: _kSessionJson);
+        await _secureStorage.delete(key: _kSessionUserInfoJson);
+      } catch (_) {
+        // The original secure-storage failure is the actionable error.
+      }
+      throw StateError(
+        'No se pudo guardar la sesión en el almacenamiento seguro del dispositivo.',
       );
     }
   }
 
   Future<bool> tryRestoreStoredSession() async {
     final prefs = await SharedPreferences.getInstance();
+    // One-way migration: never reuse a session cookie that an older release
+    // persisted without encryption.
+    await prefs.remove(_kSessionJsonPrefs);
+    await prefs.remove(_kSessionUserInfoJsonPrefs);
     final url = prefs.getString('odoo_url');
     if ((url ?? '').trim().isEmpty) return false;
+    if (!ServerPolicy.isSecureOrigin(url!)) return false;
+    if (!AppConfig.allowAdvancedLoginConfig &&
+        AppConfig.hasValidBaseUrl &&
+        (Uri.parse(url).origin != Uri.parse(AppConfig.odooBaseUrl).origin ||
+            prefs.getString('odoo_database') != AppConfig.odooDatabaseName)) {
+      // Never reuse staging credentials in a production build.
+      return false;
+    }
 
     String? sessionJson;
     String? userInfoJson;
@@ -290,13 +329,11 @@ class OdooService {
       userInfoJson = await _secureStorage.read(key: _kSessionUserInfoJson);
     } catch (e) {
       AppLogger.warning(
-        'No se pudo leer sesión de secure storage; usando fallback',
+        'No se pudo leer la sesión del almacenamiento seguro',
         data: {'error': e.toString()},
         scope: 'odoo.auth',
       );
     }
-    sessionJson ??= prefs.getString(_kSessionJsonPrefs);
-    userInfoJson ??= prefs.getString(_kSessionUserInfoJsonPrefs);
     if ((sessionJson ?? '').isEmpty) return false;
 
     try {
@@ -355,6 +392,7 @@ class OdooService {
     try {
       final result = await _withRetry(
         () => _client.callRPC('/web/session/get_session_info', 'call', {}),
+        readOnly: true,
       );
       if (result is! Map) return false;
       final info = Map<String, dynamic>.from(result);
@@ -429,6 +467,7 @@ class OdooService {
       () => _client.callKw(
         _buildKwParams(model, 'search_read', args: [domain], kwargs: kwargs),
       ),
+      readOnly: true,
     );
     if (result == false || result == null) return [];
     if (result is! List) {
@@ -446,6 +485,7 @@ class OdooService {
     final result = await _withRetry(
       () =>
           _client.callKw(_buildKwParams(model, 'search_count', args: [domain])),
+      readOnly: true,
     );
     final count = result is num ? result.toInt() : int.tryParse('$result');
     if (count == null) {
@@ -475,6 +515,7 @@ class OdooService {
           kwargs: kwargs,
         ),
       ),
+      readOnly: true,
     );
     if (result is! List || result.isEmpty || result.first is! Map) {
       throw StateError('El registro $model/$id no está disponible.');
@@ -553,7 +594,13 @@ class OdooService {
   }) async {
     _ensureInit();
     try {
-      return await _withRetry(() => _client.callRPC(path, 'call', params));
+      return await _withRetry(
+        () => _client.callRPC(path, 'call', params),
+        readOnly: const {
+          '/my/calidad/mobile/bootstrap',
+          '/my/calidad/mobile/section',
+        }.contains(path),
+      );
     } on FormatException catch (error, stackTrace) {
       AppLogger.error(
         'Respuesta no JSON de controlador Odoo',
@@ -597,51 +644,13 @@ class OdooService {
     init();
   }
 
-  Future<T> _withRetry<T>(Future<T> Function() fn) async {
-    int attempt = 0;
-    Object? lastError;
-    while (attempt <= AppConfig.rpcRetries) {
-      try {
-        return await fn().timeout(
-          Duration(seconds: AppConfig.httpTimeoutSeconds),
-        );
-      } on TimeoutException {
-        lastError = Exception(
-          'Timeout de red con Odoo (${AppConfig.httpTimeoutSeconds}s).',
-        );
-        AppLogger.warning(
-          'Timeout Odoo',
-          data: {'attempt': attempt + 1, 'max': AppConfig.rpcRetries + 1},
-          scope: 'odoo.rpc',
-        );
-        if (attempt == AppConfig.rpcRetries) rethrow;
-      } on OdooException catch (e) {
-        // Server-side ACL, validation and business errors are deterministic;
-        // retrying them creates duplicate work and noisy logs.
-        lastError = e;
-        AppLogger.error('Error funcional de Odoo', error: e, scope: 'odoo.rpc');
-        rethrow;
-      } catch (e) {
-        lastError = e;
-        AppLogger.warning(
-          'Error RPC Odoo, reintento',
-          data: {
-            'attempt': attempt + 1,
-            'max': AppConfig.rpcRetries + 1,
-            'error': e.toString(),
-          },
-          scope: 'odoo.rpc',
-        );
-        if (attempt == AppConfig.rpcRetries) rethrow;
-      }
-      attempt++;
-      await Future<void>.delayed(Duration(milliseconds: 250 * attempt));
-    }
-    AppLogger.error(
-      'Fallo RPC Odoo tras reintentos',
-      error: lastError,
-      scope: 'odoo.rpc',
-    );
-    throw lastError ?? Exception('Error de conexión con Odoo.');
+  Future<T> _withRetry<T>(
+    Future<T> Function() fn, {
+    bool readOnly = false,
+  }) {
+    return RpcExecutor(
+      timeout: Duration(seconds: AppConfig.httpTimeoutSeconds.clamp(1, 120)),
+      retries: AppConfig.rpcRetries,
+    ).run(fn, readOnly: readOnly);
   }
 }

@@ -4,9 +4,11 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../app/screens/document_viewer_screen.dart';
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../providers/data_provider.dart';
 import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
+import '../../services/odoo_values.dart';
 
 class DocumentosScreen extends StatefulWidget {
   const DocumentosScreen({super.key});
@@ -67,12 +69,12 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
     return ChangeNotifierProvider.value(
       value: _provider,
       child: AppScaffold(
-        title: 'Documentos',
+        title: context.l10n.documentation,
         child: Column(
           children: [
             AppSearchBar(
               controller: _searchCtrl,
-              hintText: 'Buscar documentos...',
+              hintText: context.l10n.searchDocuments,
               onSubmitted: (v) => _loadData(search: v),
               onChanged: (v) {
                 if (v.isEmpty) _loadData();
@@ -99,10 +101,10 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
       final limitedAccess = OdooService.isAccessError(p.errorMessage);
       return AppEmptyState(
         title: limitedAccess
-            ? 'Documentos con acceso limitado'
-            : 'No se pudieron cargar documentos',
+            ? context.l10n.documentsLimitedAccess
+            : context.l10n.couldNotLoadDocuments,
         subtitle: limitedAccess
-            ? 'Este perfil no puede consultar el listado completo de documentos por API con sus permisos actuales.'
+            ? context.l10n.documentsLimitedAccessHint
             : p.errorMessage!,
         icon: limitedAccess
             ? Icons.lock_outline_rounded
@@ -110,9 +112,9 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
       );
     }
     if (p.records.isEmpty) {
-      return const AppEmptyState(
-        title: 'Sin documentos',
-        subtitle: 'No se han encontrado resultados para esta búsqueda.',
+      return AppEmptyState(
+        title: context.l10n.noDocuments,
+        subtitle: context.l10n.noDocumentsHint,
         icon: Icons.folder_open_rounded,
       );
     }
@@ -125,7 +127,9 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
           if (i == 0) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
-              child: AppSectionHeader(title: '${p.totalCount} documentos'),
+              child: AppSectionHeader(
+                title: context.l10n.documentsCount(p.totalCount),
+              ),
             );
           }
           final doc = Map<String, dynamic>.from(p.records[i - 1] as Map);
@@ -139,13 +143,16 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
   }
 
   Widget _buildPdfCard(Map<String, dynamic> doc) {
-    final codigo = (doc['codigo'] ?? '').toString();
-    final title = (doc['name'] ?? 'Documento').toString();
-    final versions = (doc['version_count'] as num?)?.toInt() ?? 0;
+    final codigo = OdooValues.string(doc['codigo']);
+    final title = OdooValues.string(
+      doc['name'],
+      fallback: context.l10n.document,
+    );
+    final versions = OdooValues.intValue(doc['version_count']) ?? 0;
     final subtitle = codigo.isEmpty
-        ? 'PDF · $versions versiones'
-        : '$codigo · PDF · $versions versiones';
-    final id = (doc['id'] as num?)?.toInt();
+        ? 'PDF · ${context.l10n.versions(versions)}'
+        : '$codigo · PDF · ${context.l10n.versions(versions)}';
+    final id = OdooValues.intValue(doc['id']);
 
     return AppPdfCard(
       title: title,
@@ -157,11 +164,14 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
 
   Future<void> _previewDocument(int? id) async {
     if (id == null) return;
+    final t = context.l10n;
     try {
       final attachment = _odoo.isPortalSession
           ? 0
           : await _resolveDocumentAttachmentId(id);
-      if (attachment == null) throw Exception('Documento sin versión adjunta.');
+      if (attachment == null) {
+        throw Exception(t.documentWithoutAttachment);
+      }
       final file = await _attachments.fetchAttachmentToCache(
         attachmentId: attachment,
         defaultName: 'documento_$id.pdf',
@@ -183,7 +193,7 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'No se pudo abrir el documento: ${OdooService.prettyError(e)}',
+            '${t.couldNotOpenDocument}: ${OdooService.prettyError(e)}',
           ),
         ),
       );
@@ -192,11 +202,14 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
 
   Future<void> _downloadDocument(int? id) async {
     if (id == null) return;
+    final t = context.l10n;
     try {
       final attachment = _odoo.isPortalSession
           ? 0
           : await _resolveDocumentAttachmentId(id);
-      if (attachment == null) throw Exception('Documento sin versión adjunta.');
+      if (attachment == null) {
+        throw Exception(t.documentWithoutAttachment);
+      }
       final file = await _attachments.fetchAttachmentToCache(
         attachmentId: attachment,
         defaultName: 'documento_$id.pdf',
@@ -211,7 +224,7 @@ class _DocumentosScreenState extends State<DocumentosScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('No se pudo descargar: ${OdooService.prettyError(e)}'),
+          content: Text('${t.couldNotDownload}: ${OdooService.prettyError(e)}'),
         ),
       );
     }

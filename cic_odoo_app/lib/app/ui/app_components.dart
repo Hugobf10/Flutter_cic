@@ -108,7 +108,7 @@ class _NeumorphicSurfaceState extends State<NeumorphicSurface> {
         subtle: widget.subtle || _pressed,
         showBorder: widget.showBorder,
       ),
-      child: widget.child,
+      child: Material(type: MaterialType.transparency, child: widget.child),
     );
     if (widget.onTap == null) return content;
 
@@ -736,6 +736,7 @@ class AppStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = AppTheme.statusColorFor(context, this.color);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
@@ -846,7 +847,7 @@ class AppBottomNavigation extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                   onTap: () => onTap(i),
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
+                    duration: AppMotion.adaptive(context, AppMotion.standard),
                     padding: const EdgeInsets.symmetric(
                       vertical: 8,
                       horizontal: 6,

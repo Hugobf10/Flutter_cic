@@ -9,11 +9,7 @@ class AuthService {
 
   Future<AuthResult> loginPassword(AuthLoginRequest request) async {
     final provider = OdooPasswordAuth(odoo: _odoo, request: request);
-    final result = await provider.login();
-    if (result.success) {
-      await _odoo.persistSessionSnapshot();
-    }
-    return result;
+    return provider.login();
   }
 
   Future<void> logout() async {

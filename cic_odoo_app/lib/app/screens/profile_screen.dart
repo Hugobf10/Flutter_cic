@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/strings.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../services/attachment_service.dart';
@@ -7,6 +8,7 @@ import '../../services/odoo_service.dart';
 import '../../services/odoo_values.dart';
 import '../../theme/app_theme.dart';
 import '../providers/app_state_provider.dart';
+import 'accessibility_screen.dart';
 import '../screens/document_viewer_screen.dart';
 import '../ui/app_components.dart';
 import 'edit_profile_screen.dart';
@@ -100,14 +102,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final appState = context.watch<AppStateProvider>();
-    final name = (_partner['name'] ?? auth.userName).toString().trim().isEmpty
-        ? 'Usuario'
-        : (_partner['name'] ?? auth.userName).toString();
+    final name = OdooValues.string(
+      _partner['name'],
+      fallback: auth.userName.isEmpty ? 'Usuario' : auth.userName,
+    );
 
     return AppScaffold(
-      title: 'Mi perfil',
+      title: context.l10n.myProfile,
       actions: [
         IconButton(
+          tooltip: context.l10n.editProfile,
           onPressed: _loading || !auth.canEditModule('profile')
               ? null
               : () async {
@@ -128,16 +132,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ? const AppLoadingView()
           : _error != null
           ? AppEmptyState(
-              title: 'No se pudo cargar el perfil',
+              title: context.l10n.profileError,
               subtitle: _error!,
               icon: Icons.error_outline_rounded,
-              action: AppButton.primary(label: 'Reintentar', onPressed: _load),
+              action: AppButton.primary(
+                label: context.l10n.retry,
+                onPressed: _load,
+              ),
             )
           : ListView(
               children: [
                 _ProfileHero(
                   name: name,
-                  email: (_partner['email'] ?? auth.userLogin).toString(),
+                  email: OdooValues.string(
+                    _partner['email'],
+                    fallback: auth.userLogin,
+                  ),
                   unitName: auth.unidadNombre,
                   avatar: AppAvatar(
                     name: name,
@@ -146,24 +156,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                const AppSectionHeader(
-                  title: 'Información personal',
-                  subtitle: 'Datos básicos del perfil',
+                AppSectionHeader(
+                  title: context.l10n.personalInfo,
+                  subtitle: context.l10n.basicProfile,
                 ),
                 _InfoTile(
                   icon: Icons.phone_outlined,
-                  label: 'Teléfono',
-                  value: (_partner['phone'] ?? '-').toString(),
+                  label: context.l10n.phone,
+                  value: OdooValues.string(_partner['phone'], fallback: '—'),
                 ),
                 _InfoTile(
                   icon: Icons.smartphone_outlined,
-                  label: 'Móvil',
-                  value: (_partner['mobile'] ?? '-').toString(),
+                  label: context.l10n.mobile,
+                  value: OdooValues.string(_partner['mobile'], fallback: '—'),
                 ),
                 _InfoTile(
                   icon: Icons.badge_outlined,
-                  label: 'Puesto',
-                  value: (_partner['function'] ?? '-').toString(),
+                  label: context.l10n.position,
+                  value: OdooValues.string(_partner['function'], fallback: '—'),
                 ),
                 const SizedBox(height: 14),
                 const AppSectionHeader(
@@ -172,18 +182,74 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 _buildCvCard(),
                 const SizedBox(height: 14),
+                AppSectionHeader(
+                  title: context.l10n.preferences,
+                  subtitle: context.l10n.preferencesHint,
+                ),
+                AppCard(
+                  padding: EdgeInsets.zero,
+                  child: ListTile(
+                    leading: const Icon(Icons.accessibility_new_rounded),
+                    title: Text(context.l10n.accessibility),
+                    subtitle: Text(context.l10n.accessibilityHint),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const AccessibilityScreen(),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 AppCard(
                   child: SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
                     value: appState.themeMode == ThemeMode.dark,
                     onChanged: (_) => appState.toggleThemeMode(),
-                    title: Text('Modo oscuro'),
-                    subtitle: Text('Alternar tema claro / oscuro'),
+                    title: Text(context.l10n.darkMode),
+                    subtitle: Text(context.l10n.darkModeHint),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        context.l10n.language,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      Text(context.l10n.languageHint),
+                      DropdownButton<String>(
+                        isExpanded: true,
+                        value: appState.locale?.languageCode ?? 'system',
+                        items: [
+                          DropdownMenuItem(
+                            value: 'system',
+                            child: Text(context.l10n.systemLanguage),
+                          ),
+                          const DropdownMenuItem(
+                            value: 'es',
+                            child: Text('Español'),
+                          ),
+                          const DropdownMenuItem(
+                            value: 'en',
+                            child: Text('English'),
+                          ),
+                        ],
+                        onChanged: (value) => appState.setLocale(
+                          value == null || value == 'system'
+                              ? null
+                              : Locale(value),
+                        ),
+                      ),
+                      Text(context.l10n.languageProgress),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 14),
                 AppButton.primary(
-                  label: 'Cerrar sesión',
+                  label: context.l10n.logout,
                   icon: Icons.logout_rounded,
                   onPressed: () => context.read<AuthProvider>().logout(),
                 ),
@@ -212,7 +278,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildCvCard() {
     final cvRef = _partner['cv_attachment_id'];
     final cvId = OdooValues.many2oneId(cvRef);
-    final cvName = (_partner['cv_attachment_name'] ?? 'CV').toString();
+    final cvName = OdooValues.string(
+      _partner['cv_attachment_name'],
+      fallback: 'CV',
+    );
     return AppCard(
       child: Row(
         children: [

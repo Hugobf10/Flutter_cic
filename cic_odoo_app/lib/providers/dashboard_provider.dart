@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import '../services/odoo_service.dart';
+import '../services/odoo_values.dart';
+import '../services/portal_api_service.dart';
 
 enum DashboardState { initial, loading, loaded, error }
 
 /// Provider del dashboard ejecutivo. Consume calidad.dashboard.service.
 class DashboardProvider extends ChangeNotifier {
   final OdooService _odoo = OdooService();
+  final PortalApiService _portalApi = PortalApiService();
 
   DashboardState _state = DashboardState.initial;
   String? _errorMessage;
@@ -41,24 +44,70 @@ class DashboardProvider extends ChangeNotifier {
     try {
       if (filters != null) _activeFilters = filters;
       _dashboardData = await _odoo.getDashboardData(filters: _activeFilters);
+      await _prependMobileHomeKpis();
       _state = DashboardState.loaded;
     } catch (e) {
       if (OdooService.isAccessError(e)) {
-        _permissionDenied = true;
-        _dashboardData = const {
-          'kpis': [],
-          'alerts': [],
-          'summary_by_unit': [],
-          'charts': {},
-        };
-        _state = DashboardState.loaded;
-        _errorMessage = 'Dashboard avanzado no disponible para este perfil.';
+        try {
+          _dashboardData = const {
+            'kpis': [],
+            'alerts': [],
+            'summary_by_unit': [],
+            'charts': {},
+          };
+          await _prependMobileHomeKpis();
+          _state = DashboardState.loaded;
+        } catch (_) {
+          _permissionDenied = true;
+          _dashboardData = const {
+            'kpis': [],
+            'alerts': [],
+            'summary_by_unit': [],
+            'charts': {},
+          };
+          _state = DashboardState.loaded;
+          _errorMessage = 'Dashboard avanzado no disponible para este perfil.';
+        }
       } else {
         _state = DashboardState.error;
         _errorMessage = OdooService.prettyError(e);
       }
     }
     notifyListeners();
+  }
+
+  Future<void> _prependMobileHomeKpis() async {
+    final bootstrap = await _portalApi.bootstrap();
+    final dashboard = OdooValues.map(bootstrap['dashboard']);
+    if (dashboard.isEmpty) return;
+
+    final mobileKpis = <Map<String, dynamic>>[
+      {
+        'module_key': 'incidents',
+        'title': 'Incidencias',
+        'value': OdooValues.intValue(dashboard['incidencias_count']) ?? 0,
+        'helper': 'Abiertas',
+      },
+      {
+        'module_key': 'reservas',
+        'title': 'Reservas',
+        'value': OdooValues.intValue(dashboard['reservations_today_count']) ??
+            0,
+        'helper': 'Hoy',
+      },
+      {
+        'module_key': 'training',
+        'title': 'Formación',
+        'value': OdooValues.intValue(dashboard['pending_trainings_count']) ??
+            0,
+        'helper': 'Pendientes',
+      },
+    ];
+    final current = (_dashboardData?['kpis'] as List?) ?? const [];
+    _dashboardData = <String, dynamic>{
+      ...?_dashboardData,
+      'kpis': [...mobileKpis, ...current],
+    };
   }
 
   /// Carga las opciones de filtros.

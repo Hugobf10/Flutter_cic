@@ -11,6 +11,11 @@ class MonitoringService {
       options.dsn = AppConfig.sentryDsn;
       options.environment = AppConfig.sentryEnvironment;
       options.tracesSampleRate = AppConfig.sentryTracesSampleRate;
+      options.sendDefaultPii = false;
+      options.attachScreenshot = false;
+      // Explicit privacy safeguard; Sentry currently marks this option experimental.
+      // ignore: experimental_member_use
+      options.attachViewHierarchy = false;
     });
   }
 
@@ -21,7 +26,9 @@ class MonitoringService {
   }) async {
     if (!AppConfig.hasSentry) return;
     await Sentry.captureException(
-      error,
+      // Server errors may embed SQL, user input or private record contents.
+      // Keep the failure category and local stack, never the raw exception.
+      StateError('Application failure: ${error.runtimeType}'),
       stackTrace: stackTrace,
       hint: Hint.withMap(<String, dynamic>{
         ...?(hint == null ? null : {'hint': hint}),

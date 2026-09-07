@@ -9,6 +9,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../features/purchases/barcode_scanner_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/attachment_service.dart';
@@ -456,18 +457,15 @@ class _ReservasScreenState extends State<ReservasScreen>
 
   void _nextStep() {
     if (_wizardStep == 0 && _serviceTemplateId == null) {
-      _showSnack('Selecciona un servicio para continuar.', isError: true);
+      _showSnack(context.l10n.selectService, isError: true);
       return;
     }
     if (_wizardStep == 1 && _variantId == null) {
-      _showSnack('Selecciona un recurso para continuar.', isError: true);
+      _showSnack(context.l10n.selectResource, isError: true);
       return;
     }
     if (_wizardStep == 2 && _start == null) {
-      _showSnack(
-        'Selecciona una franja horaria para continuar.',
-        isError: true,
-      );
+      _showSnack(context.l10n.selectTimeSlot, isError: true);
       return;
     }
     if (_wizardStep < 3) {
@@ -482,6 +480,7 @@ class _ReservasScreenState extends State<ReservasScreen>
   }
 
   Future<void> _crearReserva() async {
+    final t = context.l10n;
     if (_variantId == null || _start == null || _end == null) return;
     if (!_end!.isAfter(_start!)) {
       _showSnack('La fecha fin debe ser mayor que inicio.', isError: true);
@@ -531,11 +530,7 @@ class _ReservasScreenState extends State<ReservasScreen>
       _editingReservationId = null;
       await _loadMisReservas();
       await _loadAgendaReservas(day: _agendaDay);
-      _showSnack(
-        wasEditing
-            ? 'Reserva actualizada. Confírmala cuando esté lista.'
-            : 'Reserva creada en borrador. Revísala y confírmala cuando esté lista.',
-      );
+      _showSnack(wasEditing ? t.reservationUpdated : t.draftCreated);
       if (mounted) setState(() {});
     } catch (e) {
       _showSnack(
@@ -548,6 +543,7 @@ class _ReservasScreenState extends State<ReservasScreen>
   }
 
   Future<void> _confirmarReserva(int id) async {
+    final t = context.l10n;
     try {
       if (_odoo.isPortalSession) {
         await _portalApi.action('reservation_confirm', recordId: id);
@@ -566,7 +562,7 @@ class _ReservasScreenState extends State<ReservasScreen>
       await _loadMisReservas();
       await _loadAgendaReservas(day: _agendaDay);
       if (mounted) setState(() {});
-      _showSnack('Reserva confirmada.');
+      _showSnack(t.reservationConfirmed);
     } catch (e) {
       _showSnack(
         'No se pudo confirmar: ${OdooService.prettyError(e)}',
@@ -576,6 +572,7 @@ class _ReservasScreenState extends State<ReservasScreen>
   }
 
   Future<void> _cancelarReserva(int id) async {
+    final t = context.l10n;
     try {
       if (_odoo.isPortalSession) {
         await _portalApi.action('reservation_cancel', recordId: id);
@@ -587,7 +584,7 @@ class _ReservasScreenState extends State<ReservasScreen>
       await _loadMisReservas();
       await _loadAgendaReservas(day: _agendaDay);
       if (mounted) setState(() {});
-      _showSnack('Reserva cancelada.');
+      _showSnack(t.reservationCancelled);
     } catch (e) {
       _showSnack(
         'No se pudo cancelar: ${OdooService.prettyError(e)}',
@@ -710,8 +707,9 @@ class _ReservasScreenState extends State<ReservasScreen>
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final t = context.l10n;
     if (_isLoading) {
-      return const AppScaffold(title: 'Reservas', child: AppLoadingView());
+      return AppScaffold(title: t.reservations, child: const AppLoadingView());
     }
 
     if (_error != null) {
@@ -719,43 +717,37 @@ class _ReservasScreenState extends State<ReservasScreen>
         return _buildLimitedAccessReservationMode(auth);
       }
       return AppScaffold(
-        title: 'Reservas',
+        title: t.reservations,
         child: AppEmptyState(
-          title: 'No se pudieron cargar las reservas',
+          title: t.couldNotLoadReservations,
           subtitle: _error!,
           icon: Icons.cloud_off_rounded,
-          action: AppButton.primary(
-            label: 'Reintentar',
-            onPressed: _loadInitial,
-          ),
+          action: AppButton.primary(label: t.retry, onPressed: _loadInitial),
         ),
       );
     }
 
     return AppScaffold(
-      title: 'Reservas',
+      title: t.reservations,
       padding: EdgeInsets.zero,
       actions: [
         if (auth.isInternalUser || auth.isAdmin)
           IconButton(
             onPressed: _scanReservationQr,
             icon: Icon(Icons.qr_code_scanner_rounded),
-            tooltip: 'Escanear QR de sala o equipo',
+            tooltip: t.scanReservationQr,
           ),
         IconButton(onPressed: _loadInitial, icon: Icon(Icons.refresh_rounded)),
       ],
       appBarBottom: TabBar(
         controller: _tabController,
-        tabs: const [
+        tabs: [
           Tab(
-            text: 'Nueva reserva',
+            text: t.newReservation,
             icon: Icon(Icons.add_circle_outline_rounded),
           ),
-          Tab(text: 'Mis reservas', icon: Icon(Icons.list_alt_rounded)),
-          Tab(
-            text: 'Agenda diaria',
-            icon: Icon(Icons.calendar_view_day_rounded),
-          ),
+          Tab(text: t.myReservations, icon: const Icon(Icons.list_alt_rounded)),
+          Tab(text: t.dailyAgenda, icon: Icon(Icons.calendar_view_day_rounded)),
         ],
       ),
       child: SizedBox.expand(
@@ -767,10 +759,9 @@ class _ReservasScreenState extends State<ReservasScreen>
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                 children: [
-                  const AppSectionHeader(
-                    title: 'Reserva rápida',
-                    subtitle:
-                        'Selecciona servicio, recurso y horario en 4 pasos',
+                  AppSectionHeader(
+                    title: t.quickReservation,
+                    subtitle: t.quickReservationHint,
                   ),
                   if (_activeTarget != null) _buildResourceContextBanner(),
                   if (auth.isInternalUser || auth.isAdmin) ...[
@@ -782,10 +773,9 @@ class _ReservasScreenState extends State<ReservasScreen>
                   if (auth.canEditModule('reservas'))
                     _buildNewReservationCard()
                   else
-                    const AppEmptyState(
-                      title: 'Reserva no disponible',
-                      subtitle:
-                          'Este usuario puede consultar reservas, pero no crear nuevas desde la app.',
+                    AppEmptyState(
+                      title: t.reservationUnavailable,
+                      subtitle: t.reservationUnavailableHint,
                       icon: Icons.lock_outline_rounded,
                     ),
                 ],
@@ -797,15 +787,15 @@ class _ReservasScreenState extends State<ReservasScreen>
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                 children: [
                   AppSectionHeader(
-                    title: 'Mis reservas',
-                    subtitle: '${_reservas.length} registros',
+                    title: t.myReservations,
+                    subtitle: t.records(_reservas.length),
                   ),
                   if (_reservasError != null)
                     _buildReservasNotice(_reservasError!),
                   if (_reservas.isEmpty)
-                    const AppEmptyState(
-                      title: 'Sin reservas',
-                      subtitle: 'No tienes reservas registradas.',
+                    AppEmptyState(
+                      title: t.noReservations,
+                      subtitle: t.noReservationsHint,
                       icon: Icons.event_busy_outlined,
                     )
                   else
@@ -819,9 +809,11 @@ class _ReservasScreenState extends State<ReservasScreen>
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                 children: [
                   AppSectionHeader(
-                    title: 'Agenda del día',
-                    subtitle:
-                        '${_agendaReservas.length} reservas visibles el ${_formatAgendaDay(_agendaDay)}',
+                    title: t.dailyAgenda,
+                    subtitle: t.agendaVisible(
+                      _agendaReservas.length,
+                      _formatAgendaDay(_agendaDay),
+                    ),
                   ),
                   if (_activeTarget != null) _buildResourceContextBanner(),
                   _buildAgendaDaySelector(),
@@ -838,10 +830,9 @@ class _ReservasScreenState extends State<ReservasScreen>
                       ),
                     ),
                   if (_agendaReservas.isEmpty)
-                    const AppEmptyState(
-                      title: 'Sin reservas este día',
-                      subtitle:
-                          'No hay reservas disponibles para consultar en la fecha seleccionada.',
+                    AppEmptyState(
+                      title: t.noReservationsDay,
+                      subtitle: t.noReservationsDayHint,
                       icon: Icons.calendar_today_outlined,
                     )
                   else
@@ -856,27 +847,25 @@ class _ReservasScreenState extends State<ReservasScreen>
   }
 
   Widget _buildLimitedAccessReservationMode(AuthProvider auth) {
+    final t = context.l10n;
     return AppScaffold(
-      title: 'Reservas',
+      title: t.reservations,
       padding: EdgeInsets.zero,
       actions: [
         if (auth.isInternalUser || auth.isAdmin)
           IconButton(
             onPressed: _scanReservationQr,
             icon: Icon(Icons.qr_code_scanner_rounded),
-            tooltip: 'Escanear QR de sala o equipo',
+            tooltip: t.scanReservationQr,
           ),
         IconButton(onPressed: _loadInitial, icon: Icon(Icons.refresh_rounded)),
       ],
       appBarBottom: TabBar(
         controller: _tabController,
-        tabs: const [
-          Tab(text: 'Mis reservas', icon: Icon(Icons.list_alt_rounded)),
-          Tab(
-            text: 'Agenda diaria',
-            icon: Icon(Icons.calendar_view_day_rounded),
-          ),
-          Tab(text: 'Acceso', icon: Icon(Icons.lock_outline_rounded)),
+        tabs: [
+          Tab(text: t.myReservations, icon: const Icon(Icons.list_alt_rounded)),
+          Tab(text: t.dailyAgenda, icon: Icon(Icons.calendar_view_day_rounded)),
+          Tab(text: t.access, icon: const Icon(Icons.lock_outline_rounded)),
         ],
       ),
       child: SizedBox.expand(
@@ -889,15 +878,15 @@ class _ReservasScreenState extends State<ReservasScreen>
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                 children: [
                   AppSectionHeader(
-                    title: 'Mis reservas',
-                    subtitle: '${_reservas.length} registros',
+                    title: t.myReservations,
+                    subtitle: t.records(_reservas.length),
                   ),
                   if (_reservasError != null)
                     _buildReservasNotice(_reservasError!),
                   if (_reservas.isEmpty)
-                    const AppEmptyState(
-                      title: 'Sin reservas',
-                      subtitle: 'No tienes reservas registradas.',
+                    AppEmptyState(
+                      title: t.noReservations,
+                      subtitle: t.noReservationsHint,
                       icon: Icons.event_busy_outlined,
                     )
                   else
@@ -911,9 +900,11 @@ class _ReservasScreenState extends State<ReservasScreen>
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                 children: [
                   AppSectionHeader(
-                    title: 'Agenda del día',
-                    subtitle:
-                        '${_agendaReservas.length} reservas visibles el ${_formatAgendaDay(_agendaDay)}',
+                    title: t.dailyAgenda,
+                    subtitle: t.agendaVisible(
+                      _agendaReservas.length,
+                      _formatAgendaDay(_agendaDay),
+                    ),
                   ),
                   if (_activeTarget != null) _buildResourceContextBanner(),
                   _buildAgendaDaySelector(),
@@ -930,10 +921,9 @@ class _ReservasScreenState extends State<ReservasScreen>
                       ),
                     ),
                   if (_agendaReservas.isEmpty)
-                    const AppEmptyState(
-                      title: 'Sin reservas este día',
-                      subtitle:
-                          'No hay reservas visibles en la fecha seleccionada.',
+                    AppEmptyState(
+                      title: t.noReservationsDay,
+                      subtitle: t.noReservationsDayHint,
                       icon: Icons.calendar_today_outlined,
                     )
                   else
@@ -952,7 +942,7 @@ class _ReservasScreenState extends State<ReservasScreen>
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
+                        Row(
                           children: [
                             AppIconSurface(
                               icon: Icons.lock_outline_rounded,
@@ -962,7 +952,7 @@ class _ReservasScreenState extends State<ReservasScreen>
                             ),
                             SizedBox(width: 8),
                             Text(
-                              'Reservas con acceso limitado',
+                              t.limitedReservations,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
@@ -972,7 +962,7 @@ class _ReservasScreenState extends State<ReservasScreen>
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          'Este perfil está en modo de consulta dentro de la app. Puede revisar sus reservas y la agenda diaria, pero no crear ni editar nuevas reservas con sus permisos actuales.',
+                          t.limitedReservationsHint,
                           style: TextStyle(
                             color: AppTheme.textSecondaryFor(context),
                           ),
@@ -1032,8 +1022,8 @@ class _ReservasScreenState extends State<ReservasScreen>
                 Expanded(
                   child: Text(
                     label?.trim().isNotEmpty == true
-                        ? 'Recurso seleccionado: $label'
-                        : 'Recurso seleccionado por QR',
+                        ? context.l10n.selectedResource(label!)
+                        : context.l10n.selectedResource(context.l10n.resource),
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
@@ -1661,7 +1651,7 @@ class _ReservasScreenState extends State<ReservasScreen>
                             ),
                           ),
                           AppStatusChip(
-                            label: _formatEstado(estado),
+                            label: _formatEstado(context, estado),
                             color: color,
                           ),
                         ],
@@ -1734,18 +1724,19 @@ class _ReservasScreenState extends State<ReservasScreen>
     }
   }
 
-  String _formatEstado(String estado) {
+  String _formatEstado(BuildContext context, String estado) {
+    final t = context.l10n;
     switch (estado) {
       case 'confirmada':
-        return 'Confirmada';
+        return t.confirmed;
       case 'facturada':
-        return 'Facturada';
+        return t.billed;
       case 'cancelada':
-        return 'Cancelada';
+        return t.cancelled;
       case 'borrador':
-        return 'Borrador';
+        return t.draft;
       default:
-        return estado.isEmpty ? 'Reserva' : estado;
+        return estado.isEmpty ? t.reservation : estado;
     }
   }
 
@@ -1967,7 +1958,7 @@ class _ReservasScreenState extends State<ReservasScreen>
         children: [
           if (_editingReservationId != null) ...[
             Text(
-              'Editando borrador',
+              context.l10n.editingDraft,
               style: TextStyle(
                 color: AppTheme.primary,
                 fontWeight: FontWeight.w700,
@@ -1999,7 +1990,7 @@ class _ReservasScreenState extends State<ReservasScreen>
                   child: OutlinedButton.icon(
                     onPressed: _prevStep,
                     icon: Icon(Icons.arrow_back_rounded),
-                    label: Text('Atrás'),
+                    label: Text(context.l10n.back),
                   ),
                 ),
               if (_wizardStep > 0) const SizedBox(width: 10),
@@ -2017,12 +2008,12 @@ class _ReservasScreenState extends State<ReservasScreen>
                     _wizardStep == 3
                         ? (_isCreating
                               ? (_editingReservationId == null
-                                    ? 'Creando...'
-                                    : 'Guardando...')
+                                    ? context.l10n.creating
+                                    : context.l10n.saving)
                               : (_editingReservationId == null
-                                    ? 'Crear borrador'
-                                    : 'Guardar cambios'))
-                        : 'Siguiente',
+                                    ? context.l10n.createDraft
+                                    : context.l10n.saveChanges))
+                        : context.l10n.next,
                   ),
                 ),
               ),
@@ -2034,7 +2025,12 @@ class _ReservasScreenState extends State<ReservasScreen>
   }
 
   Widget _buildWizardHeader() {
-    const labels = ['Servicio', 'Recurso', 'Horario', 'Confirmar'];
+    final labels = [
+      context.l10n.service,
+      context.l10n.resource,
+      context.l10n.schedule,
+      context.l10n.confirm,
+    ];
     return Row(
       children: List.generate(labels.length, (i) {
         final active = i == _wizardStep;
@@ -2180,8 +2176,8 @@ class _ReservasScreenState extends State<ReservasScreen>
                 DropdownButtonFormField<int>(
                   key: ValueKey<int?>(_sessionTypeId),
                   initialValue: _sessionTypeId,
-                  decoration: const InputDecoration(
-                    labelText: 'Tipo de sesión',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.sessionType,
                   ),
                   items: _sessionTypes
                       .map(
@@ -2244,7 +2240,7 @@ class _ReservasScreenState extends State<ReservasScreen>
               ),
               const SizedBox(height: 10),
               Text(
-                'Horas disponibles',
+                context.l10n.availableHours,
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: AppTheme.textPrimaryFor(context),
@@ -2284,7 +2280,7 @@ class _ReservasScreenState extends State<ReservasScreen>
               ),
               const SizedBox(height: 10),
               Text(
-                'Duración',
+                context.l10n.duration,
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: AppTheme.textPrimaryFor(context),
@@ -2328,7 +2324,7 @@ class _ReservasScreenState extends State<ReservasScreen>
               const SizedBox(height: 12),
               AppInput(
                 controller: _motivoCtrl,
-                labelText: 'Motivo (opcional)',
+                labelText: context.l10n.reasonOptional,
                 prefixIcon: Icons.notes_rounded,
               ),
               const SizedBox(height: 10),
@@ -2463,7 +2459,7 @@ class _ReservasScreenState extends State<ReservasScreen>
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  'Motivo: $motivo',
+                  '${context.l10n.reason}: $motivo',
                   style: TextStyle(
                     color: AppTheme.textMutedFor(context),
                     fontSize: 12,
@@ -2474,7 +2470,7 @@ class _ReservasScreenState extends State<ReservasScreen>
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  'Solicitante: $contacto',
+                  '${context.l10n.requester}: $contacto',
                   style: TextStyle(
                     color: AppTheme.textMutedFor(context),
                     fontSize: 12,
@@ -2489,12 +2485,12 @@ class _ReservasScreenState extends State<ReservasScreen>
                   TextButton.icon(
                     onPressed: () => _editarReserva(r),
                     icon: Icon(Icons.edit_outlined),
-                    label: Text('Editar'),
+                    label: Text(context.l10n.edit),
                   ),
                   TextButton.icon(
                     onPressed: () => _confirmarReserva(id),
                     icon: Icon(Icons.check_circle_outline_rounded),
-                    label: Text('Confirmar'),
+                    label: Text(context.l10n.confirm),
                   ),
                 ],
               ),
@@ -2506,7 +2502,7 @@ class _ReservasScreenState extends State<ReservasScreen>
                 child: TextButton.icon(
                   onPressed: () => _cancelarReserva(id),
                   icon: Icon(Icons.cancel_outlined),
-                  label: Text('Cancelar'),
+                  label: Text(context.l10n.cancel),
                 ),
               ),
             ],
@@ -2518,7 +2514,7 @@ class _ReservasScreenState extends State<ReservasScreen>
 
   Widget _estadoBadge(String estado) {
     final color = _estadoColor(estado);
-    return AppStatusChip(label: _formatEstado(estado), color: color);
+    return AppStatusChip(label: _formatEstado(context, estado), color: color);
   }
 
   String _nameFromMany2one(dynamic v) {

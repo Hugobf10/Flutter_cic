@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../features/forms/dynamic_form.dart';
 import '../../features/incidents/incidence_detail_screen.dart';
 import '../../providers/auth_provider.dart';
@@ -80,60 +81,82 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
             16 + MediaQuery.of(ctx).viewInsets.bottom,
           ),
           child: DynamicForm(
-            submitLabel: 'Crear incidencia',
-            fields: const [
-              DynamicFieldConfig(key: 'name', label: 'Título', required: true),
+            submitLabel: context.l10n.createIncident,
+            fields: [
+              DynamicFieldConfig(
+                key: 'name',
+                label: context.l10n.title,
+                required: true,
+              ),
               DynamicFieldConfig(
                 key: 'tipo',
-                label: 'Tipo',
+                label: context.l10n.type,
                 type: DynamicFieldType.select,
                 initialValue: 'nc',
                 required: true,
                 options: [
-                  DynamicFieldOption(value: 'nc', label: 'No conformidad'),
+                  DynamicFieldOption(
+                    value: 'nc',
+                    label: context.l10n.nonConformity,
+                  ),
                   DynamicFieldOption(
                     value: 'om',
-                    label: 'Oportunidad de mejora',
+                    label: context.l10n.improvementOpportunity,
                   ),
                 ],
               ),
               DynamicFieldConfig(
                 key: 'categoria',
-                label: 'Categoría',
+                label: context.l10n.category,
                 type: DynamicFieldType.select,
                 initialValue: 'calidad',
                 required: true,
                 options: [
-                  DynamicFieldOption(value: 'calidad', label: 'Calidad'),
-                  DynamicFieldOption(value: 'prl', label: 'PRL'),
+                  DynamicFieldOption(
+                    value: 'calidad',
+                    label: context.l10n.quality,
+                  ),
+                  DynamicFieldOption(
+                    value: 'prl',
+                    label: context.l10n.healthSafety,
+                  ),
                 ],
               ),
               DynamicFieldConfig(
                 key: 'subtipo',
-                label: 'Subtipo',
+                label: context.l10n.subtype,
                 type: DynamicFieldType.select,
                 initialValue: 'interna',
                 required: true,
                 options: [
-                  DynamicFieldOption(value: 'interna', label: 'Interna'),
-                  DynamicFieldOption(value: 'proveedor', label: 'Proveedor'),
-                  DynamicFieldOption(value: 'auditoria', label: 'Auditoría'),
+                  DynamicFieldOption(
+                    value: 'interna',
+                    label: context.l10n.internal,
+                  ),
+                  DynamicFieldOption(
+                    value: 'proveedor',
+                    label: context.l10n.supplier,
+                  ),
+                  DynamicFieldOption(
+                    value: 'auditoria',
+                    label: context.l10n.audit,
+                  ),
                   DynamicFieldOption(
                     value: 'reclamacion',
-                    label: 'Reclamación',
+                    label: context.l10n.claim,
                   ),
-                  DynamicFieldOption(value: 'otra', label: 'Otra'),
+                  DynamicFieldOption(value: 'otra', label: context.l10n.other),
                 ],
               ),
               DynamicFieldConfig(
                 key: 'fecha',
-                label: 'Fecha',
+                label: context.l10n.date,
                 type: DynamicFieldType.date,
                 required: true,
               ),
               DynamicFieldConfig(
                 key: 'descripcion',
-                label: 'Descripción',
+                label: context.l10n.description,
                 type: DynamicFieldType.multiline,
                 maxLines: 4,
               ),
@@ -172,7 +195,7 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     return AppScaffold(
-      title: 'Incidencias',
+      title: context.l10n.incidents,
       padding: EdgeInsets.zero,
       actions: [
         if (auth.canEditModule('incidents'))
@@ -193,10 +216,10 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
 
   Widget _buildFilterChips() {
     final filters = {
-      'todas': 'Todas',
-      'abierta': 'Abiertas',
-      'en_proceso': 'En proceso',
-      'cerrada': 'Cerradas',
+      'todas': context.l10n.all,
+      'abierta': context.l10n.openPlural,
+      'en_proceso': context.l10n.inProgress,
+      'cerrada': context.l10n.closedPlural,
     };
     return Container(
       height: 52,
@@ -242,7 +265,7 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: _loadPortalData,
-              child: Text('Reintentar'),
+              child: Text(context.l10n.retry),
             ),
           ],
         ),
@@ -251,7 +274,7 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
     if (_portalRows.isEmpty) {
       return Center(
         child: Text(
-          'No hay incidencias.',
+          context.l10n.noIncidents,
           style: TextStyle(color: AppTheme.textMutedFor(context)),
         ),
       );
@@ -263,8 +286,8 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
         itemCount: _portalRows.length + 1,
         itemBuilder: (_, index) => index == 0
             ? SectionHeader(
-                title: '${_portalRows.length} incidencias',
-                subtitle: 'De tu unidad, ordenadas por fecha',
+                title: context.l10n.incidentsCount(_portalRows.length),
+                subtitle: context.l10n.incidentsUnitHint,
               )
             : _buildCard(_portalRows[index - 1]),
       ),

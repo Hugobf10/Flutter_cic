@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
@@ -8,6 +9,8 @@ import 'app/providers/app_state_provider.dart';
 import 'app/screens/superapp_shell.dart';
 import 'app/ui/app_components.dart';
 import 'config/app_config.dart';
+import 'l10n/generated/app_localizations.dart';
+import 'theme/accessibility_media.dart';
 import 'providers/auth_provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'screens/reservas/reservation_entry_target.dart';
@@ -15,16 +18,18 @@ import 'screens/login/login_screen.dart';
 import 'services/deep_link_service.dart';
 import 'services/app_logger.dart';
 import 'services/monitoring_service.dart';
+import 'services/push_notifications_service.dart';
 import 'theme/app_motion.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await MonitoringService.init();
-  runZonedGuarded(
-    () {
+  await runZonedGuarded<Future<void>>(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      await MonitoringService.init();
+      await PushNotificationsService.prepareBackgroundHandling();
       FlutterError.onError = (details) {
-        FlutterError.presentError(details);
+        if (kDebugMode) FlutterError.presentError(details);
         AppLogger.error(
           'FlutterError capturado',
           error: details.exception,
@@ -83,12 +88,40 @@ class CicSalamancaApp extends StatelessWidget {
         builder: (context, appState, _) {
           return MaterialApp(
             title: AppConfig.appName,
+            locale: appState.locale,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
+            theme: AppTheme.lightThemeFor(highContrast: appState.highContrast),
+            darkTheme: AppTheme.darkThemeFor(
+              highContrast: appState.highContrast,
+            ),
+            highContrastTheme: AppTheme.lightThemeFor(highContrast: true),
+            highContrastDarkTheme: AppTheme.darkThemeFor(highContrast: true),
             themeMode: appState.themeMode,
-            themeAnimationDuration: AppMotion.standard,
+            themeAnimationDuration: appState.reduceMotion
+                ? Duration.zero
+                : AppMotion.standard,
             themeAnimationCurve: AppMotion.enterCurve,
+            builder: (context, child) {
+              final media = MediaQuery.of(context);
+              return MediaQuery(
+                data: media.copyWith(
+                  textScaler: PreferenceTextScaler(
+                    media.textScaler,
+                    appState.textScaleFactor,
+                  ),
+                  boldText: media.boldText || appState.boldText,
+                  highContrast: media.highContrast || appState.highContrast,
+                  disableAnimations:
+                      media.disableAnimations || appState.reduceMotion,
+                ),
+                child: AccessibilityPalette(
+                  alternativeColors: appState.alternativeColors,
+                  child: child ?? const SizedBox.shrink(),
+                ),
+              );
+            },
             home: const _DeepLinkBootstrap(child: AuthGate()),
           );
         },

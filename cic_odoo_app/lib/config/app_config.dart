@@ -1,4 +1,5 @@
 import 'app_env.dart';
+import 'server_policy.dart';
 
 /// Configuración centralizada de la app CIC Odoo.
 class AppConfig {
@@ -60,11 +61,42 @@ class AppConfig {
 
   static bool get hasSentry => sentryDsn.trim().isNotEmpty;
 
+  /// Push stays opt-in until CIC supplies a Firebase project configuration.
+  /// These client values identify the app; the server credential never ships
+  /// in the mobile binary.
+  static const bool pushNotificationsEnabled = bool.fromEnvironment(
+    'PUSH_NOTIFICATIONS_ENABLED',
+    defaultValue: false,
+  );
+  static const String firebaseApiKey = String.fromEnvironment(
+    'FIREBASE_API_KEY',
+    defaultValue: '',
+  );
+  static const String firebaseAppId = String.fromEnvironment(
+    'FIREBASE_APP_ID',
+    defaultValue: '',
+  );
+  static const String firebaseMessagingSenderId = String.fromEnvironment(
+    'FIREBASE_MESSAGING_SENDER_ID',
+    defaultValue: '',
+  );
+  static const String firebaseProjectId = String.fromEnvironment(
+    'FIREBASE_PROJECT_ID',
+    defaultValue: '',
+  );
+  static const String firebaseVapidKey = String.fromEnvironment(
+    'FIREBASE_VAPID_KEY',
+    defaultValue: '',
+  );
+
+  static bool get hasPushConfiguration =>
+      pushNotificationsEnabled &&
+      firebaseApiKey.isNotEmpty &&
+      firebaseAppId.isNotEmpty &&
+      firebaseMessagingSenderId.isNotEmpty &&
+      firebaseProjectId.isNotEmpty;
+
   static bool get hasValidBaseUrl {
-    final uri = Uri.tryParse(odooBaseUrl);
-    return uri != null &&
-        uri.hasScheme &&
-        (uri.scheme == 'http' || uri.scheme == 'https') &&
-        uri.host.isNotEmpty;
+    return ServerPolicy.isSecureOrigin(odooBaseUrl);
   }
 }

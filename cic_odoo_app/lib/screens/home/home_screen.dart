@@ -12,6 +12,7 @@ import '../../app/screens/modules_hub_screen.dart';
 import '../../app/screens/notifications_screen.dart';
 import '../../app/screens/profile_screen.dart';
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../config/app_config.dart';
 import '../../features/purchases/purchases_screen.dart';
 import '../../features/quality/quality_center_screen.dart';
@@ -80,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final appState = context.watch<AppStateProvider>();
 
     return AppScaffold(
-      title: 'Inicio',
+      title: context.l10n.home,
       showAppBar: false,
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 20),
       child: RefreshIndicator(
@@ -100,19 +101,19 @@ class _HomeScreenState extends State<HomeScreen> {
             if (dashboard.state == DashboardState.error) ...[
               const SizedBox(height: 12),
               _DashboardStatusBanner(
-                message: dashboard.errorMessage ?? 'Error desconocido',
+                message: dashboard.errorMessage ?? context.l10n.unknownError,
                 onRetry: _onRefresh,
               ),
             ],
             const SizedBox(height: 26),
             AppSectionHeader(
-              title: 'Accesos rápidos',
+              title: context.l10n.quickActions,
               action: TextButton.icon(
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const ModulesHubScreen()),
                 ),
                 icon: const Icon(Icons.arrow_forward_rounded, size: 16),
-                label: const Text('Ver todos'),
+                label: Text(context.l10n.viewAllModules),
               ),
             ),
             const _QuickActions(),
@@ -121,14 +122,14 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 20),
             if (dashboard.permissionDenied) const _AccessScopeBanner(),
             AppSectionHeader(
-              title: 'Actividad reciente',
+              title: context.l10n.recentActivity,
               action: TextButton(
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => const NotificationsScreen(),
                   ),
                 ),
-                child: Text('Ver todo'),
+                child: Text(context.l10n.viewAll),
               ),
             ),
             _ActivityList(items: appState.notifications, auth: auth),
@@ -151,11 +152,12 @@ class _HomeHero extends StatelessWidget {
     final name = auth.userName.trim().isEmpty ? 'Usuario' : auth.userName;
     final firstName = name.split(' ').first;
     final hour = DateTime.now().hour;
+    final t = context.l10n;
     final greeting = hour < 12
-        ? 'Buenos días'
+        ? t.goodMorning
         : hour < 20
-        ? 'Buenas tardes'
-        : 'Buenas noches';
+        ? t.goodAfternoon
+        : t.goodEvening;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,7 +234,7 @@ class _HomeHero extends StatelessWidget {
         ),
         const SizedBox(height: 7),
         Text(
-          'Aquí tienes un resumen de lo importante.',
+          context.l10n.summary,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: AppTheme.textSecondaryFor(context),
           ),
@@ -255,34 +257,35 @@ class _DashboardMetrics extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     final definitions = <_MetricDefinition>[
-      const _MetricDefinition(
-        title: 'Incidencias',
+      _MetricDefinition(
+        title: t.incidents,
         moduleKey: 'incidents',
-        helper: 'Abiertas',
+        helper: t.open,
         icon: Icons.warning_amber_rounded,
         color: AppTheme.primary,
       ),
-      const _MetricDefinition(
-        title: 'Reservas',
+      _MetricDefinition(
+        title: t.reservations,
         moduleKey: 'reservas',
-        helper: 'Hoy',
+        helper: t.today,
         icon: Icons.calendar_month_rounded,
         color: AppTheme.info,
       ),
-      const _MetricDefinition(
-        title: 'Formación',
+      _MetricDefinition(
+        title: t.training,
         moduleKey: 'training',
-        helper: 'Pendientes',
+        helper: t.pending,
         icon: Icons.school_rounded,
         color: AppTheme.accent,
       ),
     ].where((definition) => auth.canViewModule(definition.moduleKey)).toList();
 
     if (definitions.isEmpty) {
-      return const AppEmptyState(
-        title: 'Todo al día',
-        subtitle: 'No hay indicadores disponibles para este perfil.',
+      return AppEmptyState(
+        title: t.upToDate,
+        subtitle: t.upToDateHint,
         icon: Icons.task_alt_rounded,
       );
     }
@@ -436,7 +439,7 @@ class _DashboardStatusBanner extends StatelessWidget {
           IconButton(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh_rounded, size: 18),
-            tooltip: 'Reintentar',
+            tooltip: context.l10n.retry,
           ),
         ],
       ),
@@ -986,11 +989,14 @@ class _ActivityList extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: AppListTile(
-            onTap: () => ModuleNavigation.openModule(
-              context,
-              auth: auth,
-              moduleKey: n.moduleKey,
-            ),
+            onTap: () {
+              context.read<AppStateProvider>().markNotificationRead(n);
+              ModuleNavigation.openModule(
+                context,
+                auth: auth,
+                moduleKey: n.moduleKey,
+              );
+            },
             leading: Container(
               width: 10,
               height: 10,

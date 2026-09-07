@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/screens/document_viewer_screen.dart';
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
 import '../../services/odoo_values.dart';
@@ -59,7 +60,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
     return DefaultTabController(
       length: 2,
       child: AppScaffold(
-        title: 'Reclutamiento',
+        title: context.l10n.recruitment,
         actions: [
           IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
         ],
@@ -67,16 +68,16 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
             ? const AppLoadingView()
             : _error != null
             ? AppEmptyState(
-                title: 'Error',
+                title: context.l10n.error,
                 subtitle: _error!,
                 icon: Icons.error_outline_rounded,
               )
             : Column(
                 children: [
-                  const TabBar(
+                  TabBar(
                     tabs: [
-                      Tab(text: 'Vacantes'),
-                      Tab(text: 'Candidaturas'),
+                      Tab(text: context.l10n.vacancies),
+                      Tab(text: context.l10n.applications),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -84,18 +85,19 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                     child: TabBarView(
                       children: [
                         _jobs.isEmpty
-                            ? const AppEmptyState(
-                                title: 'Sin vacantes',
-                                subtitle: 'No hay posiciones abiertas.',
+                            ? AppEmptyState(
+                                title: context.l10n.noVacancies,
+                                subtitle: context.l10n.noVacanciesHint,
                                 icon: Icons.work_outline_rounded,
                               )
                             : ListView.builder(
                                 itemCount: _jobs.length,
                                 itemBuilder: (_, i) {
                                   final it = _jobs[i];
-                                  final dept = it['department_id'] is List
-                                      ? it['department_id'][1].toString()
-                                      : '-';
+                                  final dept = OdooValues.many2oneLabel(
+                                    it['department_id'],
+                                    fallback: '—',
+                                  );
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: 8),
                                     child: AppCard(
@@ -105,14 +107,17 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            (it['name'] ?? '').toString(),
+                                            OdooValues.string(
+                                              it['name'],
+                                              fallback: context.l10n.vacancy,
+                                            ),
                                             style: TextStyle(
                                               fontWeight: FontWeight.w700,
                                             ),
                                           ),
                                           const SizedBox(height: 6),
                                           Text(
-                                            'Departamento: $dept',
+                                            '${context.l10n.department}: $dept',
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: AppTheme.textSecondaryFor(
@@ -121,7 +126,12 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                                             ),
                                           ),
                                           Text(
-                                            'Vacantes: ${(it['no_of_recruitment'] ?? 0)}',
+                                            context.l10n.vacancyCount(
+                                              OdooValues.intValue(
+                                                    it['no_of_recruitment'],
+                                                  ) ??
+                                                  0,
+                                            ),
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: AppTheme.textSecondaryFor(
@@ -136,21 +146,23 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                                 },
                               ),
                         _applicants.isEmpty
-                            ? const AppEmptyState(
-                                title: 'Sin candidaturas',
-                                subtitle: 'No hay candidaturas registradas.',
+                            ? AppEmptyState(
+                                title: context.l10n.noApplications,
+                                subtitle: context.l10n.noApplicationsHint,
                                 icon: Icons.person_search_rounded,
                               )
                             : ListView.builder(
                                 itemCount: _applicants.length,
                                 itemBuilder: (_, i) {
                                   final it = _applicants[i];
-                                  final job = it['job_id'] is List
-                                      ? it['job_id'][1].toString()
-                                      : '-';
-                                  final stage = it['stage_id'] is List
-                                      ? it['stage_id'][1].toString()
-                                      : '-';
+                                  final job = OdooValues.many2oneLabel(
+                                    it['job_id'],
+                                    fallback: '—',
+                                  );
+                                  final stage = OdooValues.many2oneLabel(
+                                    it['stage_id'],
+                                    fallback: '—',
+                                  );
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: 8),
                                     child: AppCard(
@@ -163,9 +175,11 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                                             children: [
                                               Expanded(
                                                 child: Text(
-                                                  (it['partner_name'] ??
-                                                          'Candidato')
-                                                      .toString(),
+                                                  OdooValues.string(
+                                                    it['partner_name'],
+                                                    fallback:
+                                                        context.l10n.candidate,
+                                                  ),
                                                   style: TextStyle(
                                                     fontWeight: FontWeight.w700,
                                                   ),
@@ -175,7 +189,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                                           ),
                                           const SizedBox(height: 6),
                                           Text(
-                                            'Puesto: $job',
+                                            '${context.l10n.job}: $job',
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: AppTheme.textSecondaryFor(
@@ -184,7 +198,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                                             ),
                                           ),
                                           Text(
-                                            'Estado: $stage',
+                                            '${context.l10n.status}: $stage',
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: AppTheme.textSecondaryFor(
@@ -193,8 +207,10 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                                             ),
                                           ),
                                           Text(
-                                            (it['email_from'] ?? '-')
-                                                .toString(),
+                                            OdooValues.string(
+                                              it['email_from'],
+                                              fallback: '—',
+                                            ),
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: AppTheme.textMutedFor(
@@ -219,7 +235,10 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
 
   void _openJobDetail(Map<String, dynamic> job) {
     final jobId = (job['id'] as num?)?.toInt();
-    final title = (job['name'] ?? 'Vacante').toString();
+    final title = OdooValues.string(
+      job['name'],
+      fallback: context.l10n.vacancy,
+    );
     final candidates = _applicants.where((applicant) {
       final ref = applicant['job_id'];
       return ref is List &&
@@ -242,27 +261,30 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
             Text(title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 6),
             Text(
-              '${candidates.length} candidaturas vinculadas',
+              context.l10n.linkedApplications(candidates.length),
               style: TextStyle(color: AppTheme.textSecondaryFor(context)),
             ),
             const SizedBox(height: 14),
             if (candidates.isEmpty)
-              const AppEmptyState(
-                title: 'Sin candidaturas',
-                subtitle: 'Esta vacante no tiene candidaturas visibles.',
+              AppEmptyState(
+                title: context.l10n.noApplications,
+                subtitle: context.l10n.noVisibleApplicationsHint,
                 icon: Icons.person_search_rounded,
               )
             else
               ...candidates.map((candidate) {
-                final stage = candidate['stage_id'] is List
-                    ? candidate['stage_id'][1].toString()
-                    : '-';
+                final stage = OdooValues.many2oneLabel(
+                  candidate['stage_id'],
+                  fallback: '—',
+                );
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: AppListTile(
                     onTap: () => _openApplicantDetail(candidate),
-                    title: (candidate['partner_name'] ?? 'Candidato')
-                        .toString(),
+                    title: OdooValues.string(
+                      candidate['partner_name'],
+                      fallback: context.l10n.candidate,
+                    ),
                     subtitle: stage,
                     trailing: Icon(Icons.chevron_right_rounded),
                   ),
@@ -275,12 +297,11 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
   }
 
   void _openApplicantDetail(Map<String, dynamic> applicant) {
-    final job = applicant['job_id'] is List
-        ? applicant['job_id'][1].toString()
-        : '-';
-    final stage = applicant['stage_id'] is List
-        ? applicant['stage_id'][1].toString()
-        : '-';
+    final job = OdooValues.many2oneLabel(applicant['job_id'], fallback: '—');
+    final stage = OdooValues.many2oneLabel(
+      applicant['stage_id'],
+      fallback: '—',
+    );
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -295,21 +316,26 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
             Text(
-              (applicant['partner_name'] ?? 'Candidato').toString(),
+              OdooValues.string(
+                applicant['partner_name'],
+                fallback: context.l10n.candidate,
+              ),
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
-            Text('Vacante: $job'),
-            Text('Estado: $stage'),
-            Text('Email: ${(applicant['email_from'] ?? '-')}'),
+            Text('${context.l10n.vacancy}: $job'),
+            Text('${context.l10n.status}: $stage'),
+            Text(
+              '${context.l10n.email}: ${OdooValues.string(applicant['email_from'], fallback: '—')}',
+            ),
             const SizedBox(height: 20),
             Text(
-              'Documentación aportada',
+              context.l10n.providedDocuments,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 4),
             Text(
-              'Consulta en modo lectura. No se permite descargar ni compartir archivos.',
+              context.l10n.documentsReadOnlyHint,
               style: TextStyle(color: AppTheme.textSecondaryFor(context)),
             ),
             const SizedBox(height: 12),
@@ -329,9 +355,9 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
             if (!_documentSpecs.any(
               (document) => applicant[document.field] == true,
             ))
-              const AppEmptyState(
-                title: 'Sin documentación',
-                subtitle: 'La candidatura no tiene documentos disponibles.',
+              AppEmptyState(
+                title: context.l10n.noCandidateDocuments,
+                subtitle: context.l10n.noCandidateDocumentsHint,
                 icon: Icons.folder_off_outlined,
               ),
           ],
@@ -373,8 +399,10 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
     Map<String, dynamic> applicant,
     _CandidateDocument document,
   ) {
-    final name = (applicant[document.fileNameField] ?? '').toString().trim();
-    return name.isEmpty ? 'Documento disponible para consulta' : name;
+    return OdooValues.string(
+      applicant[document.fileNameField],
+      fallback: 'Documento disponible para consulta',
+    );
   }
 
   Future<void> _previewDocument(
@@ -409,7 +437,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'No se pudo visualizar el documento: ${OdooService.prettyError(e)}',
+            '${context.l10n.couldNotPreviewDocument}: ${OdooService.prettyError(e)}',
           ),
         ),
       );

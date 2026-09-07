@@ -16,4 +16,18 @@ class AppNotification {
   final String createdAtLabel;
   final String moduleKey;
   final bool unread;
+
+  String get storageKey => '$moduleKey:$id';
+
+  AppNotification copyWith({bool? unread}) {
+    return AppNotification(
+      id: id,
+      title: title,
+      subtitle: subtitle,
+      level: level,
+      createdAtLabel: createdAtLabel,
+      moduleKey: moduleKey,
+      unread: unread ?? this.unread,
+    );
+  }
 }

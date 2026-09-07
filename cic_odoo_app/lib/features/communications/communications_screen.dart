@@ -9,7 +9,9 @@ import 'communication_detail_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
 import '../../services/portal_api_service.dart';
+import '../../services/odoo_values.dart';
 import '../../theme/app_theme.dart';
+import '../../l10n/strings.dart';
 
 enum _CommunicationFilter { all, communications, suggestions }
 
@@ -28,13 +30,16 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
   List<Map<String, dynamic>> _rows = [];
   _CommunicationFilter _filter = _CommunicationFilter.all;
 
-  static const _stages = [
-    WorkflowStage(key: 'recibida', label: 'Recibida'),
-    WorkflowStage(key: 'en_analisis', label: 'Análisis'),
-    WorkflowStage(key: 'tratada', label: 'Tratada'),
-    WorkflowStage(key: 'respondida', label: 'Respondida'),
-    WorkflowStage(key: 'cerrada', label: 'Cerrada'),
-  ];
+  List<WorkflowStage> _stages(BuildContext context) {
+    final t = context.l10n;
+    return [
+      WorkflowStage(key: 'recibida', label: t.received),
+      WorkflowStage(key: 'en_analisis', label: t.inAnalysis),
+      WorkflowStage(key: 'tratada', label: t.handled),
+      WorkflowStage(key: 'respondida', label: t.answered),
+      WorkflowStage(key: 'cerrada', label: t.closed),
+    ];
+  }
 
   @override
   void initState() {
@@ -90,7 +95,9 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('No se pudo ejecutar acción: $e'),
+          content: Text(
+            '${context.l10n.couldNotRunAction}: ${OdooService.prettyError(e)}',
+          ),
           backgroundColor: AppTheme.danger,
         ),
       );
@@ -117,14 +124,14 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
           final row = Map<String, dynamic>.from(item);
           return DynamicFieldOption(
             value: (row['id'] as num).toInt(),
-            label: row['name']?.toString() ?? 'Unidad',
+            label: row['name']?.toString() ?? context.l10n.unit,
           );
         }).toList();
         postOptions = rawPosts.whereType<Map>().map((item) {
           final row = Map<String, dynamic>.from(item);
           return DynamicFieldOption(
             value: (row['id'] as num).toInt(),
-            label: row['name']?.toString() ?? 'Puesto funcional',
+            label: row['name']?.toString() ?? context.l10n.role,
           );
         }).toList();
       } catch (error) {
@@ -132,7 +139,7 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'No se pueden cargar los destinatarios: ${OdooService.prettyError(error)}',
+              '${context.l10n.couldNotLoadRecipients}: ${OdooService.prettyError(error)}',
             ),
           ),
         );
@@ -153,36 +160,39 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
             16 + MediaQuery.of(ctx).viewInsets.bottom,
           ),
           child: DynamicForm(
-            submitLabel: 'Crear comunicación',
+            submitLabel: context.l10n.createCommunication,
             fields: [
-              const DynamicFieldConfig(
+              DynamicFieldConfig(
                 key: 'name',
-                label: 'Título',
+                label: context.l10n.title,
                 required: true,
               ),
               DynamicFieldConfig(
                 key: 'tipo',
-                label: 'Tipo',
+                label: context.l10n.type,
                 type: DynamicFieldType.select,
                 required: true,
                 initialValue: 'comunicacion',
-                options: const [
+                options: [
                   DynamicFieldOption(
                     value: 'comunicacion',
-                    label: 'Comunicación',
+                    label: context.l10n.communication,
                   ),
-                  DynamicFieldOption(value: 'sugerencia', label: 'Sugerencia'),
+                  DynamicFieldOption(
+                    value: 'sugerencia',
+                    label: context.l10n.suggestion,
+                  ),
                 ],
               ),
-              const DynamicFieldConfig(
+              DynamicFieldConfig(
                 key: 'fecha',
-                label: 'Fecha',
+                label: context.l10n.date,
                 type: DynamicFieldType.date,
                 required: true,
               ),
-              const DynamicFieldConfig(
+              DynamicFieldConfig(
                 key: 'descripcion',
-                label: 'Descripción',
+                label: context.l10n.description,
                 type: DynamicFieldType.multiline,
                 required: true,
                 maxLines: 4,
@@ -190,14 +200,14 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
               if (auth.isInternalUser)
                 DynamicFieldConfig(
                   key: 'destino_unidad_ids',
-                  label: 'Unidades destinatarias',
+                  label: context.l10n.recipientUnits,
                   type: DynamicFieldType.multiSelect,
                   options: unitOptions,
                 ),
               if (auth.isInternalUser)
                 DynamicFieldConfig(
                   key: 'destino_puesto_ids',
-                  label: 'Puestos funcionales destinatarios',
+                  label: context.l10n.recipientRoles,
                   type: DynamicFieldType.multiSelect,
                   options: postOptions,
                 ),
@@ -255,14 +265,14 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
       };
     }).toList();
     if (_loading) {
-      return const AppScaffold(
-        title: 'Comunicaciones',
+      return AppScaffold(
+        title: context.l10n.communications,
         child: AppLoadingView(),
       );
     }
 
     return AppScaffold(
-      title: 'Comunicaciones',
+      title: context.l10n.communications,
       padding: EdgeInsets.zero,
       actions: [
         if (auth.canSendCommunications)
@@ -274,10 +284,13 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
       ],
       child: _error != null
           ? AppEmptyState(
-              title: 'No se pudieron cargar las comunicaciones',
+              title: context.l10n.couldNotLoadCommunications,
               subtitle: _error!,
               icon: Icons.cloud_off_rounded,
-              action: AppButton.primary(label: 'Reintentar', onPressed: _load),
+              action: AppButton.primary(
+                label: context.l10n.retry,
+                onPressed: _load,
+              ),
             )
           : Column(
               children: [
@@ -288,14 +301,14 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                     runSpacing: 8,
                     children: [
                       AppChoicePill(
-                        label: 'Todas',
+                        label: context.l10n.all,
                         icon: Icons.all_inbox_rounded,
                         selected: _filter == _CommunicationFilter.all,
                         onTap: () =>
                             setState(() => _filter = _CommunicationFilter.all),
                       ),
                       AppChoicePill(
-                        label: 'Comunicaciones',
+                        label: context.l10n.communications,
                         icon: Icons.campaign_rounded,
                         selected:
                             _filter == _CommunicationFilter.communications,
@@ -304,7 +317,7 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                         ),
                       ),
                       AppChoicePill(
-                        label: 'Sugerencias',
+                        label: context.l10n.suggestions,
                         icon: Icons.lightbulb_outline_rounded,
                         selected: _filter == _CommunicationFilter.suggestions,
                         onTap: () => setState(
@@ -323,7 +336,7 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
                       final row = visibleRows[i];
                       return _CommunicationCard(
                         row: row,
-                        stages: _stages,
+                        stages: _stages(context),
                         onAction: _runAction,
                         canEdit: auth.canEditModule('communications'),
                         onTap: () {
@@ -364,10 +377,17 @@ class _CommunicationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final id = (row['id'] as num).toInt();
     final estado = (row['estado'] ?? 'recibida').toString();
-    final title = row['name']?.toString() ?? 'Comunicación';
-    final desc = row['descripcion']?.toString() ?? '';
-    final tipo = row['tipo']?.toString() ?? '';
-    final fecha = row['fecha']?.toString() ?? '';
+    final requiresWorkflow = OdooValues.boolValue(
+      row['requiere_tramitacion'],
+      fallback: true,
+    );
+    final title = OdooValues.string(
+      row['name'],
+      fallback: context.l10n.communication,
+    );
+    final desc = OdooValues.string(row['descripcion']);
+    final tipo = OdooValues.string(row['tipo'], fallback: '—');
+    final fecha = OdooValues.string(row['fecha'], fallback: '—');
     final partner = row['partner_id'] is List
         ? row['partner_id'][1].toString()
         : '';
@@ -404,7 +424,11 @@ class _CommunicationCard extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
-                WorkflowStateChip(label: estado, color: color),
+                if (requiresWorkflow)
+                  WorkflowStateChip(
+                    label: _localizedStage(context, estado),
+                    color: color,
+                  ),
               ],
             ),
             const SizedBox(height: 6),
@@ -417,26 +441,27 @@ class _CommunicationCard extends StatelessWidget {
               Text(desc, maxLines: 2, overflow: TextOverflow.ellipsis),
             ],
             const SizedBox(height: 10),
-            WorkflowStepperBar(stages: stages, currentKey: estado),
-            const SizedBox(height: 10),
-            if (canEdit)
+            if (requiresWorkflow)
+              WorkflowStepperBar(stages: stages, currentKey: estado),
+            if (requiresWorkflow) const SizedBox(height: 10),
+            if (canEdit && requiresWorkflow)
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
                   if (estado == 'recibida')
                     _ActionBtn(
-                      label: 'Analizar',
+                      label: context.l10n.analyse,
                       onTap: () => onAction(id, 'action_marcar_en_analisis'),
                     ),
                   if (estado == 'en_analisis')
                     _ActionBtn(
-                      label: 'Marcar tratada',
+                      label: context.l10n.markHandled,
                       onTap: () => onAction(id, 'action_marcar_tratada'),
                     ),
                   if (estado == 'tratada' || estado == 'respondida')
                     _ActionBtn(
-                      label: 'Cerrar',
+                      label: context.l10n.close,
                       onTap: () => onAction(id, 'action_cerrar'),
                     ),
                 ],
@@ -446,6 +471,18 @@ class _CommunicationCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _localizedStage(BuildContext context, String value) {
+  final t = context.l10n;
+  return switch (value) {
+    'recibida' => t.received,
+    'en_analisis' => t.inAnalysis,
+    'tratada' => t.handled,
+    'respondida' => t.answered,
+    'cerrada' => t.closed,
+    _ => value,
+  };
 }
 
 class _ActionBtn extends StatelessWidget {

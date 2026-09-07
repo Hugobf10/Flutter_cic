@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
+import '../../l10n/strings.dart';
 import '../../services/app_logger.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_theme.dart';
@@ -41,7 +42,7 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
         ..sort((a, b) => a.title.compareTo(b.title));
     } catch (e, stackTrace) {
       modules = const [];
-      fatalError = 'No se pudo cargar el catalogo de modulos para este perfil.';
+      fatalError = context.l10n.modulesLoadError;
       AppLogger.error(
         'Error construyendo el catalogo de modulos',
         error: e,
@@ -57,7 +58,7 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
     }
 
     return AppScaffold(
-      title: 'Explorar',
+      title: context.l10n.explore,
       child: Column(
         children: [
           AppReveal(
@@ -77,7 +78,7 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Módulos disponibles',
+                          context.l10n.availableModules,
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
@@ -86,7 +87,7 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
                         ),
                         const SizedBox(height: 5),
                         Text(
-                          'Solo ves las áreas habilitadas para tu perfil en Odoo.',
+                          context.l10n.availableModulesHint,
                           style: TextStyle(
                             color: AppTheme.textSecondaryFor(context),
                           ),
@@ -101,14 +102,14 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
           const SizedBox(height: 14),
           if (fatalError != null)
             AppEmptyState(
-              title: 'No se pudo cargar Modulos',
+              title: context.l10n.modulesLoadError,
               subtitle: fatalError,
               icon: Icons.error_outline_rounded,
             )
           else ...[
             AppSearchBar(
               controller: _searchCtrl,
-              hintText: 'Buscar módulos...',
+              hintText: context.l10n.searchModules,
               onChanged: (value) =>
                   setState(() => _query = value.trim().toLowerCase()),
             ),
@@ -116,7 +117,7 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                '${modules.length} módulos disponibles',
+                context.l10n.modulesAvailable(modules.length),
                 style: TextStyle(
                   color: AppTheme.textMutedFor(context),
                   fontSize: 12,

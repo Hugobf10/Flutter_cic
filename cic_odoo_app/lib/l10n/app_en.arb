@@ -1,0 +1,252 @@
+{
+  "@@locale": "en",
+  "accessibility": "Accessibility",
+  "readingVision": "Reading and vision",
+  "readingVisionHint": "Adjust the interface to your visual needs.",
+  "textSize": "Text size",
+  "textSizeHint": "Combined with your device setting.",
+  "boldText": "Bold text",
+  "boldTextHint": "Increase text weight to make reading easier.",
+  "highContrast": "High contrast",
+  "highContrastHint": "Strengthen backgrounds, borders and text.",
+  "movement": "Motion",
+  "movementHint": "Reduce effects that may cause dizziness or distraction.",
+  "reduceMotion": "Reduce animations",
+  "reduceMotionHint": "Disable transitions and entrance animations.",
+  "preview": "Preview",
+  "previewSuccess": "Completed",
+  "previewWarning": "Pending",
+  "previewText": "Check the selected text size, weight and contrast here.",
+  "resetAccessibility": "Reset accessibility",
+  "colorSupport": "Distinguishing colours",
+  "colorSupportHint": "Statuses include text and icons. Enable a blue and orange palette if red and green are difficult to distinguish.",
+  "alternativeColors": "Blue and orange palette",
+  "screenReader": "Screen reader",
+  "screenReaderHint": "For spoken navigation, enable VoiceOver in iPhone accessibility settings or TalkBack on Android. No special mode is needed in this app.",
+  "language": "Language",
+  "languageHint": "Interface language. Content sent by other people keeps its original language.",
+  "systemLanguage": "Device language",
+  "languageProgress": "English translation is in progress; some modules still appear in Spanish.",
+  "home": "Home",
+  "modules": "Modules",
+  "activity": "Activity",
+  "profile": "Profile",
+  "myProfile": "My profile",
+  "preferences": "Preferences",
+  "preferencesHint": "Appearance and accessibility needs",
+  "accessibilityHint": "Text, contrast and reduced motion",
+  "darkMode": "Dark mode",
+  "darkModeHint": "Switch between light and dark themes",
+  "logout": "Sign out",
+  "personalInfo": "Personal information",
+  "basicProfile": "Basic profile details",
+  "phone": "Phone",
+  "mobile": "Mobile",
+  "position": "Position",
+  "documentation": "Documents",
+  "retry": "Retry",
+  "profileError": "Could not load your profile",
+  "view": "View",
+  "noCv": "No CV uploaded",
+  "backToTop": "Back to top",
+  "quickActions": "Quick actions",
+  "editProfile": "Edit profile"
+  ,"explore": "Explore"
+  ,"availableModules": "Available modules"
+  ,"availableModulesHint": "You only see the areas enabled for your Odoo profile."
+  ,"searchModules": "Search modules..."
+  ,"modulesAvailable": "{count} modules available"
+  ,"@modulesAvailable": {"placeholders": {"count": {"type": "int"}}}
+  ,"modulesLoadError": "Could not load the module catalogue for this profile."
+  ,"all": "All"
+  ,"unread": "Unread"
+  ,"important": "Important"
+  ,"loadingActivity": "Loading activity..."
+  ,"noActivity": "No activity"
+  ,"noActivityHint": "There are no notifications for this filter."
+  ,"activityCentre": "Activity centre"
+  ,"activityCentreHint": "Recent, important and pending items to review."
+  ,"total": "Total"
+  ,"recentActivity": "Recent activity"
+  ,"viewAll": "View all"
+  ,"quickActions": "Quick actions"
+  ,"viewAllModules": "View all"
+  ,"summary": "Here is a summary of what matters."
+  ,"goodMorning": "Good morning"
+  ,"goodAfternoon": "Good afternoon"
+  ,"goodEvening": "Good evening"
+  ,"incidents": "Incidents"
+  ,"reservations": "Reservations"
+  ,"training": "Training"
+  ,"open": "Open"
+  ,"today": "Today"
+  ,"pending": "Pending"
+  ,"upToDate": "All caught up"
+  ,"upToDateHint": "There are no indicators available for this profile."
+  ,"unknownError": "Unknown error"
+  ,"communications": "Communications"
+  ,"suggestions": "Suggestions"
+  ,"couldNotLoadCommunications": "Could not load communications"
+  ,"createCommunication": "Create communication"
+  ,"communication": "Communication"
+  ,"suggestion": "Suggestion"
+  ,"title": "Title"
+  ,"type": "Type"
+  ,"date": "Date"
+  ,"description": "Description"
+  ,"recipientUnits": "Recipient units"
+  ,"recipientRoles": "Recipient functional roles"
+  ,"unit": "Unit"
+  ,"role": "Functional role"
+  ,"couldNotLoadRecipients": "Could not load recipients"
+  ,"couldNotRunAction": "Could not run action"
+  ,"analyse": "Analyse"
+  ,"markHandled": "Mark as handled"
+  ,"close": "Close"
+  ,"received": "Received"
+  ,"inAnalysis": "In analysis"
+  ,"handled": "Handled"
+  ,"answered": "Answered"
+  ,"closed": "Closed"
+  ,"newReservation": "New reservation"
+  ,"myReservations": "My reservations"
+  ,"dailyAgenda": "Daily agenda"
+  ,"quickReservation": "Quick reservation"
+  ,"quickReservationHint": "Select a service, resource and time in 4 steps"
+  ,"reservationUnavailable": "Reservation unavailable"
+  ,"reservationUnavailableHint": "This user can view reservations but cannot create new ones from the app."
+  ,"couldNotLoadReservations": "Could not load reservations"
+  ,"scanReservationQr": "Scan room or equipment QR"
+  ,"records": "{count} records"
+  ,"@records": {"placeholders": {"count": {"type": "int"}}}
+  ,"noReservations": "No reservations"
+  ,"noReservationsHint": "You have no registered reservations."
+  ,"agendaVisible": "{count} reservations visible on {date}"
+  ,"@agendaVisible": {"placeholders": {"count": {"type": "int"}, "date": {"type": "String"}}}
+  ,"noReservationsDay": "No reservations on this day"
+  ,"noReservationsDayHint": "There are no reservations available to view on the selected date."
+  ,"limitedReservations": "Reservations with limited access"
+  ,"back": "Back"
+  ,"next": "Next"
+  ,"createDraft": "Create draft"
+  ,"saveChanges": "Save changes"
+  ,"creating": "Creating..."
+  ,"saving": "Saving..."
+  ,"edit": "Edit"
+  ,"confirm": "Confirm"
+  ,"cancel": "Cancel"
+  ,"editingDraft": "Editing draft"
+  ,"reason": "Reason"
+  ,"requester": "Requester"
+  ,"access": "Access"
+  ,"limitedReservationsHint": "This profile is in view-only mode in the app. It can review reservations and the daily agenda, but cannot create or edit reservations with its current permissions."
+  ,"service": "Service"
+  ,"resource": "Resource"
+  ,"schedule": "Schedule"
+  ,"duration": "Duration"
+  ,"sessionType": "Session type"
+  ,"reasonOptional": "Reason (optional)"
+  ,"availableHours": "Available hours"
+  ,"selectedResource": "Selected resource: {name}"
+  ,"@selectedResource": {"placeholders": {"name": {"type": "String"}}}
+  ,"selectService": "Select a service to continue."
+  ,"selectResource": "Select a resource to continue."
+  ,"selectTimeSlot": "Select a time slot to continue."
+  ,"reservationUpdated": "Reservation updated. Confirm it when ready."
+  ,"draftCreated": "Reservation created as a draft. Review and confirm it when ready."
+  ,"reservationConfirmed": "Reservation confirmed."
+  ,"reservationCancelled": "Reservation cancelled."
+  ,"draft": "Draft"
+  ,"confirmed": "Confirmed"
+  ,"cancelled": "Cancelled"
+  ,"reservation": "Reservation"
+  ,"billed": "Billed"
+  ,"searchDocuments": "Search documents..."
+  ,"documentsLimitedAccess": "Documents with limited access"
+  ,"documentsLimitedAccessHint": "This profile cannot access the complete document list through the API with its current permissions."
+  ,"couldNotLoadDocuments": "Could not load documents"
+  ,"noDocuments": "No documents"
+  ,"noDocumentsHint": "No results were found for this search."
+  ,"documentsCount": "{count} documents"
+  ,"@documentsCount": {"placeholders": {"count": {"type": "int"}}}
+  ,"versions": "{count} versions"
+  ,"@versions": {"placeholders": {"count": {"type": "int"}}}
+  ,"document": "Document"
+  ,"documentWithoutAttachment": "Document without an attached version."
+  ,"couldNotOpenDocument": "Could not open the document"
+  ,"couldNotDownload": "Could not download"
+  ,"createIncident": "Create incident"
+  ,"nonConformity": "Non-conformity"
+  ,"improvementOpportunity": "Improvement opportunity"
+  ,"category": "Category"
+  ,"quality": "Quality"
+  ,"healthSafety": "Health and safety"
+  ,"subtype": "Subtype"
+  ,"internal": "Internal"
+  ,"supplier": "Supplier"
+  ,"audit": "Audit"
+  ,"claim": "Claim"
+  ,"other": "Other"
+  ,"openPlural": "Open"
+  ,"inProgress": "In progress"
+  ,"closedPlural": "Closed"
+  ,"noIncidents": "No incidents."
+  ,"incidentsCount": "{count} incidents"
+  ,"@incidentsCount": {"placeholders": {"count": {"type": "int"}}}
+  ,"incidentsUnitHint": "From your unit, sorted by date"
+  ,"signInTitle": "Sign in to your space"
+  ,"signInHint": "Use the same credentials as in Odoo Web."
+  ,"corporateEmail": "Corporate email"
+  ,"enterCorporateEmail": "Enter your corporate email"
+  ,"password": "Password"
+  ,"enterPassword": "Enter your password"
+  ,"showPassword": "Show password"
+  ,"hidePassword": "Hide password"
+  ,"verifying": "Verifying"
+  ,"signIn": "Sign in"
+  ,"encryptedSession": "Encrypted session and permissions synced with Odoo."
+  ,"supportConfiguration": "Support configuration"
+  ,"authorisedServer": "Authorised server"
+  ,"authorisedEnvironment": "Authorised environment"
+  ,"enterAuthorisedServer": "Enter the authorised server"
+  ,"enterAuthorisedEnvironment": "Enter the authorised environment"
+  ,"useLightMode": "Use light mode"
+  ,"useDarkMode": "Use dark mode"
+  ,"yourCicSpace": "Your CIC space"
+  ,"brandHint": "Information, tasks and follow-up connected to your profile."
+  ,"privacyTitle": "Privacy from the first step"
+  ,"privacyHint": "Before you sign in, we do not load alerts, personal data or Odoo information. Afterwards you only see what your profile authorises."
+  ,"signInHelpTitle": "Problems signing in? "
+  ,"signInHelpHint": "Check your usual credentials and, if it continues, contact the person responsible for your CIC account."
+  ,"accessVerificationFailed": "We could not verify access"
+  ,"loginValueOneTitle": "Everything important, organised"
+  ,"loginValueOneHint": "Documents, news, activity and shortcuts in one home screen."
+  ,"loginValueTwoTitle": "Connected workflows"
+  ,"loginValueTwoHint": "Reservations, incidents and processes updated with Odoo."
+  ,"loginValueThreeTitle": "Access based on your profile"
+  ,"loginValueThreeHint": "Everyone sees only the modules they are authorised to use."
+  ,"recruitment": "Recruitment"
+  ,"error": "Error"
+  ,"vacancies": "Vacancies"
+  ,"applications": "Applications"
+  ,"noVacancies": "No vacancies"
+  ,"noVacanciesHint": "There are no open positions."
+  ,"vacancy": "Vacancy"
+  ,"department": "Department"
+  ,"vacancyCount": "Vacancies: {count}"
+  ,"@vacancyCount": {"placeholders": {"count": {"type": "int"}}}
+  ,"noApplications": "No applications"
+  ,"noApplicationsHint": "There are no registered applications."
+  ,"candidate": "Candidate"
+  ,"job": "Position"
+  ,"status": "Status"
+  ,"linkedApplications": "{count} linked applications"
+  ,"@linkedApplications": {"placeholders": {"count": {"type": "int"}}}
+  ,"noVisibleApplicationsHint": "This vacancy has no visible applications."
+  ,"email": "Email"
+  ,"providedDocuments": "Documents provided"
+  ,"documentsReadOnlyHint": "Read-only view. Downloading and sharing files is not permitted."
+  ,"noCandidateDocuments": "No documents"
+  ,"noCandidateDocumentsHint": "The application has no available documents."
+  ,"couldNotPreviewDocument": "Could not preview the document"
+}

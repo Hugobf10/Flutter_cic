@@ -1,4 +1,5 @@
 import '../../services/odoo_service.dart';
+import '../../config/server_policy.dart';
 import '../core/auth_models.dart';
 import '../core/auth_provider.dart';
 
@@ -26,6 +27,12 @@ class OdooPasswordAuth implements AuthProvider {
       );
     }
 
+    if (!ServerPolicy.isSecureOrigin(serverUrl)) {
+      return const AuthResult(
+        success: false,
+        errorMessage: 'El servidor debe ser una dirección HTTPS válida.',
+      );
+    }
     _odoo.init(baseUrl: serverUrl);
     final ok = await _odoo.authenticate(login, password, database: database);
     if (!ok) {

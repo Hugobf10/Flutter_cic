@@ -36,7 +36,10 @@ class OdooValues {
   static String string(dynamic value, {String fallback = ''}) {
     if (value == null || value == false) return fallback;
     final result = value.toString().trim();
-    return result.isEmpty ? fallback : result;
+    final normalized = result.toLowerCase();
+    return result.isEmpty || normalized == 'false' || normalized == 'null'
+        ? fallback
+        : result;
   }
 
   static int? many2oneId(dynamic value) {

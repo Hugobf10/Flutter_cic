@@ -1,0 +1,252 @@
+{
+  "@@locale": "es",
+  "accessibility": "Accesibilidad",
+  "readingVision": "Lectura y visión",
+  "readingVisionHint": "Ajusta la interfaz a tus necesidades visuales.",
+  "textSize": "Tamaño del texto",
+  "textSizeHint": "Se combina con el ajuste del dispositivo.",
+  "boldText": "Texto reforzado",
+  "boldTextHint": "Aumenta el grosor del texto para facilitar la lectura.",
+  "highContrast": "Alto contraste",
+  "highContrastHint": "Refuerza fondos, bordes y textos.",
+  "movement": "Movimiento",
+  "movementHint": "Reduce efectos que puedan causar mareo o distracción.",
+  "reduceMotion": "Reducir animaciones",
+  "reduceMotionHint": "Desactiva las transiciones y las entradas animadas.",
+  "preview": "Vista previa",
+  "previewSuccess": "Completado",
+  "previewWarning": "Pendiente",
+  "previewText": "Comprueba aquí el tamaño, el grosor y el contraste seleccionados.",
+  "resetAccessibility": "Restablecer accesibilidad",
+  "colorSupport": "Distinción de colores",
+  "colorSupportHint": "Los estados incluyen texto e iconos. Puedes activar una paleta azul y naranja si te cuesta distinguir el rojo y el verde.",
+  "alternativeColors": "Paleta azul y naranja",
+  "screenReader": "Lector de pantalla",
+  "screenReaderHint": "Para navegación hablada, activa VoiceOver en los ajustes de accesibilidad de iPhone o TalkBack en Android. No necesitas activar un modo especial en esta app.",
+  "language": "Idioma",
+  "languageHint": "Idioma de la interfaz. Los contenidos enviados por otras personas conservan su idioma original.",
+  "systemLanguage": "Idioma del dispositivo",
+  "languageProgress": "La traducción al inglés se está completando; algunos módulos todavía aparecen en español.",
+  "home": "Inicio",
+  "modules": "Módulos",
+  "activity": "Actividad",
+  "profile": "Perfil",
+  "myProfile": "Mi perfil",
+  "preferences": "Preferencias",
+  "preferencesHint": "Apariencia y necesidades de acceso",
+  "accessibilityHint": "Texto, contraste y reducción de movimiento",
+  "darkMode": "Modo oscuro",
+  "darkModeHint": "Alternar tema claro / oscuro",
+  "logout": "Cerrar sesión",
+  "personalInfo": "Información personal",
+  "basicProfile": "Datos básicos del perfil",
+  "phone": "Teléfono",
+  "mobile": "Móvil",
+  "position": "Puesto",
+  "documentation": "Documentación",
+  "retry": "Reintentar",
+  "profileError": "No se pudo cargar el perfil",
+  "view": "Ver",
+  "noCv": "No hay CV cargado",
+  "backToTop": "Volver arriba",
+  "quickActions": "Acciones rápidas",
+  "editProfile": "Editar perfil"
+  ,"explore": "Explorar"
+  ,"availableModules": "Módulos disponibles"
+  ,"availableModulesHint": "Solo ves las áreas habilitadas para tu perfil en Odoo."
+  ,"searchModules": "Buscar módulos..."
+  ,"modulesAvailable": "{count} módulos disponibles"
+  ,"@modulesAvailable": {"placeholders": {"count": {"type": "int"}}}
+  ,"modulesLoadError": "No se pudo cargar el catálogo de módulos para este perfil."
+  ,"all": "Todas"
+  ,"unread": "No leídas"
+  ,"important": "Importantes"
+  ,"loadingActivity": "Cargando actividad..."
+  ,"noActivity": "Sin actividad"
+  ,"noActivityHint": "No hay notificaciones para este filtro."
+  ,"activityCentre": "Centro de actividad"
+  ,"activityCentreHint": "Lo reciente, importante y pendiente de revisar."
+  ,"total": "Total"
+  ,"recentActivity": "Actividad reciente"
+  ,"viewAll": "Ver todo"
+  ,"quickActions": "Accesos rápidos"
+  ,"viewAllModules": "Ver todos"
+  ,"summary": "Aquí tienes un resumen de lo importante."
+  ,"goodMorning": "Buenos días"
+  ,"goodAfternoon": "Buenas tardes"
+  ,"goodEvening": "Buenas noches"
+  ,"incidents": "Incidencias"
+  ,"reservations": "Reservas"
+  ,"training": "Formación"
+  ,"open": "Abiertas"
+  ,"today": "Hoy"
+  ,"pending": "Pendientes"
+  ,"upToDate": "Todo al día"
+  ,"upToDateHint": "No hay indicadores disponibles para este perfil."
+  ,"unknownError": "Error desconocido"
+  ,"communications": "Comunicaciones"
+  ,"suggestions": "Sugerencias"
+  ,"couldNotLoadCommunications": "No se pudieron cargar las comunicaciones"
+  ,"createCommunication": "Crear comunicación"
+  ,"communication": "Comunicación"
+  ,"suggestion": "Sugerencia"
+  ,"title": "Título"
+  ,"type": "Tipo"
+  ,"date": "Fecha"
+  ,"description": "Descripción"
+  ,"recipientUnits": "Unidades destinatarias"
+  ,"recipientRoles": "Puestos funcionales destinatarios"
+  ,"unit": "Unidad"
+  ,"role": "Puesto funcional"
+  ,"couldNotLoadRecipients": "No se pueden cargar los destinatarios"
+  ,"couldNotRunAction": "No se pudo ejecutar la acción"
+  ,"analyse": "Analizar"
+  ,"markHandled": "Marcar tratada"
+  ,"close": "Cerrar"
+  ,"received": "Recibida"
+  ,"inAnalysis": "En análisis"
+  ,"handled": "Tratada"
+  ,"answered": "Respondida"
+  ,"closed": "Cerrada"
+  ,"newReservation": "Nueva reserva"
+  ,"myReservations": "Mis reservas"
+  ,"dailyAgenda": "Agenda diaria"
+  ,"quickReservation": "Reserva rápida"
+  ,"quickReservationHint": "Selecciona servicio, recurso y horario en 4 pasos"
+  ,"reservationUnavailable": "Reserva no disponible"
+  ,"reservationUnavailableHint": "Este usuario puede consultar reservas, pero no crear nuevas desde la app."
+  ,"couldNotLoadReservations": "No se pudieron cargar las reservas"
+  ,"scanReservationQr": "Escanear QR de sala o equipo"
+  ,"records": "{count} registros"
+  ,"@records": {"placeholders": {"count": {"type": "int"}}}
+  ,"noReservations": "Sin reservas"
+  ,"noReservationsHint": "No tienes reservas registradas."
+  ,"agendaVisible": "{count} reservas visibles el {date}"
+  ,"@agendaVisible": {"placeholders": {"count": {"type": "int"}, "date": {"type": "String"}}}
+  ,"noReservationsDay": "Sin reservas este día"
+  ,"noReservationsDayHint": "No hay reservas disponibles para consultar en la fecha seleccionada."
+  ,"limitedReservations": "Reservas con acceso limitado"
+  ,"back": "Atrás"
+  ,"next": "Siguiente"
+  ,"createDraft": "Crear borrador"
+  ,"saveChanges": "Guardar cambios"
+  ,"creating": "Creando..."
+  ,"saving": "Guardando..."
+  ,"edit": "Editar"
+  ,"confirm": "Confirmar"
+  ,"cancel": "Cancelar"
+  ,"editingDraft": "Editando borrador"
+  ,"reason": "Motivo"
+  ,"requester": "Solicitante"
+  ,"access": "Acceso"
+  ,"limitedReservationsHint": "Este perfil está en modo de consulta dentro de la app. Puede revisar sus reservas y la agenda diaria, pero no crear ni editar nuevas reservas con sus permisos actuales."
+  ,"service": "Servicio"
+  ,"resource": "Recurso"
+  ,"schedule": "Horario"
+  ,"duration": "Duración"
+  ,"sessionType": "Tipo de sesión"
+  ,"reasonOptional": "Motivo (opcional)"
+  ,"availableHours": "Horas disponibles"
+  ,"selectedResource": "Recurso seleccionado: {name}"
+  ,"@selectedResource": {"placeholders": {"name": {"type": "String"}}}
+  ,"selectService": "Selecciona un servicio para continuar."
+  ,"selectResource": "Selecciona un recurso para continuar."
+  ,"selectTimeSlot": "Selecciona una franja horaria para continuar."
+  ,"reservationUpdated": "Reserva actualizada. Confírmala cuando esté lista."
+  ,"draftCreated": "Reserva creada en borrador. Revísala y confírmala cuando esté lista."
+  ,"reservationConfirmed": "Reserva confirmada."
+  ,"reservationCancelled": "Reserva cancelada."
+  ,"draft": "Borrador"
+  ,"confirmed": "Confirmada"
+  ,"cancelled": "Cancelada"
+  ,"reservation": "Reserva"
+  ,"billed": "Facturada"
+  ,"searchDocuments": "Buscar documentos..."
+  ,"documentsLimitedAccess": "Documentos con acceso limitado"
+  ,"documentsLimitedAccessHint": "Este perfil no puede consultar el listado completo de documentos por API con sus permisos actuales."
+  ,"couldNotLoadDocuments": "No se pudieron cargar documentos"
+  ,"noDocuments": "Sin documentos"
+  ,"noDocumentsHint": "No se han encontrado resultados para esta búsqueda."
+  ,"documentsCount": "{count} documentos"
+  ,"@documentsCount": {"placeholders": {"count": {"type": "int"}}}
+  ,"versions": "{count} versiones"
+  ,"@versions": {"placeholders": {"count": {"type": "int"}}}
+  ,"document": "Documento"
+  ,"documentWithoutAttachment": "Documento sin versión adjunta."
+  ,"couldNotOpenDocument": "No se pudo abrir el documento"
+  ,"couldNotDownload": "No se pudo descargar"
+  ,"createIncident": "Crear incidencia"
+  ,"nonConformity": "No conformidad"
+  ,"improvementOpportunity": "Oportunidad de mejora"
+  ,"category": "Categoría"
+  ,"quality": "Calidad"
+  ,"healthSafety": "PRL"
+  ,"subtype": "Subtipo"
+  ,"internal": "Interna"
+  ,"supplier": "Proveedor"
+  ,"audit": "Auditoría"
+  ,"claim": "Reclamación"
+  ,"other": "Otra"
+  ,"openPlural": "Abiertas"
+  ,"inProgress": "En proceso"
+  ,"closedPlural": "Cerradas"
+  ,"noIncidents": "No hay incidencias."
+  ,"incidentsCount": "{count} incidencias"
+  ,"@incidentsCount": {"placeholders": {"count": {"type": "int"}}}
+  ,"incidentsUnitHint": "De tu unidad, ordenadas por fecha"
+  ,"signInTitle": "Accede a tu espacio"
+  ,"signInHint": "Usa las mismas credenciales que en Odoo Web."
+  ,"corporateEmail": "Correo corporativo"
+  ,"enterCorporateEmail": "Introduce tu correo corporativo"
+  ,"password": "Contraseña"
+  ,"enterPassword": "Introduce tu contraseña"
+  ,"showPassword": "Mostrar contraseña"
+  ,"hidePassword": "Ocultar contraseña"
+  ,"verifying": "Verificando"
+  ,"signIn": "Entrar"
+  ,"encryptedSession": "Sesión cifrada y permisos sincronizados con Odoo."
+  ,"supportConfiguration": "Configuración de soporte"
+  ,"authorisedServer": "Servidor autorizado"
+  ,"authorisedEnvironment": "Entorno autorizado"
+  ,"enterAuthorisedServer": "Introduce el servidor autorizado"
+  ,"enterAuthorisedEnvironment": "Introduce el entorno autorizado"
+  ,"useLightMode": "Usar modo claro"
+  ,"useDarkMode": "Usar modo oscuro"
+  ,"yourCicSpace": "Tu espacio CIC"
+  ,"brandHint": "Información, gestiones y seguimiento conectados con tu perfil."
+  ,"privacyTitle": "Privacidad desde el primer paso"
+  ,"privacyHint": "Antes de identificarte no cargamos avisos, datos personales ni información de Odoo. Después verás solo lo autorizado para tu perfil."
+  ,"signInHelpTitle": "¿Problemas para entrar? "
+  ,"signInHelpHint": "Comprueba tus credenciales habituales y, si continúa, contacta con el responsable de tu cuenta CIC."
+  ,"accessVerificationFailed": "No hemos podido verificar el acceso"
+  ,"loginValueOneTitle": "Todo lo importante, ordenado"
+  ,"loginValueOneHint": "Documentos, noticias, actividad y accesos en un mismo inicio."
+  ,"loginValueTwoTitle": "Gestiones conectadas"
+  ,"loginValueTwoHint": "Reservas, incidencias y procesos actualizados con Odoo."
+  ,"loginValueThreeTitle": "Acceso según tu perfil"
+  ,"loginValueThreeHint": "Cada persona ve únicamente los módulos que tiene autorizados."
+  ,"recruitment": "Reclutamiento"
+  ,"error": "Error"
+  ,"vacancies": "Vacantes"
+  ,"applications": "Candidaturas"
+  ,"noVacancies": "Sin vacantes"
+  ,"noVacanciesHint": "No hay posiciones abiertas."
+  ,"vacancy": "Vacante"
+  ,"department": "Departamento"
+  ,"vacancyCount": "Vacantes: {count}"
+  ,"@vacancyCount": {"placeholders": {"count": {"type": "int"}}}
+  ,"noApplications": "Sin candidaturas"
+  ,"noApplicationsHint": "No hay candidaturas registradas."
+  ,"candidate": "Candidato"
+  ,"job": "Puesto"
+  ,"status": "Estado"
+  ,"linkedApplications": "{count} candidaturas vinculadas"
+  ,"@linkedApplications": {"placeholders": {"count": {"type": "int"}}}
+  ,"noVisibleApplicationsHint": "Esta vacante no tiene candidaturas visibles."
+  ,"email": "Correo electrónico"
+  ,"providedDocuments": "Documentación aportada"
+  ,"documentsReadOnlyHint": "Consulta en modo lectura. No se permite descargar ni compartir archivos."
+  ,"noCandidateDocuments": "Sin documentación"
+  ,"noCandidateDocumentsHint": "La candidatura no tiene documentos disponibles."
+  ,"couldNotPreviewDocument": "No se pudo visualizar el documento"
+}

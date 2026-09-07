@@ -58,8 +58,9 @@ class AuthProvider extends ChangeNotifier {
   }
 
   bool get isAdmin {
-    final login = userLogin.toLowerCase();
-    return login == 'admin' || _odoo.sessionInfo['is_admin'] == true;
+    // A username is not a role. Only the authenticated server session can
+    // identify an administrator; Odoo ACLs still enforce every operation.
+    return isInternalUser && _odoo.sessionInfo['is_admin'] == true;
   }
 
   bool get hasIntranetAccess =>
@@ -169,6 +170,7 @@ class AuthProvider extends ChangeNotifier {
     if (isPortalOnlyUser) {
       if (moduleKey == 'purchases' ||
           moduleKey == 'maintenance' ||
+          moduleKey == 'security' ||
           moduleKey == 'users' ||
           moduleKey == 'roles' ||
           moduleKey == 'permissions' ||
@@ -267,6 +269,7 @@ class AuthProvider extends ChangeNotifier {
               modelReadAccess == true;
         case 'purchases':
         case 'maintenance':
+          return _modelAccess[moduleKey] == true;
         case 'recruitment':
         case 'permissions':
         case 'users':
@@ -282,8 +285,11 @@ class AuthProvider extends ChangeNotifier {
       switch (moduleKey) {
         case 'purchases':
         case 'maintenance':
-        case 'recruitment':
           return modelReadAccess == true;
+        case 'recruitment':
+          // The mobile backend scopes recruitment to interviewer/recruiter
+          // assignments. A general HR read ACL must not expose an empty module.
+          return _portalCapabilities['recruitment']?['view'] == true;
       }
     }
 
@@ -565,6 +571,10 @@ class AuthProvider extends ChangeNotifier {
     if (_userProfile['public'] == true) return;
     try {
       final bootstrap = await _portalApi.bootstrap();
+      if (_odoo.isPortalSession) {
+        final profile = OdooValues.map(bootstrap['partner']);
+        if (profile.isNotEmpty) _partnerProfile = profile;
+      }
       final raw = bootstrap['capabilities'];
       if (raw is Map) {
         _portalCapabilities = raw.map((key, value) {
@@ -592,7 +602,7 @@ class AuthProvider extends ChangeNotifier {
         _errorMessage =
             'La intranet móvil no está disponible en este servidor. Actualiza el módulo de portal.';
       }
-      debugPrint('Portal bootstrap failed: $error\n$stackTrace');
+      debugPrint('Portal bootstrap failed: ${error.runtimeType}\n$stackTrace');
     }
   }
 }

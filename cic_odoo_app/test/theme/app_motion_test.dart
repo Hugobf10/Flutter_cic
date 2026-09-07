@@ -3,6 +3,39 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('enabling reduced motion cancels a pending reveal', (
+    tester,
+  ) async {
+    var reduced = false;
+    late StateSetter update;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            update = setState;
+            return MediaQuery(
+              data: MediaQueryData(disableAnimations: reduced),
+              child: const AppReveal(
+                delay: Duration(seconds: 10),
+                child: Text('Ready'),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+    update(() => reduced = true);
+    await tester.pump();
+    final fade = tester.widget<FadeTransition>(
+      find.descendant(
+        of: find.byType(AppReveal),
+        matching: find.byType(FadeTransition),
+      ),
+    );
+    expect(fade.opacity.value, 1);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('AppReveal respeta la preferencia de reducir movimiento', (
     tester,
   ) async {

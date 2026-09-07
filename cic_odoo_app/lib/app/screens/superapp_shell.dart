@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/strings.dart';
 
 import '../../features/communications/communications_screen.dart';
 import '../../features/suppliers/suppliers_screen.dart';
@@ -10,6 +11,7 @@ import '../../screens/home/home_screen.dart';
 import '../../screens/reservas/reservation_entry_target.dart';
 import '../../screens/incidencias/incidencias_screen.dart';
 import '../../screens/reservas/reservas_screen.dart';
+import '../../services/push_notifications_service.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_theme.dart';
 import '../providers/app_state_provider.dart';
@@ -26,11 +28,18 @@ class SuperAppShell extends StatefulWidget {
   State<SuperAppShell> createState() => _SuperAppShellState();
 }
 
-class _SuperAppShellState extends State<SuperAppShell> {
+class _SuperAppShellState extends State<SuperAppShell>
+    with WidgetsBindingObserver {
   int _index = 0;
+  final Set<int> _visitedPages = {0};
   bool _openingPendingReservation = false;
 
-  static const _labels = ['Inicio', 'Módulos', 'Actividad', 'Perfil'];
+  List<String> get _labels => [
+    context.l10n.home,
+    context.l10n.modules,
+    context.l10n.activity,
+    context.l10n.profile,
+  ];
   static const _icons = [
     Icons.home_rounded,
     Icons.grid_view_rounded,
@@ -48,9 +57,33 @@ class _SuperAppShellState extends State<SuperAppShell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AppStateProvider>().initialize();
+      context.read<AppStateProvider>().initialize().whenComplete(() {
+        if (!mounted) return;
+        PushNotificationsService.instance.configure(
+          onForegroundMessage: () {
+            context.read<AppStateProvider>().loadNotifications();
+          },
+        );
+      });
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    PushNotificationsService.instance.stop();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || !mounted) return;
+    // Las notificaciones remotas requieren FCM/APNs. Mientras la app está
+    // activa, esta recarga permite reflejar incidencias y comunicaciones
+    // nuevas nada más volver a ella.
+    context.read<AppStateProvider>().loadNotifications();
   }
 
   @override
@@ -67,7 +100,15 @@ class _SuperAppShellState extends State<SuperAppShell> {
       });
     }
 
-    final pages = _pages;
+    // Do not fetch profiles and other hidden tab content during home startup.
+    // Once visited, a page stays mounted and keeps its scroll/form state.
+    _visitedPages.add(_index);
+    final pages = List<Widget>.generate(
+      _pages.length,
+      (index) => _visitedPages.contains(index)
+          ? _pages[index]
+          : const SizedBox.shrink(),
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {

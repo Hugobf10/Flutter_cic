@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../app/providers/app_state_provider.dart';
 import '../../app/ui/app_components.dart';
 import '../../config/app_config.dart';
+import '../../l10n/strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_theme.dart';
@@ -65,6 +66,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: _ThemeToggle(
                   dark: AppTheme.isDark(context),
                   onTap: appState.toggleThemeMode,
+                ),
+              ),
+              Positioned(
+                top: 12,
+                left: 16,
+                child: _LanguageToggle(
+                  locale: appState.locale,
+                  onChanged: appState.setLocale,
                 ),
               ),
               Center(
@@ -156,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Accede a tu espacio',
+                          context.l10n.signInTitle,
                           style: TextStyle(
                             color: AppTheme.textPrimaryFor(context),
                             fontSize: 23,
@@ -166,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Usa las mismas credenciales que en Odoo Web.',
+                          context.l10n.signInHint,
                           style: TextStyle(
                             color: AppTheme.textSecondaryFor(context),
                             fontSize: 13,
@@ -189,13 +198,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     AutofillHints.username,
                     AutofillHints.email,
                   ],
-                  decoration: const InputDecoration(
-                    labelText: 'Correo corporativo',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.corporateEmail,
                     hintText: 'tu.usuario@cicancer.org',
                     prefixIcon: Icon(Icons.alternate_email_rounded),
                   ),
                   validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Introduce tu correo corporativo'
+                      ? context.l10n.enterCorporateEmail
                       : null,
                 ),
               ),
@@ -208,12 +217,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   textInputAction: TextInputAction.done,
                   autofillHints: const [AutofillHints.password],
                   decoration: InputDecoration(
-                    labelText: 'Contraseña',
+                    labelText: context.l10n.password,
                     prefixIcon: Icon(Icons.password_rounded),
                     suffixIcon: IconButton(
                       tooltip: _obscurePassword
-                          ? 'Mostrar contraseña'
-                          : 'Ocultar contraseña',
+                          ? context.l10n.showPassword
+                          : context.l10n.hidePassword,
                       onPressed: loading
                           ? null
                           : () => setState(
@@ -227,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   validator: (value) => (value == null || value.isEmpty)
-                      ? 'Introduce tu contraseña'
+                      ? context.l10n.enterPassword
                       : null,
                   onFieldSubmitted: (_) => loading ? null : _handleLogin(),
                 ),
@@ -245,7 +254,7 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(
                 height: 54,
                 child: AppButton.primary(
-                  label: loading ? 'Verificando' : 'Entrar',
+                  label: loading ? context.l10n.verifying : context.l10n.signIn,
                   icon: Icons.arrow_forward_rounded,
                   loading: loading,
                   onPressed: loading ? null : _handleLogin,
@@ -263,7 +272,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(width: 6),
                   Flexible(
                     child: Text(
-                      'Sesión cifrada y permisos sincronizados con Odoo.',
+                      context.l10n.encryptedSession,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: AppTheme.textMutedFor(context),
@@ -285,7 +294,7 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AppChoicePill(
-          label: 'Configuración de soporte',
+          label: context.l10n.supportConfiguration,
           icon: Icons.tune_rounded,
           selected: _showAdvanced,
           onTap: loading
@@ -302,13 +311,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: TextFormField(
                     controller: _serverController,
                     enabled: !loading,
-                    decoration: const InputDecoration(
-                      labelText: 'Servidor autorizado',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.authorisedServer,
                       prefixIcon: Icon(Icons.dns_outlined),
                     ),
                     validator: (value) =>
                         (value == null || value.trim().isEmpty)
-                        ? 'Introduce el servidor autorizado'
+                        ? context.l10n.enterAuthorisedServer
                         : null,
                   ),
                 ),
@@ -317,13 +326,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: TextFormField(
                     controller: _databaseController,
                     enabled: !loading,
-                    decoration: const InputDecoration(
-                      labelText: 'Entorno autorizado',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.authorisedEnvironment,
                       prefixIcon: Icon(Icons.storage_outlined),
                     ),
                     validator: (value) =>
                         (value == null || value.trim().isEmpty)
-                        ? 'Introduce el entorno autorizado'
+                        ? context.l10n.enterAuthorisedEnvironment
                         : null,
                   ),
                 ),
@@ -340,6 +349,49 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
+class _LanguageToggle extends StatelessWidget {
+  const _LanguageToggle({required this.locale, required this.onChanged});
+
+  final Locale? locale;
+  final ValueChanged<Locale?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      tooltip: context.l10n.language,
+      onSelected: (value) =>
+          onChanged(value == 'system' ? null : Locale(value)),
+      itemBuilder: (_) => [
+        PopupMenuItem(
+          value: 'system',
+          child: Text(context.l10n.systemLanguage),
+        ),
+        const PopupMenuItem(value: 'es', child: Text('Español')),
+        const PopupMenuItem(value: 'en', child: Text('English')),
+      ],
+      child: Semantics(
+        button: true,
+        label: context.l10n.language,
+        child: NeumorphicSurface(
+          subtle: true,
+          borderRadius: AppTheme.radiusXl,
+          padding: const EdgeInsets.all(11),
+          child: Text(
+            (locale?.languageCode ??
+                    Localizations.localeOf(context).languageCode)
+                .toUpperCase(),
+            style: TextStyle(
+              color: AppTheme.textPrimaryFor(context),
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ThemeToggle extends StatelessWidget {
   const _ThemeToggle({required this.dark, required this.onTap});
 
@@ -349,7 +401,7 @@ class _ThemeToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: dark ? 'Usar modo claro' : 'Usar modo oscuro',
+      message: dark ? context.l10n.useLightMode : context.l10n.useDarkMode,
       child: NeumorphicSurface(
         onTap: onTap,
         subtle: true,
@@ -393,7 +445,7 @@ class _BrandHeader extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         Text(
-          'Tu espacio CIC',
+          context.l10n.yourCicSpace,
           textAlign: compact ? TextAlign.center : TextAlign.left,
           style: TextStyle(
             color: AppTheme.textPrimaryFor(context),
@@ -405,7 +457,7 @@ class _BrandHeader extends StatelessWidget {
         ),
         const SizedBox(height: 9),
         Text(
-          'Información, gestiones y seguimiento conectados con tu perfil.',
+          context.l10n.brandHint,
           textAlign: compact ? TextAlign.center : TextAlign.left,
           style: TextStyle(
             color: AppTheme.textSecondaryFor(context),
@@ -426,33 +478,31 @@ class _BrandPanel extends StatelessWidget {
     return NeumorphicSurface(
       borderRadius: AppTheme.radiusLg,
       padding: const EdgeInsets.all(32),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          _BrandHeader(compact: false),
-          SizedBox(height: 26),
+          const _BrandHeader(compact: false),
+          const SizedBox(height: 26),
           _ValueCard(
             icon: Icons.dashboard_customize_rounded,
             color: AppTheme.primary,
-            title: 'Todo lo importante, ordenado',
-            subtitle:
-                'Documentos, noticias, actividad y accesos en un mismo inicio.',
+            title: context.l10n.loginValueOneTitle,
+            subtitle: context.l10n.loginValueOneHint,
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           _ValueCard(
             icon: Icons.task_alt_rounded,
             color: AppTheme.success,
-            title: 'Gestiones conectadas',
-            subtitle: 'Reservas, incidencias y procesos actualizados con Odoo.',
+            title: context.l10n.loginValueTwoTitle,
+            subtitle: context.l10n.loginValueTwoHint,
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           _ValueCard(
             icon: Icons.shield_outlined,
             color: AppTheme.accent,
-            title: 'Acceso según tu perfil',
-            subtitle:
-                'Cada persona ve únicamente los módulos que tiene autorizados.',
+            title: context.l10n.loginValueThreeTitle,
+            subtitle: context.l10n.loginValueThreeHint,
           ),
         ],
       ),
@@ -552,7 +602,7 @@ class _PrivacyNotice extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Privacidad desde el primer paso',
+                  context.l10n.privacyTitle,
                   style: TextStyle(
                     color: AppTheme.textPrimaryFor(context),
                     fontWeight: FontWeight.w800,
@@ -561,7 +611,7 @@ class _PrivacyNotice extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Antes de identificarte no cargamos avisos, datos personales ni información de Odoo. Después verás solo lo autorizado para tu perfil.',
+                  context.l10n.privacyHint,
                   style: TextStyle(
                     color: AppTheme.textSecondaryFor(context),
                     fontSize: 11,
@@ -596,15 +646,14 @@ class _AccessHelp extends StatelessWidget {
               TextSpan(
                 children: [
                   TextSpan(
-                    text: '¿Problemas para entrar? ',
+                    text: context.l10n.signInHelpTitle,
                     style: TextStyle(
                       color: AppTheme.textPrimaryFor(context),
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   TextSpan(
-                    text:
-                        'Comprueba tus credenciales habituales y, si continúa, contacta con el responsable de tu cuenta CIC.',
+                    text: context.l10n.signInHelpHint,
                     style: TextStyle(color: AppTheme.textSecondaryFor(context)),
                   ),
                 ],
@@ -649,7 +698,7 @@ class _ErrorBox extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'No hemos podido verificar el acceso',
+                  context.l10n.accessVerificationFailed,
                   style: TextStyle(
                     color: AppTheme.danger,
                     fontWeight: FontWeight.w800,

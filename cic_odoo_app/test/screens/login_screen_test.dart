@@ -33,8 +33,12 @@ void main() {
         find.textContaining('Antes de identificarte no cargamos avisos'),
         findsOneWidget,
       );
-      expect(find.text(AppConfig.odooBaseUrl), findsNothing);
-      expect(find.text(AppConfig.odooDatabaseName), findsNothing);
+      if (AppConfig.odooBaseUrl.isNotEmpty) {
+        expect(find.text(AppConfig.odooBaseUrl), findsNothing);
+      }
+      if (AppConfig.odooDatabaseName.isNotEmpty) {
+        expect(find.text(AppConfig.odooDatabaseName), findsNothing);
+      }
       expect(find.text('Configuración de soporte'), findsNothing);
       expect(find.byType(CircularProgressIndicator), findsNothing);
     },

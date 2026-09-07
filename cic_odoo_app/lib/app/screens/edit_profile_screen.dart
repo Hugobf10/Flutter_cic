@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../services/attachment_service.dart';
 import '../../services/app_permission_service.dart';
 import '../../services/odoo_service.dart';
+import '../../services/odoo_values.dart';
 import '../../services/portal_api_service.dart';
 import '../ui/app_components.dart';
 
@@ -43,22 +44,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
     _nameCtrl = TextEditingController(
-      text: (widget.partnerData['name'] ?? '').toString(),
+      text: OdooValues.string(widget.partnerData['name']),
     );
     _emailCtrl = TextEditingController(
-      text: (widget.partnerData['email'] ?? '').toString(),
+      text: OdooValues.string(widget.partnerData['email']),
     );
     _phoneCtrl = TextEditingController(
-      text: (widget.partnerData['phone'] ?? '').toString(),
+      text: OdooValues.string(widget.partnerData['phone']),
     );
     _mobileCtrl = TextEditingController(
-      text: (widget.partnerData['mobile'] ?? '').toString(),
+      text: OdooValues.string(widget.partnerData['mobile']),
     );
     _positionCtrl = TextEditingController(
-      text: (widget.partnerData['function'] ?? '').toString(),
+      text: OdooValues.string(widget.partnerData['function']),
     );
     _notesCtrl = TextEditingController(
-      text: (widget.partnerData['comment'] ?? '').toString(),
+      text: OdooValues.string(widget.partnerData['comment']),
     );
     const allowedChannels = {'odoo', 'email', 'ambos'};
     final configuredChannel = widget
@@ -160,8 +161,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentCv = (widget.partnerData['cv_attachment_name'] ?? '')
-        .toString();
+    final currentCv = OdooValues.string(
+      widget.partnerData['cv_attachment_name'],
+    );
     return AppScaffold(
       title: 'Editar perfil',
       child: ListView(

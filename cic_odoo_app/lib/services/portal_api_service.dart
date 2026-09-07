@@ -105,7 +105,7 @@ class PortalApiService {
         'Error en controlador móvil de intranet',
         error: error,
         stackTrace: stackTrace,
-        data: {'path': path, 'params': params},
+        data: {'path': path},
         scope: 'portal.api',
       );
       if (kDebugMode) debugPrint(stackTrace.toString());

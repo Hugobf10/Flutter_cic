@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
 import '../../services/portal_api_service.dart';
+import '../../services/odoo_values.dart';
 
 class CommunicationDetailScreen extends StatefulWidget {
   const CommunicationDetailScreen({super.key, required this.id});
@@ -63,6 +64,10 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
   Future<void> _edit() async {
     final record = _record;
     if (record == null) return;
+    final requiresWorkflow = OdooValues.boolValue(
+      record['requiere_tramitacion'],
+      fallback: true,
+    );
     final edited = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -112,27 +117,30 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
               maxLines: 4,
               initialValue: record['descripcion'],
             ),
-            DynamicFieldConfig(
-              key: 'analisis',
-              label: 'Análisis',
-              type: DynamicFieldType.multiline,
-              maxLines: 4,
-              initialValue: record['analisis'],
-            ),
-            DynamicFieldConfig(
-              key: 'tratamiento',
-              label: 'Tratamiento previsto',
-              type: DynamicFieldType.multiline,
-              maxLines: 4,
-              initialValue: record['tratamiento'],
-            ),
-            DynamicFieldConfig(
-              key: 'respuesta',
-              label: 'Respuesta al trabajador',
-              type: DynamicFieldType.multiline,
-              maxLines: 4,
-              initialValue: record['respuesta'],
-            ),
+            if (requiresWorkflow)
+              DynamicFieldConfig(
+                key: 'analisis',
+                label: 'Análisis',
+                type: DynamicFieldType.multiline,
+                maxLines: 4,
+                initialValue: record['analisis'],
+              ),
+            if (requiresWorkflow)
+              DynamicFieldConfig(
+                key: 'tratamiento',
+                label: 'Tratamiento previsto',
+                type: DynamicFieldType.multiline,
+                maxLines: 4,
+                initialValue: record['tratamiento'],
+              ),
+            if (requiresWorkflow)
+              DynamicFieldConfig(
+                key: 'respuesta',
+                label: 'Respuesta al trabajador',
+                type: DynamicFieldType.multiline,
+                maxLines: 4,
+                initialValue: record['respuesta'],
+              ),
           ],
           onSubmit: (values) async {
             await _portalApi.action(
@@ -143,9 +151,9 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
                 'tipo': values['tipo'],
                 'fecha': _dateString(values['fecha']),
                 'descripcion': values['descripcion'],
-                'analisis': values['analisis'],
-                'tratamiento': values['tratamiento'],
-                'respuesta': values['respuesta'],
+                if (requiresWorkflow) 'analisis': values['analisis'],
+                if (requiresWorkflow) 'tratamiento': values['tratamiento'],
+                if (requiresWorkflow) 'respuesta': values['respuesta'],
               },
             );
           },
@@ -206,6 +214,10 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
 
     final record = _record!;
     final state = (record['estado'] ?? 'recibida').toString();
+    final requiresWorkflow = OdooValues.boolValue(
+      record['requiere_tramitacion'],
+      fallback: true,
+    );
     final canEdit = auth.canEditModule('communications');
     final canSend = auth.canSendCommunications;
     final responseSent = record['respuesta_enviada'] == true;
@@ -234,11 +246,11 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
             spacing: 8,
             children: [
               _chip('Tipo: ${record['tipo'] ?? '-'}'),
-              _chip('Estado: ${_stateLabel(state)}'),
+              if (requiresWorkflow) _chip('Estado: ${_stateLabel(state)}'),
               _chip('Fecha: ${record['fecha'] ?? '-'}'),
             ],
           ),
-          if (canEdit) ...[
+          if (canEdit && requiresWorkflow) ...[
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
@@ -274,9 +286,10 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
               ),
             ),
           _section('Descripción', record['descripcion']),
-          _section('Análisis', record['analisis']),
-          _section('Tratamiento previsto', record['tratamiento']),
-          _section('Respuesta', record['respuesta']),
+          if (requiresWorkflow) _section('Análisis', record['analisis']),
+          if (requiresWorkflow)
+            _section('Tratamiento previsto', record['tratamiento']),
+          if (requiresWorkflow) _section('Respuesta', record['respuesta']),
           _recipientSummary(record),
           const SizedBox(height: 12),
           Text('Documentos', style: Theme.of(context).textTheme.titleMedium),
@@ -311,11 +324,7 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
         children: [
           Text(title, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 4),
-          Text(
-            (value?.toString().trim().isNotEmpty ?? false)
-                ? value.toString()
-                : '-',
-          ),
+          Text(OdooValues.string(value, fallback: '—')),
         ],
       ),
     );

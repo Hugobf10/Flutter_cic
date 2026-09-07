@@ -32,8 +32,8 @@ void main() {
     expect(AppTheme.lightTheme.brightness, Brightness.light);
     expect(AppTheme.darkTheme.brightness, Brightness.dark);
     expect(light.color, isNot(dark.color));
-    expect(light.boxShadow, hasLength(2));
-    expect(dark.boxShadow, hasLength(2));
+    expect(light.boxShadow, isEmpty);
+    expect(dark.boxShadow, isEmpty);
     expect(
       AppTheme.lightTheme.pageTransitionsTheme.builders[TargetPlatform.windows],
       isA<AppPageTransitionsBuilder>(),

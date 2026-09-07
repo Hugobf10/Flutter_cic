@@ -3,9 +3,23 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'app_motion.dart';
+import 'accessibility_media.dart';
 
 class AppTheme {
   AppTheme._();
+
+  static Color statusColorFor(BuildContext context, Color color) {
+    if (MediaQuery.highContrastOf(context)) return textPrimaryFor(context);
+    if (!AccessibilityPalette.enabled(context)) return color;
+    final dark = isDark(context);
+    if (color == success || color == info || color == accent) {
+      return dark ? const Color(0xFF8CCBFF) : const Color(0xFF005A91);
+    }
+    if (color == danger || color == warning) {
+      return dark ? const Color(0xFFFFBE85) : const Color(0xFF8B3A00);
+    }
+    return color;
+  }
 
   // Identidad CIC.
   static const Color primary = Color(0xFF0191B9);
@@ -50,22 +64,11 @@ class AppTheme {
     end: Alignment.bottomRight,
   );
 
-  /// Compatibilidad con decoraciones antiguas en modo claro.
-  static List<BoxShadow> get softShadow => _lightRaisedShadow;
-
-  static List<BoxShadow> get glowShadow => const [
-    BoxShadow(color: Color(0x2B0191B9), blurRadius: 24, offset: Offset(0, 10)),
-  ];
-
-  static const List<BoxShadow> _lightRaisedShadow = [
-    BoxShadow(color: Color(0xA8C4CCD7), blurRadius: 18, offset: Offset(8, 8)),
-    BoxShadow(color: Color(0xF5FFFFFF), blurRadius: 16, offset: Offset(-7, -7)),
-  ];
-
-  static const List<BoxShadow> _darkRaisedShadow = [
-    BoxShadow(color: Color(0xB8000000), blurRadius: 18, offset: Offset(8, 8)),
-    BoxShadow(color: Color(0x183F4A5E), blurRadius: 15, offset: Offset(-6, -6)),
-  ];
+  // The product uses a flat, bordered visual language. Keeping these aliases
+  // empty also removes shadows from legacy components without duplicating UI
+  // changes across every screen.
+  static List<BoxShadow> get softShadow => const [];
+  static List<BoxShadow> get glowShadow => const [];
 
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [Color(0xFF07005E), Color(0xFF0191B9)],
@@ -78,62 +81,54 @@ class AppTheme {
   static final BorderRadius radiusLg = BorderRadius.circular(28);
   static final BorderRadius radiusXl = BorderRadius.circular(9999);
 
-  static ThemeData get lightTheme => _buildTheme(Brightness.light);
-  static ThemeData get darkTheme => _buildTheme(Brightness.dark);
+  static final Map<(Brightness, bool), ThemeData> _themes = {};
+  static ThemeData _cachedTheme(Brightness brightness, bool contrast) =>
+      _themes.putIfAbsent((
+        brightness,
+        contrast,
+      ), () => _buildTheme(brightness, highContrast: contrast));
+
+  static ThemeData get lightTheme => lightThemeFor();
+  static ThemeData get darkTheme => darkThemeFor();
+
+  static ThemeData lightThemeFor({bool highContrast = false}) =>
+      _cachedTheme(Brightness.light, highContrast);
+
+  static ThemeData darkThemeFor({bool highContrast = false}) =>
+      _cachedTheme(Brightness.dark, highContrast);
 
   static bool isDark(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark;
 
   static Color surfaceFor(BuildContext context) =>
-      isDark(context) ? _darkSurface : surface;
+      Theme.of(context).scaffoldBackgroundColor;
 
   static Color cardFor(BuildContext context) =>
-      isDark(context) ? _darkCard : surfaceCard;
+      Theme.of(context).cardTheme.color ??
+      (isDark(context) ? _darkCard : surfaceCard);
 
   static Color elevatedFor(BuildContext context) =>
-      isDark(context) ? _darkElevated : surfaceElevated;
+      Theme.of(context).inputDecorationTheme.fillColor ??
+      (isDark(context) ? _darkElevated : surfaceElevated);
 
   static Color dividerFor(BuildContext context) =>
-      isDark(context) ? _darkDivider : divider;
+      Theme.of(context).dividerColor;
 
   static Color textPrimaryFor(BuildContext context) =>
-      isDark(context) ? _darkText : textPrimary;
+      Theme.of(context).textTheme.titleLarge?.color ??
+      (isDark(context) ? _darkText : textPrimary);
 
   static Color textSecondaryFor(BuildContext context) =>
-      isDark(context) ? _darkTextSecondary : textSecondary;
+      Theme.of(context).textTheme.bodyLarge?.color ??
+      (isDark(context) ? _darkTextSecondary : textSecondary);
 
   static Color textMutedFor(BuildContext context) =>
-      isDark(context) ? _darkTextMuted : textMuted;
+      Theme.of(context).textTheme.bodySmall?.color ??
+      (isDark(context) ? _darkTextMuted : textMuted);
 
-  static List<BoxShadow> raisedShadowFor(BuildContext context) =>
-      isDark(context) ? _darkRaisedShadow : _lightRaisedShadow;
+  static List<BoxShadow> raisedShadowFor(BuildContext context) => const [];
 
-  static List<BoxShadow> subtleShadowFor(BuildContext context) =>
-      isDark(context)
-      ? const [
-          BoxShadow(
-            color: Color(0x8A000000),
-            blurRadius: 12,
-            offset: Offset(5, 5),
-          ),
-          BoxShadow(
-            color: Color(0x103F4A5E),
-            blurRadius: 10,
-            offset: Offset(-4, -4),
-          ),
-        ]
-      : const [
-          BoxShadow(
-            color: Color(0x86C4CCD7),
-            blurRadius: 12,
-            offset: Offset(5, 5),
-          ),
-          BoxShadow(
-            color: Color(0xEFFFFFFF),
-            blurRadius: 10,
-            offset: Offset(-4, -4),
-          ),
-        ];
+  static List<BoxShadow> subtleShadowFor(BuildContext context) => const [];
 
   static BoxDecoration neumorphicDecoration(
     BuildContext context, {
@@ -148,11 +143,14 @@ class AppTheme {
       border: showBorder
           ? Border.all(color: dividerFor(context).withValues(alpha: 0.72))
           : null,
-      boxShadow: subtle ? subtleShadowFor(context) : raisedShadowFor(context),
+      boxShadow: const [],
     );
   }
 
   static LinearGradient cardGradientFor(BuildContext context) {
+    if (MediaQuery.highContrastOf(context)) {
+      return LinearGradient(colors: [cardFor(context), cardFor(context)]);
+    }
     if (!isDark(context)) return cardGradient;
     return const LinearGradient(
       colors: [Color(0xFF252C39), Color(0xFF1C222D)],
@@ -162,6 +160,9 @@ class AppTheme {
   }
 
   static LinearGradient heroGradientFor(BuildContext context) {
+    if (MediaQuery.highContrastOf(context)) {
+      return LinearGradient(colors: [surfaceFor(context), surfaceFor(context)]);
+    }
     if (!isDark(context)) return heroGradient;
     return const LinearGradient(
       colors: [Color(0xFF1B202A), Color(0xFF171B24), Color(0xFF1D2330)],
@@ -170,17 +171,36 @@ class AppTheme {
     );
   }
 
-  static ThemeData _buildTheme(Brightness brightness) {
+  static ThemeData _buildTheme(
+    Brightness brightness, {
+    bool highContrast = false,
+  }) {
     final isDark = brightness == Brightness.dark;
-    final bg = isDark ? _darkSurface : surface;
-    final card = isDark ? _darkCard : surfaceCard;
-    final elevated = isDark ? _darkElevated : surfaceElevated;
-    final border = isDark ? _darkDivider : divider;
-    final text = isDark ? _darkText : textPrimary;
-    final textSub = isDark ? _darkTextSecondary : textSecondary;
-    final muted = isDark ? _darkTextMuted : textMuted;
+    final bg = highContrast
+        ? (isDark ? Colors.black : Colors.white)
+        : (isDark ? _darkSurface : surface);
+    final card = highContrast
+        ? (isDark ? const Color(0xFF090909) : Colors.white)
+        : (isDark ? _darkCard : surfaceCard);
+    final elevated = highContrast
+        ? (isDark ? const Color(0xFF141414) : const Color(0xFFF2F2F2))
+        : (isDark ? _darkElevated : surfaceElevated);
+    final border = highContrast
+        ? (isDark ? Colors.white : const Color(0xFF111111))
+        : (isDark ? _darkDivider : divider);
+    final text = highContrast
+        ? (isDark ? Colors.white : Colors.black)
+        : (isDark ? _darkText : textPrimary);
+    final textSub = highContrast
+        ? (isDark ? const Color(0xFFF0F0F0) : const Color(0xFF202020))
+        : (isDark ? _darkTextSecondary : textSecondary);
+    final muted = highContrast
+        ? (isDark ? const Color(0xFFD8D8D8) : const Color(0xFF383838))
+        : (isDark ? _darkTextMuted : textMuted);
 
     final base = ThemeData(useMaterial3: true, brightness: brightness);
+    // Restore the product typeface. It is Plus Jakarta Sans, not Space Grotesk;
+    // no font substitution is made by the accessibility settings.
     final txt = GoogleFonts.plusJakartaSansTextTheme(
       base.textTheme,
     ).apply(bodyColor: text, displayColor: text);
@@ -199,56 +219,54 @@ class AppTheme {
     return base.copyWith(
       scaffoldBackgroundColor: bg,
       canvasColor: bg,
+      dividerColor: border,
       colorScheme: scheme,
       splashColor: controlOverlay,
       highlightColor: controlOverlay,
       textTheme: txt.copyWith(
-        headlineLarge: GoogleFonts.plusJakartaSans(
+        headlineLarge: TextStyle(
           fontSize: 34,
           height: 1.08,
           letterSpacing: -0.9,
           fontWeight: FontWeight.w800,
           color: text,
         ),
-        headlineMedium: GoogleFonts.plusJakartaSans(
+        headlineMedium: TextStyle(
           fontSize: 28,
           height: 1.12,
           letterSpacing: -0.55,
           fontWeight: FontWeight.w800,
           color: text,
         ),
-        titleLarge: GoogleFonts.plusJakartaSans(
+        titleLarge: TextStyle(
           fontSize: 21,
           fontWeight: FontWeight.w700,
           color: text,
         ),
-        titleMedium: GoogleFonts.plusJakartaSans(
+        titleMedium: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w700,
           color: text,
         ),
-        bodyLarge: GoogleFonts.plusJakartaSans(
+        bodyLarge: TextStyle(
           fontSize: 15,
           height: 1.45,
           fontWeight: FontWeight.w500,
           color: textSub,
         ),
-        bodyMedium: GoogleFonts.plusJakartaSans(
+        bodyMedium: TextStyle(
           fontSize: 14,
           height: 1.4,
           fontWeight: FontWeight.w500,
           color: textSub,
         ),
-        bodySmall: GoogleFonts.plusJakartaSans(
+        bodySmall: TextStyle(
           fontSize: 12,
           height: 1.35,
           fontWeight: FontWeight.w500,
           color: muted,
         ),
-        labelLarge: GoogleFonts.plusJakartaSans(
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-        ),
+        labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: bg,
@@ -263,7 +281,7 @@ class AppTheme {
             : SystemUiOverlayStyle.dark,
         iconTheme: IconThemeData(color: textSub),
         actionsIconTheme: IconThemeData(color: textSub),
-        titleTextStyle: GoogleFonts.plusJakartaSans(
+        titleTextStyle: TextStyle(
           color: text,
           fontSize: 23,
           letterSpacing: -0.35,
@@ -273,12 +291,12 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: card,
         surfaceTintColor: Colors.transparent,
-        shadowColor: isDark ? Colors.black : const Color(0xFF9DA9B8),
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: radiusMd,
           side: BorderSide(color: border.withValues(alpha: 0.72)),
         ),
-        elevation: 7,
+        elevation: 0,
         margin: EdgeInsets.zero,
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -325,7 +343,7 @@ class AppTheme {
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
-          return GoogleFonts.plusJakartaSans(
+          return TextStyle(
             fontSize: 11,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
             color: selected ? primary : muted,
@@ -336,7 +354,7 @@ class AppTheme {
         backgroundColor: card,
         selectedItemColor: primary,
         unselectedItemColor: muted,
-        elevation: 8,
+        elevation: 0,
         type: BottomNavigationBarType.fixed,
       ),
       navigationRailTheme: NavigationRailThemeData(
@@ -355,10 +373,8 @@ class AppTheme {
       ),
       tabBarTheme: TabBarThemeData(
         dividerColor: Colors.transparent,
-        labelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
-        unselectedLabelStyle: GoogleFonts.plusJakartaSans(
-          fontWeight: FontWeight.w600,
-        ),
+        labelStyle: TextStyle(fontWeight: FontWeight.w700),
+        unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w600),
         labelColor: primary,
         unselectedLabelColor: muted,
         indicator: BoxDecoration(
@@ -386,11 +402,9 @@ class AppTheme {
           disabledBackgroundColor: elevated,
           disabledForegroundColor: muted,
           shape: buttonShape,
-          textStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
-          elevation: 7,
-          shadowColor: isDark
-              ? Colors.black
-              : primaryDark.withValues(alpha: 0.32),
+          textStyle: TextStyle(fontWeight: FontWeight.w700),
+          elevation: 0,
+          shadowColor: Colors.transparent,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -402,11 +416,9 @@ class AppTheme {
           disabledBackgroundColor: elevated,
           disabledForegroundColor: muted,
           shape: buttonShape,
-          textStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
-          elevation: 7,
-          shadowColor: isDark
-              ? Colors.black
-              : primaryDark.withValues(alpha: 0.32),
+          textStyle: TextStyle(fontWeight: FontWeight.w700),
+          elevation: 0,
+          shadowColor: Colors.transparent,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -418,16 +430,16 @@ class AppTheme {
           disabledForegroundColor: muted,
           side: BorderSide(color: border.withValues(alpha: 0.86)),
           shape: buttonShape,
-          textStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
-          elevation: 4,
-          shadowColor: isDark ? Colors.black : const Color(0xFFB8C2CF),
+          textStyle: TextStyle(fontWeight: FontWeight.w700),
+          elevation: 0,
+          shadowColor: Colors.transparent,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primary,
           shape: RoundedRectangleBorder(borderRadius: radiusSm),
-          textStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+          textStyle: TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
       iconButtonTheme: IconButtonThemeData(
@@ -441,7 +453,7 @@ class AppTheme {
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: primaryDark,
         foregroundColor: Colors.white,
-        elevation: 9,
+        elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: radiusMd),
       ),
       listTileTheme: ListTileThemeData(
@@ -454,21 +466,18 @@ class AppTheme {
       dialogTheme: DialogThemeData(
         backgroundColor: card,
         surfaceTintColor: Colors.transparent,
-        elevation: 12,
-        shadowColor: isDark ? Colors.black : const Color(0xFF9AA7B6),
+        elevation: 0,
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: radiusLg,
           side: BorderSide(color: border),
         ),
-        titleTextStyle: GoogleFonts.plusJakartaSans(
+        titleTextStyle: TextStyle(
           color: text,
           fontSize: 20,
           fontWeight: FontWeight.w800,
         ),
-        contentTextStyle: GoogleFonts.plusJakartaSans(
-          color: textSub,
-          height: 1.45,
-        ),
+        contentTextStyle: TextStyle(color: textSub, height: 1.45),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: card,
@@ -476,7 +485,7 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         showDragHandle: true,
         dragHandleColor: muted,
-        elevation: 14,
+        elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
           side: BorderSide(color: border),
@@ -492,7 +501,7 @@ class AppTheme {
       popupMenuTheme: PopupMenuThemeData(
         color: card,
         surfaceTintColor: Colors.transparent,
-        elevation: 10,
+        elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: radiusMd,
           side: BorderSide(color: border),
@@ -537,19 +546,16 @@ class AppTheme {
       badgeTheme: BadgeThemeData(
         backgroundColor: danger,
         textColor: Colors.white,
-        textStyle: GoogleFonts.plusJakartaSans(
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-        ),
+        textStyle: TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: isDark ? _darkElevated : textPrimary,
-        contentTextStyle: GoogleFonts.plusJakartaSans(
+        contentTextStyle: TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w600,
         ),
-        elevation: 10,
+        elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: radiusSm),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(

@@ -6,6 +6,12 @@ import 'package:cic_odoo_app/services/odoo_values.dart';
 
 void main() {
   group('OdooValues', () {
+    test('does not expose Odoo empty sentinels as text', () {
+      expect(OdooValues.string(false, fallback: '—'), '—');
+      expect(OdooValues.string('false', fallback: '—'), '—');
+      expect(OdooValues.string(' null ', fallback: 'Sin datos'), 'Sin datos');
+    });
+
     test('interprets many2one values and false safely', () {
       expect(OdooValues.many2oneId([12, 'Proveedor']), 12);
       expect(OdooValues.many2oneLabel([12, 'Proveedor']), 'Proveedor');

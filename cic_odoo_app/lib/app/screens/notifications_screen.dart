@@ -7,6 +7,7 @@ import '../providers/app_state_provider.dart';
 import '../ui/app_components.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../l10n/strings.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -29,7 +30,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         .length;
 
     return AppScaffold(
-      title: 'Actividad',
+      title: context.l10n.activity,
       child: Column(
         children: [
           _NotificationsHero(
@@ -42,17 +43,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildFilterChip('all', 'Todas', Icons.all_inbox_rounded),
+                _buildFilterChip(
+                  'all',
+                  context.l10n.all,
+                  Icons.all_inbox_rounded,
+                ),
                 const SizedBox(width: 8),
                 _buildFilterChip(
                   'unread',
-                  'No leídas',
+                  context.l10n.unread,
                   Icons.mark_email_unread_rounded,
                 ),
                 const SizedBox(width: 8),
                 _buildFilterChip(
                   'high',
-                  'Importantes',
+                  context.l10n.important,
                   Icons.priority_high_rounded,
                 ),
               ],
@@ -61,11 +66,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           const SizedBox(height: 12),
           Expanded(
             child: appState.loadingNotifications
-                ? const AppLoadingView(label: 'Cargando actividad...')
+                ? AppLoadingView(label: context.l10n.loadingActivity)
                 : list.isEmpty
-                ? const AppEmptyState(
-                    title: 'Sin actividad',
-                    subtitle: 'No hay notificaciones para este filtro.',
+                ? AppEmptyState(
+                    title: context.l10n.noActivity,
+                    subtitle: context.l10n.noActivityHint,
                     icon: Icons.notifications_none_rounded,
                   )
                 : ListView.separated(
@@ -131,7 +136,7 @@ class _NotificationsHero extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Centro de actividad',
+                      context.l10n.activityCentre,
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
@@ -140,7 +145,7 @@ class _NotificationsHero extends StatelessWidget {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      'Lo reciente, importante y pendiente de revisar.',
+                      context.l10n.activityCentreHint,
                       style: TextStyle(
                         color: AppTheme.textSecondaryFor(context),
                       ),
@@ -155,7 +160,7 @@ class _NotificationsHero extends StatelessWidget {
             children: [
               Expanded(
                 child: _NotificationStat(
-                  label: 'Total',
+                  label: context.l10n.total,
                   value: totalCount.toString(),
                   color: AppTheme.primary,
                 ),
@@ -163,7 +168,7 @@ class _NotificationsHero extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _NotificationStat(
-                  label: 'No leídas',
+                  label: context.l10n.unread,
                   value: unreadCount.toString(),
                   color: AppTheme.info,
                 ),
@@ -171,7 +176,7 @@ class _NotificationsHero extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _NotificationStat(
-                  label: 'Importantes',
+                  label: context.l10n.important,
                   value: highCount.toString(),
                   color: AppTheme.warning,
                 ),
@@ -245,11 +250,14 @@ class _NotificationCard extends StatelessWidget {
     };
 
     return AppListTile(
-      onTap: () => ModuleNavigation.openModule(
-        context,
-        auth: auth,
-        moduleKey: item.moduleKey,
-      ),
+      onTap: () {
+        context.read<AppStateProvider>().markNotificationRead(item);
+        ModuleNavigation.openModule(
+          context,
+          auth: auth,
+          moduleKey: item.moduleKey,
+        );
+      },
       leading: AppIconSurface(
         icon: item.level == 'high'
             ? Icons.priority_high_rounded
