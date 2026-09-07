@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/screens/document_viewer_screen.dart';
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
@@ -76,6 +77,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     final auth = context.watch<AuthProvider>();
     final pending = _rows
         .where((e) => (e['estado'] ?? '').toString() == 'pendiente')
@@ -89,7 +91,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
     return DefaultTabController(
       length: 2,
       child: AppScaffold(
-        title: 'Formación',
+        title: t.training,
         actions: [
           if (auth.canEditModule('training'))
             IconButton(
@@ -107,10 +109,10 @@ class _TrainingScreenState extends State<TrainingScreen> {
         ],
         child: Column(
           children: [
-            const TabBar(
+            TabBar(
               tabs: [
-                Tab(text: 'Pendientes'),
-                Tab(text: 'Historial'),
+                Tab(text: t.pending),
+                Tab(text: t.trainingHistory),
               ],
             ),
             const SizedBox(height: 12),
@@ -119,7 +121,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
                   ? const AppLoadingView()
                   : _error != null && !_limitedAccessMode
                   ? AppEmptyState(
-                      title: 'Error al cargar formación',
+                      title: t.trainingLoadError,
                       subtitle: _error!,
                       icon: Icons.error_outline_rounded,
                     )
@@ -141,7 +143,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
                                         SizedBox(width: 10),
                                         Expanded(
                                           child: Text(
-                                            'Formación con acceso limitado',
+                                            t.trainingLimitedAccess,
                                             style: TextStyle(
                                               fontWeight: FontWeight.w700,
                                               color: AppTheme.textPrimaryFor(
@@ -154,7 +156,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
                                     ),
                                     SizedBox(height: 10),
                                     Text(
-                                      'Este perfil no puede consultar el historial completo de formaciones por API con sus permisos actuales.',
+                                      t.trainingLimitedAccessHint,
                                       style: TextStyle(
                                         color: AppTheme.textSecondaryFor(
                                           context,
@@ -166,19 +168,19 @@ class _TrainingScreenState extends State<TrainingScreen> {
                               ),
                             ] else ...[
                               _kpi(
-                                'Pendientes',
+                                t.pending,
                                 pending.toString(),
                                 AppTheme.warning,
                               ),
                               const SizedBox(height: 8),
                               _kpi(
-                                'En progreso',
+                                t.inProgress,
                                 inProgress.toString(),
                                 AppTheme.info,
                               ),
                               const SizedBox(height: 8),
                               _kpi(
-                                'Completadas',
+                                t.previewSuccess,
                                 completed.toString(),
                                 AppTheme.success,
                               ),
@@ -187,33 +189,30 @@ class _TrainingScreenState extends State<TrainingScreen> {
                             AppCard(
                               child: Text(
                                 _limitedAccessMode
-                                    ? 'La app sigue disponible en modo limitado. Si este perfil debe consultar el historial o certificados, hay que habilitar permisos API de formación en Odoo.'
-                                    : 'Registra una formación externa o completa una formación pendiente desde su ficha.',
+                                    ? t.trainingLimitedModeHint
+                                    : t.trainingNormalModeHint,
                               ),
                             ),
                             const SizedBox(height: 12),
                             if (!_limitedAccessMode)
                               _buildTrainingList(
                                 pendingRows,
-                                emptyTitle: 'No tienes formación pendiente',
-                                emptySubtitle:
-                                    'Las formaciones asignadas o los cursos e-learning aparecerán aquí.',
+                                emptyTitle: t.noPendingTraining,
+                                emptySubtitle: t.noPendingTrainingHint,
                                 auth: auth,
                               ),
                           ],
                         ),
                         _limitedAccessMode
-                            ? const AppEmptyState(
-                                title: 'Historial no disponible',
-                                subtitle:
-                                    'Este perfil no puede cargar asistencias de formación por API con sus permisos actuales.',
+                            ? AppEmptyState(
+                                title: t.trainingHistoryUnavailable,
+                                subtitle: t.trainingHistoryUnavailableHint,
                                 icon: Icons.lock_outline_rounded,
                               )
                             : _buildTrainingList(
                                 _rows,
-                                emptyTitle: 'Sin historial',
-                                emptySubtitle:
-                                    'Aún no tienes asistencias de formación.',
+                                emptyTitle: t.noTrainingHistory,
+                                emptySubtitle: t.noTrainingHistoryHint,
                                 auth: auth,
                               ),
                       ],
@@ -286,14 +285,15 @@ class _TrainingScreenState extends State<TrainingScreen> {
   }
 
   Widget _buildTrainingCard(Map<String, dynamic> row, AuthProvider auth) {
+    final t = context.l10n;
     final title = _trainingName(row);
     final completed = _isCompleted(row);
     final inProgress = _isInProgress(row);
     final status = completed
-        ? 'Realizada'
+        ? t.previewSuccess
         : inProgress
-        ? 'En progreso'
-        : 'Pendiente';
+        ? t.inProgress
+        : t.pending;
     final color = completed
         ? AppTheme.success
         : inProgress
@@ -331,22 +331,22 @@ class _TrainingScreenState extends State<TrainingScreen> {
           ),
           const SizedBox(height: 8),
           if (plannedDate.isNotEmpty)
-            _metadataLine(Icons.event_outlined, 'Prevista: $plannedDate'),
+            _metadataLine(Icons.event_outlined, t.scheduled(plannedDate)),
           if (completionDate.isNotEmpty)
             _metadataLine(
               Icons.event_available_outlined,
-              'Realizada: $completionDate',
+              t.completedOn(completionDate),
             ),
           if (entity.isNotEmpty) _metadataLine(Icons.business_outlined, entity),
           if (place.isNotEmpty) _metadataLine(Icons.place_outlined, place),
           if (duration != null)
-            _metadataLine(Icons.schedule_rounded, '$duration horas'),
+            _metadataLine(Icons.schedule_rounded, t.hours(duration)),
           if (progress != null) ...[
             const SizedBox(height: 8),
             LinearProgressIndicator(value: (progress / 100).clamp(0, 1)),
             const SizedBox(height: 4),
             Text(
-              'Progreso e-learning: ${progress.toStringAsFixed(0)}%',
+              t.elearningProgress(progress.toStringAsFixed(0)),
               style: TextStyle(
                 fontSize: 12,
                 color: AppTheme.textSecondaryFor(context),
@@ -374,19 +374,19 @@ class _TrainingScreenState extends State<TrainingScreen> {
                   TextButton.icon(
                     onPressed: () => _openCertificate(row, certificateId),
                     icon: const Icon(Icons.picture_as_pdf_outlined),
-                    label: const Text('Certificado'),
+                    label: Text(t.certificate),
                   ),
                 if (elearningUrl.isNotEmpty)
                   TextButton.icon(
                     onPressed: () => _openElearning(elearningUrl),
                     icon: const Icon(Icons.open_in_new_rounded),
-                    label: const Text('Abrir curso'),
+                    label: Text(t.openCourse),
                   ),
                 if (!completed && auth.canCompleteTraining)
                   TextButton.icon(
                     onPressed: () => _completeTraining(row),
                     icon: const Icon(Icons.task_alt_rounded),
-                    label: const Text('Marcar realizada'),
+                    label: Text(t.markCompleted),
                   ),
               ],
             ),
@@ -445,7 +445,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'No se pudo abrir el certificado: ${OdooService.prettyError(error)}',
+            context.l10n.couldNotOpenCertificate(
+              OdooService.prettyError(error),
+            ),
           ),
         ),
       );
@@ -458,7 +460,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
         !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo abrir el curso e-learning.')),
+        SnackBar(content: Text(context.l10n.couldNotOpenElearning)),
       );
     }
   }
@@ -486,7 +488,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Completar formación',
+                  context.l10n.completeTraining,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
@@ -512,7 +514,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
                                   setSheetState(() => completedOn = picked);
                                 }
                               },
-                        child: const Text('Cambiar'),
+                        child: Text(context.l10n.change),
                       ),
                     ],
                   ),
@@ -526,7 +528,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
                       Expanded(
                         child: Text(
                           certificate?.name ??
-                              'Adjuntar certificado (opcional)',
+                              context.l10n.attachOptionalCertificate,
                         ),
                       ),
                       TextButton(
@@ -538,14 +540,14 @@ class _TrainingScreenState extends State<TrainingScreen> {
                                   setSheetState(() => certificate = picked);
                                 }
                               },
-                        child: const Text('Subir'),
+                        child: Text(context.l10n.upload),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 16),
                 AppButton.primary(
-                  label: 'Confirmar realización',
+                  label: context.l10n.confirmCompletion,
                   icon: Icons.task_alt_rounded,
                   loading: saving,
                   onPressed: saving
@@ -589,7 +591,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
                             ScaffoldMessenger.of(this.context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  'No se pudo completar la formación: ${OdooService.prettyError(error)}',
+                                  this.context.l10n.couldNotCompleteTraining(
+                                    OdooService.prettyError(error),
+                                  ),
                                 ),
                               ),
                             );
@@ -620,7 +624,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
     if (formacion is List && formacion.length > 1) {
       return formacion[1].toString();
     }
-    return _text(row['name']).isNotEmpty ? _text(row['name']) : 'Formación';
+    return _text(row['name']).isNotEmpty
+        ? _text(row['name'])
+        : context.l10n.training;
   }
 
   String _text(dynamic value) => value?.toString().trim() ?? '';

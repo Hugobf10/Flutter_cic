@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../action_plans/action_plans_screen.dart';
@@ -18,29 +19,29 @@ class PlanningScreen extends StatelessWidget {
     final entries = auth.canViewModule('planning')
         ? <_PlanningEntry>[
             _PlanningEntry(
-              title: 'Objetivos',
-              subtitle: 'Consulta y edición de objetivos de calidad y PRL.',
+              title: context.l10n.goals,
+              subtitle: context.l10n.goalsPlanningHint,
               icon: Icons.flag_outlined,
               color: AppTheme.primary,
               builder: () => const GoalsScreen(),
             ),
             _PlanningEntry(
-              title: 'Planes de acción',
-              subtitle: 'Acciones preventivas y planes ligados a objetivos.',
+              title: context.l10n.actionPlans,
+              subtitle: context.l10n.actionPlansPlanningHint,
               icon: Icons.task_alt_rounded,
               color: AppTheme.warning,
               builder: () => const ActionPlansScreen(),
             ),
             _PlanningEntry(
-              title: 'Químicos',
-              subtitle: 'Inventario, peligrosidad, caducidades y fichas.',
+              title: context.l10n.chemicals,
+              subtitle: context.l10n.chemicalsPlanningHint,
               icon: Icons.science_outlined,
               color: AppTheme.success,
               builder: () => const ChemicalsScreen(),
             ),
             _PlanningEntry(
-              title: 'Informe de químicos',
-              subtitle: 'Resumen operativo por tipo y peligrosidad.',
+              title: context.l10n.chemicalReport,
+              subtitle: context.l10n.chemicalReportPlanningHint,
               icon: Icons.analytics_outlined,
               color: AppTheme.info,
               builder: () => const ChemicalReportScreen(),
@@ -49,12 +50,11 @@ class PlanningScreen extends StatelessWidget {
         : const <_PlanningEntry>[];
 
     return AppScaffold(
-      title: 'Planificación',
+      title: context.l10n.planning,
       child: entries.isEmpty
-          ? const AppEmptyState(
-              title: 'Sin acceso',
-              subtitle:
-                  'No tienes permisos para ver ningún apartado de planificación.',
+          ? AppEmptyState(
+              title: context.l10n.noAccess,
+              subtitle: context.l10n.noPlanningAccess,
               icon: Icons.lock_outline_rounded,
             )
           : ListView.separated(

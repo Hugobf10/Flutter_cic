@@ -1531,6 +1531,864 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'No se pudo visualizar el documento'**
   String get couldNotPreviewDocument;
+
+  /// No description provided for @trainingHistory.
+  ///
+  /// In es, this message translates to:
+  /// **'Historial'**
+  String get trainingHistory;
+
+  /// No description provided for @trainingLoadError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo cargar la formación'**
+  String get trainingLoadError;
+
+  /// No description provided for @trainingLimitedAccess.
+  ///
+  /// In es, this message translates to:
+  /// **'Formación con acceso limitado'**
+  String get trainingLimitedAccess;
+
+  /// No description provided for @trainingLimitedAccessHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Este perfil no puede consultar el historial completo de formaciones por API con sus permisos actuales.'**
+  String get trainingLimitedAccessHint;
+
+  /// No description provided for @trainingLimitedModeHint.
+  ///
+  /// In es, this message translates to:
+  /// **'La app sigue disponible en modo limitado. Si este perfil debe consultar el historial o certificados, hay que habilitar permisos API de formación en Odoo.'**
+  String get trainingLimitedModeHint;
+
+  /// No description provided for @trainingNormalModeHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Registra una formación externa o completa una formación pendiente desde su ficha.'**
+  String get trainingNormalModeHint;
+
+  /// No description provided for @noPendingTraining.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes formación pendiente'**
+  String get noPendingTraining;
+
+  /// No description provided for @noPendingTrainingHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Las formaciones asignadas o los cursos e-learning aparecerán aquí.'**
+  String get noPendingTrainingHint;
+
+  /// No description provided for @trainingHistoryUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'Historial no disponible'**
+  String get trainingHistoryUnavailable;
+
+  /// No description provided for @trainingHistoryUnavailableHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Este perfil no puede cargar asistencias de formación por API con sus permisos actuales.'**
+  String get trainingHistoryUnavailableHint;
+
+  /// No description provided for @noTrainingHistory.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin historial'**
+  String get noTrainingHistory;
+
+  /// No description provided for @noTrainingHistoryHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no tienes asistencias de formación.'**
+  String get noTrainingHistoryHint;
+
+  /// No description provided for @scheduled.
+  ///
+  /// In es, this message translates to:
+  /// **'Prevista: {date}'**
+  String scheduled(String date);
+
+  /// No description provided for @completedOn.
+  ///
+  /// In es, this message translates to:
+  /// **'Realizada: {date}'**
+  String completedOn(String date);
+
+  /// No description provided for @hours.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} horas'**
+  String hours(String count);
+
+  /// No description provided for @elearningProgress.
+  ///
+  /// In es, this message translates to:
+  /// **'Progreso e-learning: {progress}%'**
+  String elearningProgress(String progress);
+
+  /// No description provided for @certificate.
+  ///
+  /// In es, this message translates to:
+  /// **'Certificado'**
+  String get certificate;
+
+  /// No description provided for @openCourse.
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir curso'**
+  String get openCourse;
+
+  /// No description provided for @markCompleted.
+  ///
+  /// In es, this message translates to:
+  /// **'Marcar realizada'**
+  String get markCompleted;
+
+  /// No description provided for @couldNotOpenCertificate.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo abrir el certificado: {error}'**
+  String couldNotOpenCertificate(String error);
+
+  /// No description provided for @couldNotOpenElearning.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo abrir el curso e-learning.'**
+  String get couldNotOpenElearning;
+
+  /// No description provided for @completeTraining.
+  ///
+  /// In es, this message translates to:
+  /// **'Completar formación'**
+  String get completeTraining;
+
+  /// No description provided for @change.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar'**
+  String get change;
+
+  /// No description provided for @attachOptionalCertificate.
+  ///
+  /// In es, this message translates to:
+  /// **'Adjuntar certificado (opcional)'**
+  String get attachOptionalCertificate;
+
+  /// No description provided for @upload.
+  ///
+  /// In es, this message translates to:
+  /// **'Subir'**
+  String get upload;
+
+  /// No description provided for @confirmCompletion.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirmar realización'**
+  String get confirmCompletion;
+
+  /// No description provided for @couldNotCompleteTraining.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo completar la formación: {error}'**
+  String couldNotCompleteTraining(String error);
+
+  /// No description provided for @registerExternalTraining.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar formación externa'**
+  String get registerExternalTraining;
+
+  /// No description provided for @trainingName.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre de la formación'**
+  String get trainingName;
+
+  /// No description provided for @entityCentre.
+  ///
+  /// In es, this message translates to:
+  /// **'Entidad / centro'**
+  String get entityCentre;
+
+  /// No description provided for @completionDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha de finalización'**
+  String get completionDate;
+
+  /// No description provided for @choose.
+  ///
+  /// In es, this message translates to:
+  /// **'Elegir'**
+  String get choose;
+
+  /// No description provided for @attachCertificate.
+  ///
+  /// In es, this message translates to:
+  /// **'Adjuntar certificado (PDF)'**
+  String get attachCertificate;
+
+  /// No description provided for @sendRequest.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar solicitud'**
+  String get sendRequest;
+
+  /// No description provided for @enterTrainingName.
+  ///
+  /// In es, this message translates to:
+  /// **'Indica el nombre de la formación.'**
+  String get enterTrainingName;
+
+  /// No description provided for @enterTrainingCompletionDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Indica la fecha de finalización de la formación.'**
+  String get enterTrainingCompletionDate;
+
+  /// No description provided for @trainingSubmitted.
+  ///
+  /// In es, this message translates to:
+  /// **'Formación enviada para validación de Calidad.'**
+  String get trainingSubmitted;
+
+  /// No description provided for @couldNotRegister.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo registrar: {error}'**
+  String couldNotRegister(String error);
+
+  /// No description provided for @available.
+  ///
+  /// In es, this message translates to:
+  /// **'Disponible'**
+  String get available;
+
+  /// No description provided for @comingSoon.
+  ///
+  /// In es, this message translates to:
+  /// **'Próximamente'**
+  String get comingSoon;
+
+  /// No description provided for @security.
+  ///
+  /// In es, this message translates to:
+  /// **'Seguridad'**
+  String get security;
+
+  /// No description provided for @informationDelivered.
+  ///
+  /// In es, this message translates to:
+  /// **'Información entregada'**
+  String get informationDelivered;
+
+  /// No description provided for @payroll.
+  ///
+  /// In es, this message translates to:
+  /// **'Nóminas'**
+  String get payroll;
+
+  /// No description provided for @planning.
+  ///
+  /// In es, this message translates to:
+  /// **'Planificación'**
+  String get planning;
+
+  /// No description provided for @healthSurveillance.
+  ///
+  /// In es, this message translates to:
+  /// **'Vigilancia de la salud'**
+  String get healthSurveillance;
+
+  /// No description provided for @normative.
+  ///
+  /// In es, this message translates to:
+  /// **'Normativa'**
+  String get normative;
+
+  /// No description provided for @equipment.
+  ///
+  /// In es, this message translates to:
+  /// **'Equipos'**
+  String get equipment;
+
+  /// No description provided for @publications.
+  ///
+  /// In es, this message translates to:
+  /// **'Publicaciones'**
+  String get publications;
+
+  /// No description provided for @permissionsRoles.
+  ///
+  /// In es, this message translates to:
+  /// **'Permisos y roles'**
+  String get permissionsRoles;
+
+  /// No description provided for @suppliers.
+  ///
+  /// In es, this message translates to:
+  /// **'Proveedores'**
+  String get suppliers;
+
+  /// No description provided for @organisation.
+  ///
+  /// In es, this message translates to:
+  /// **'Organización'**
+  String get organisation;
+
+  /// No description provided for @purchases.
+  ///
+  /// In es, this message translates to:
+  /// **'Compras'**
+  String get purchases;
+
+  /// No description provided for @maintenance.
+  ///
+  /// In es, this message translates to:
+  /// **'Mantenimiento'**
+  String get maintenance;
+
+  /// No description provided for @moduleIncidentsDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Registro, seguimiento y cierre de incidencias de tu unidad'**
+  String get moduleIncidentsDescription;
+
+  /// No description provided for @moduleTrainingDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Formación presencial y online'**
+  String get moduleTrainingDescription;
+
+  /// No description provided for @moduleDocumentsDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Consulta y descarga de documentos disponibles para ti'**
+  String get moduleDocumentsDescription;
+
+  /// No description provided for @moduleSecurityDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Procedimientos y documentación de seguridad'**
+  String get moduleSecurityDescription;
+
+  /// No description provided for @moduleInformationDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Información y documentación entregada al usuario'**
+  String get moduleInformationDescription;
+
+  /// No description provided for @modulePayrollDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Documentos salariales del portal'**
+  String get modulePayrollDescription;
+
+  /// No description provided for @moduleRecruitmentDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Consulta de convocatorias y candidaturas asignadas'**
+  String get moduleRecruitmentDescription;
+
+  /// No description provided for @moduleReservationsDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Consulta disponibilidad y gestiona reservas de servicios y recursos'**
+  String get moduleReservationsDescription;
+
+  /// No description provided for @modulePlanningDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Objetivos, planes de acción, químicos e informes'**
+  String get modulePlanningDescription;
+
+  /// No description provided for @moduleHealthDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Seguimiento de vigilancia de la salud'**
+  String get moduleHealthDescription;
+
+  /// No description provided for @moduleNormativeDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Consulta de normativa y documentación aplicable'**
+  String get moduleNormativeDescription;
+
+  /// No description provided for @moduleEquipmentDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Inventario y seguimiento de equipos asociados a calidad'**
+  String get moduleEquipmentDescription;
+
+  /// No description provided for @modulePublicationsDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Consulta de publicaciones y contenidos informativos'**
+  String get modulePublicationsDescription;
+
+  /// No description provided for @modulePermissionsDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Roles y aprobaciones internas'**
+  String get modulePermissionsDescription;
+
+  /// No description provided for @moduleCommunicationsDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Comunicaciones, avisos y sugerencias'**
+  String get moduleCommunicationsDescription;
+
+  /// No description provided for @moduleSuppliersDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Gestión y seguimiento de proveedores'**
+  String get moduleSuppliersDescription;
+
+  /// No description provided for @moduleOrganisationDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Pendiente de integrar con estructura organizativa'**
+  String get moduleOrganisationDescription;
+
+  /// No description provided for @modulePurchasesDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Consulta de productos, códigos y recepción de compras'**
+  String get modulePurchasesDescription;
+
+  /// No description provided for @moduleMaintenanceDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Solicitudes de mantenimiento y equipos enlazados con calidad'**
+  String get moduleMaintenanceDescription;
+
+  /// No description provided for @goals.
+  ///
+  /// In es, this message translates to:
+  /// **'Objetivos'**
+  String get goals;
+
+  /// No description provided for @actionPlans.
+  ///
+  /// In es, this message translates to:
+  /// **'Planes de acción'**
+  String get actionPlans;
+
+  /// No description provided for @chemicals.
+  ///
+  /// In es, this message translates to:
+  /// **'Químicos'**
+  String get chemicals;
+
+  /// No description provided for @chemicalReport.
+  ///
+  /// In es, this message translates to:
+  /// **'Informe de químicos'**
+  String get chemicalReport;
+
+  /// No description provided for @goalsPlanningHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Consulta y edición de objetivos de calidad y PRL.'**
+  String get goalsPlanningHint;
+
+  /// No description provided for @actionPlansPlanningHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Acciones preventivas y planes ligados a objetivos.'**
+  String get actionPlansPlanningHint;
+
+  /// No description provided for @chemicalsPlanningHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Inventario, peligrosidad, caducidades y fichas.'**
+  String get chemicalsPlanningHint;
+
+  /// No description provided for @chemicalReportPlanningHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Resumen operativo por tipo y peligrosidad.'**
+  String get chemicalReportPlanningHint;
+
+  /// No description provided for @noAccess.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin acceso'**
+  String get noAccess;
+
+  /// No description provided for @noPlanningAccess.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes permisos para ver ningún apartado de planificación.'**
+  String get noPlanningAccess;
+
+  /// No description provided for @searchPayslips.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscar nóminas...'**
+  String get searchPayslips;
+
+  /// No description provided for @couldNotLoadPayslips.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudieron cargar las nóminas'**
+  String get couldNotLoadPayslips;
+
+  /// No description provided for @noPayslips.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin nóminas'**
+  String get noPayslips;
+
+  /// No description provided for @noPayslipsHint.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay documentos de nómina disponibles.'**
+  String get noPayslipsHint;
+
+  /// No description provided for @payslip.
+  ///
+  /// In es, this message translates to:
+  /// **'Nómina'**
+  String get payslip;
+
+  /// No description provided for @noDate.
+  ///
+  /// In es, this message translates to:
+  /// **'sin fecha'**
+  String get noDate;
+
+  /// No description provided for @couldNotOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo abrir: {error}'**
+  String couldNotOpen(String error);
+
+  /// No description provided for @documentDownloaded.
+  ///
+  /// In es, this message translates to:
+  /// **'Documento descargado: {path}'**
+  String documentDownloaded(String path);
+
+  /// No description provided for @couldNotDownloadError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo descargar: {error}'**
+  String couldNotDownloadError(String error);
+
+  /// No description provided for @noHealthForms.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin formularios'**
+  String get noHealthForms;
+
+  /// No description provided for @noHealthFormsHint.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay reconocimientos registrados.'**
+  String get noHealthFormsHint;
+
+  /// No description provided for @historicalCicCheckup.
+  ///
+  /// In es, this message translates to:
+  /// **'Reconocimiento histórico CIC'**
+  String get historicalCicCheckup;
+
+  /// No description provided for @healthCheckup.
+  ///
+  /// In es, this message translates to:
+  /// **'Reconocimiento'**
+  String get healthCheckup;
+
+  /// No description provided for @checkupDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Reconocimiento: {date}'**
+  String checkupDate(String date);
+
+  /// No description provided for @realisationDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Realización: {date}'**
+  String realisationDate(String date);
+
+  /// No description provided for @couldNotSend.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo enviar: {error}'**
+  String couldNotSend(String error);
+
+  /// No description provided for @send.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar'**
+  String get send;
+
+  /// No description provided for @healthCheckupStatus.
+  ///
+  /// In es, this message translates to:
+  /// **'Estado del reconocimiento'**
+  String get healthCheckupStatus;
+
+  /// No description provided for @observations.
+  ///
+  /// In es, this message translates to:
+  /// **'Observaciones'**
+  String get observations;
+
+  /// No description provided for @recommendations.
+  ///
+  /// In es, this message translates to:
+  /// **'Recomendaciones'**
+  String get recommendations;
+
+  /// No description provided for @notCompleted.
+  ///
+  /// In es, this message translates to:
+  /// **'No realizado'**
+  String get notCompleted;
+
+  /// No description provided for @fit.
+  ///
+  /// In es, this message translates to:
+  /// **'Apto'**
+  String get fit;
+
+  /// No description provided for @fitWithLimitations.
+  ///
+  /// In es, this message translates to:
+  /// **'Apto con limitaciones'**
+  String get fitWithLimitations;
+
+  /// No description provided for @notFit.
+  ///
+  /// In es, this message translates to:
+  /// **'No apto'**
+  String get notFit;
+
+  /// No description provided for @loadingMaintenance.
+  ///
+  /// In es, this message translates to:
+  /// **'Cargando mantenimiento...'**
+  String get loadingMaintenance;
+
+  /// No description provided for @couldNotLoadMaintenance.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo cargar mantenimiento'**
+  String get couldNotLoadMaintenance;
+
+  /// No description provided for @openRequests.
+  ///
+  /// In es, this message translates to:
+  /// **'Solicitudes abiertas'**
+  String get openRequests;
+
+  /// No description provided for @linkedEquipment.
+  ///
+  /// In es, this message translates to:
+  /// **'Equipos vinculados'**
+  String get linkedEquipment;
+
+  /// No description provided for @pendingInterventions.
+  ///
+  /// In es, this message translates to:
+  /// **'Pendientes de intervención'**
+  String get pendingInterventions;
+
+  /// No description provided for @maintenanceInfo.
+  ///
+  /// In es, this message translates to:
+  /// **'La vista usa las solicitudes de mantenimiento y el enlace real con los equipos de calidad.'**
+  String get maintenanceInfo;
+
+  /// No description provided for @editingAllowedInOdoo.
+  ///
+  /// In es, this message translates to:
+  /// **'Edición permitida en Odoo'**
+  String get editingAllowedInOdoo;
+
+  /// No description provided for @readOnly.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo lectura'**
+  String get readOnly;
+
+  /// No description provided for @requests.
+  ///
+  /// In es, this message translates to:
+  /// **'Solicitudes'**
+  String get requests;
+
+  /// No description provided for @noRequests.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin solicitudes'**
+  String get noRequests;
+
+  /// No description provided for @noRequestsHint.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay solicitudes de mantenimiento visibles para este usuario.'**
+  String get noRequestsHint;
+
+  /// No description provided for @unlinkedEquipment.
+  ///
+  /// In es, this message translates to:
+  /// **'Equipo no vinculado'**
+  String get unlinkedEquipment;
+
+  /// No description provided for @noResponsible.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin responsable'**
+  String get noResponsible;
+
+  /// No description provided for @closedFeminine.
+  ///
+  /// In es, this message translates to:
+  /// **'Cerrada'**
+  String get closedFeminine;
+
+  /// No description provided for @openFeminine.
+  ///
+  /// In es, this message translates to:
+  /// **'Abierta'**
+  String get openFeminine;
+
+  /// No description provided for @maintenanceRequest.
+  ///
+  /// In es, this message translates to:
+  /// **'Solicitud de mantenimiento'**
+  String get maintenanceRequest;
+
+  /// No description provided for @qualityEquipment.
+  ///
+  /// In es, this message translates to:
+  /// **'Equipo de calidad: {name}'**
+  String qualityEquipment(String name);
+
+  /// No description provided for @responsible.
+  ///
+  /// In es, this message translates to:
+  /// **'Responsable: {name}'**
+  String responsible(String name);
+
+  /// No description provided for @requestScheduleClose.
+  ///
+  /// In es, this message translates to:
+  /// **'Solicitud: {request}\nProgramada: {scheduled}\nCierre: {closed}'**
+  String requestScheduleClose(String request, String scheduled, String closed);
+
+  /// No description provided for @noLinkedEquipment.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin equipos enlazados'**
+  String get noLinkedEquipment;
+
+  /// No description provided for @noLinkedEquipmentHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no hay equipos de calidad sincronizados con mantenimiento.'**
+  String get noLinkedEquipmentHint;
+
+  /// No description provided for @interventionRequired.
+  ///
+  /// In es, this message translates to:
+  /// **'Requiere intervención'**
+  String get interventionRequired;
+
+  /// No description provided for @controlled.
+  ///
+  /// In es, this message translates to:
+  /// **'Controlado'**
+  String get controlled;
+
+  /// No description provided for @code.
+  ///
+  /// In es, this message translates to:
+  /// **'Código: {code}'**
+  String code(String code);
+
+  /// No description provided for @equipmentStatus.
+  ///
+  /// In es, this message translates to:
+  /// **'Estado: {status}'**
+  String equipmentStatus(String status);
+
+  /// No description provided for @unitLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Unidad: {name}'**
+  String unitLabel(String name);
+
+  /// No description provided for @linkedToMaintenance.
+  ///
+  /// In es, this message translates to:
+  /// **'Vinculado a mantenimiento'**
+  String get linkedToMaintenance;
+
+  /// No description provided for @noLink.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin vínculo'**
+  String get noLink;
+
+  /// No description provided for @openCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} abiertas'**
+  String openCount(String count);
+
+  /// No description provided for @totalCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} totales'**
+  String totalCount(String count);
+
+  /// No description provided for @lastRequest.
+  ///
+  /// In es, this message translates to:
+  /// **'Última solicitud: {date}'**
+  String lastRequest(String date);
+
+  /// No description provided for @preventive.
+  ///
+  /// In es, this message translates to:
+  /// **'Preventivo'**
+  String get preventive;
+
+  /// No description provided for @corrective.
+  ///
+  /// In es, this message translates to:
+  /// **'Correctivo'**
+  String get corrective;
+
+  /// No description provided for @noType.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin tipo'**
+  String get noType;
+
+  /// No description provided for @operational.
+  ///
+  /// In es, this message translates to:
+  /// **'Operativo'**
+  String get operational;
+
+  /// No description provided for @broken.
+  ///
+  /// In es, this message translates to:
+  /// **'Averiado'**
+  String get broken;
+
+  /// No description provided for @retired.
+  ///
+  /// In es, this message translates to:
+  /// **'Retirado'**
+  String get retired;
 }
 
 class _AppLocalizationsDelegate

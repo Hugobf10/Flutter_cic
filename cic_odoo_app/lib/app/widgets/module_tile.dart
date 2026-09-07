@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/strings.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_theme.dart';
+import '../core/module_localization.dart';
 import '../models/app_module.dart';
 import '../ui/app_components.dart';
 
@@ -19,6 +21,8 @@ class ModuleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final title = module.localizedTitle(context);
+    final description = module.localizedDescription(context);
     return AppReveal(
       delay: animationDelay,
       offset: const Offset(0, 0.04),
@@ -54,7 +58,7 @@ class ModuleTile extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Text(
-              module.title,
+              title,
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 15,
@@ -63,12 +67,12 @@ class ModuleTile extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            if (module.description != null)
+            if (description != null)
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    module.description!,
+                    description,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall,
@@ -90,7 +94,9 @@ class ModuleTile extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  module.implemented ? 'Disponible' : 'Próximamente',
+                  module.implemented
+                      ? context.l10n.available
+                      : context.l10n.comingSoon,
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
 import '../../theme/app_theme.dart';
@@ -96,19 +97,19 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
     return DefaultTabController(
       length: 2,
       child: AppScaffold(
-        title: 'Mantenimiento',
+        title: context.l10n.maintenance,
         actions: [
           IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
         ],
         child: _loading
-            ? const AppLoadingView(label: 'Cargando mantenimiento...')
+            ? AppLoadingView(label: context.l10n.loadingMaintenance)
             : _error != null
             ? AppEmptyState(
-                title: 'No se pudo cargar mantenimiento',
+                title: context.l10n.couldNotLoadMaintenance,
                 subtitle: _error!,
                 icon: Icons.error_outline_rounded,
                 action: AppButton.primary(
-                  label: 'Reintentar',
+                  label: context.l10n.retry,
                   onPressed: _load,
                 ),
               )
@@ -121,19 +122,19 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
 
                       final cards = [
                         _MaintenanceStatCard(
-                          label: 'Solicitudes abiertas',
+                          label: context.l10n.openRequests,
                           value: openRequests.toString(),
                           icon: Icons.build_circle_outlined,
                           color: AppTheme.warning,
                         ),
                         _MaintenanceStatCard(
-                          label: 'Equipos vinculados',
+                          label: context.l10n.linkedEquipment,
                           value: linkedEquipment.toString(),
                           icon: Icons.sync_alt_rounded,
                           color: AppTheme.primary,
                         ),
                         _MaintenanceStatCard(
-                          label: 'Pendientes de intervención',
+                          label: context.l10n.pendingInterventions,
                           value: pendingInterventions.toString(),
                           icon: Icons.warning_amber_rounded,
                           color: AppTheme.danger,
@@ -167,7 +168,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            'La vista usa `maintenance.request` y el enlace real con `calidad.equipo` del addon `calidad_equipos_mantenimiento`.',
+                            context.l10n.maintenanceInfo,
                             style: TextStyle(
                               color: AppTheme.textSecondaryFor(context),
                               fontSize: 12,
@@ -177,8 +178,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                         const SizedBox(width: 10),
                         AppStatusChip(
                           label: auth.canEditModule('equipment')
-                              ? 'Edición permitida en Odoo'
-                              : 'Solo lectura',
+                              ? context.l10n.editingAllowedInOdoo
+                              : context.l10n.readOnly,
                           color: auth.canEditModule('equipment')
                               ? AppTheme.success
                               : AppTheme.textMutedFor(context),
@@ -187,10 +188,10 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const TabBar(
+                  TabBar(
                     tabs: [
-                      Tab(text: 'Solicitudes'),
-                      Tab(text: 'Equipos'),
+                      Tab(text: context.l10n.requests),
+                      Tab(text: context.l10n.equipment),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -207,10 +208,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
 
   Widget _buildRequests() {
     if (_requests.isEmpty) {
-      return const AppEmptyState(
-        title: 'Sin solicitudes',
-        subtitle:
-            'No hay solicitudes de mantenimiento visibles para este usuario.',
+      return AppEmptyState(
+        title: context.l10n.noRequests,
+        subtitle: context.l10n.noRequestsHint,
         icon: Icons.build_outlined,
       );
     }
@@ -222,17 +222,17 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
         final row = _requests[index];
         final equipment = row['equipment_id'] is List
             ? row['equipment_id'][1].toString()
-            : 'Equipo no vinculado';
+            : context.l10n.unlinkedEquipment;
         final owner = row['owner_user_id'] is List
             ? row['owner_user_id'][1].toString()
             : row['user_id'] is List
             ? row['user_id'][1].toString()
-            : 'Sin responsable';
+            : context.l10n.noResponsible;
         final stage = row['stage_id'] is List
             ? row['stage_id'][1].toString()
             : _isClosed(row)
-            ? 'Cerrada'
-            : 'Abierta';
+            ? context.l10n.closedFeminine
+            : context.l10n.openFeminine;
         final qualityEquipment = row['calidad_equipo_id'] is List
             ? row['calidad_equipo_id'][1].toString()
             : '';
@@ -246,7 +246,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      (row['name'] ?? 'Solicitud de mantenimiento').toString(),
+                      (row['name'] ?? context.l10n.maintenanceRequest)
+                          .toString(),
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         color: AppTheme.textPrimaryFor(context),
@@ -271,7 +272,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               if (qualityEquipment.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Text(
-                  'Equipo de calidad: $qualityEquipment',
+                  context.l10n.qualityEquipment(qualityEquipment),
                   style: TextStyle(
                     color: AppTheme.textMutedFor(context),
                     fontSize: 12,
@@ -288,14 +289,18 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                     color: _isClosed(row) ? AppTheme.success : AppTheme.warning,
                   ),
                   AppStatusChip(
-                    label: 'Responsable: $owner',
+                    label: context.l10n.responsible(owner),
                     color: AppTheme.primary,
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
-                'Solicitud: ${_formatValue(row['request_date'])}\nProgramada: ${_formatValue(row['schedule_date'])}\nCierre: ${_formatValue(row['close_date'])}',
+                context.l10n.requestScheduleClose(
+                  _formatValue(row['request_date']),
+                  _formatValue(row['schedule_date']),
+                  _formatValue(row['close_date']),
+                ),
                 style: TextStyle(
                   color: AppTheme.textSecondaryFor(context),
                   fontSize: 12,
@@ -320,10 +325,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
 
   Widget _buildEquipment() {
     if (_equipment.isEmpty) {
-      return const AppEmptyState(
-        title: 'Sin equipos enlazados',
-        subtitle:
-            'Todavía no hay equipos de calidad sincronizados con mantenimiento.',
+      return AppEmptyState(
+        title: context.l10n.noLinkedEquipment,
+        subtitle: context.l10n.noLinkedEquipmentHint,
         icon: Icons.precision_manufacturing_outlined,
       );
     }
@@ -350,7 +354,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      (row['name'] ?? 'Equipo').toString(),
+                      (row['name'] ?? context.l10n.equipment).toString(),
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         color: AppTheme.textPrimaryFor(context),
@@ -359,8 +363,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                   ),
                   AppStatusChip(
                     label: row['requiere_intervencion'] == true
-                        ? 'Requiere intervención'
-                        : 'Controlado',
+                        ? context.l10n.interventionRequired
+                        : context.l10n.controlled,
                     color: row['requiere_intervencion'] == true
                         ? AppTheme.danger
                         : AppTheme.success,
@@ -370,14 +374,16 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               const SizedBox(height: 6),
               if ((row['codigo'] ?? '').toString().trim().isNotEmpty)
                 Text(
-                  'Código: ${row['codigo']}',
+                  context.l10n.code('${row['codigo']}'),
                   style: TextStyle(
                     color: AppTheme.textSecondaryFor(context),
                     fontSize: 12,
                   ),
                 ),
               Text(
-                'Estado: ${_equipmentStateLabel((row['estado'] ?? '').toString())}',
+                context.l10n.equipmentStatus(
+                  _equipmentStateLabel((row['estado'] ?? '').toString()),
+                ),
                 style: TextStyle(
                   color: AppTheme.textSecondaryFor(context),
                   fontSize: 12,
@@ -385,7 +391,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               ),
               if (unit.isNotEmpty)
                 Text(
-                  'Unidad: $unit',
+                  context.l10n.unitLabel(unit),
                   style: TextStyle(
                     color: AppTheme.textMutedFor(context),
                     fontSize: 12,
@@ -397,24 +403,28 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                 runSpacing: 8,
                 children: [
                   AppStatusChip(
-                    label: linked ? 'Vinculado a mantenimiento' : 'Sin vínculo',
+                    label: linked
+                        ? context.l10n.linkedToMaintenance
+                        : context.l10n.noLink,
                     color: linked
                         ? AppTheme.primary
                         : AppTheme.textMutedFor(context),
                   ),
                   AppStatusChip(
-                    label: '$openCount abiertas',
+                    label: context.l10n.openCount(openCount),
                     color: AppTheme.warning,
                   ),
                   AppStatusChip(
-                    label: '$totalCount totales',
+                    label: context.l10n.totalCount(totalCount),
                     color: AppTheme.info,
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
-                'Última solicitud: ${_formatValue(row['maintenance_last_request_date'])}',
+                context.l10n.lastRequest(
+                  _formatValue(row['maintenance_last_request_date']),
+                ),
                 style: TextStyle(
                   color: AppTheme.textMutedFor(context),
                   fontSize: 12,
@@ -439,11 +449,11 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
   String _requestTypeLabel(String value) {
     switch (value) {
       case 'preventive':
-        return 'Preventivo';
+        return context.l10n.preventive;
       case 'corrective':
-        return 'Correctivo';
+        return context.l10n.corrective;
       default:
-        return value.isEmpty ? 'Sin tipo' : value;
+        return value.isEmpty ? context.l10n.noType : value;
     }
   }
 
@@ -461,11 +471,11 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
   String _equipmentStateLabel(String value) {
     switch (value) {
       case 'operativo':
-        return 'Operativo';
+        return context.l10n.operational;
       case 'averiado':
-        return 'Averiado';
+        return context.l10n.broken;
       case 'retirado':
-        return 'Retirado';
+        return context.l10n.retired;
       default:
         return value.isEmpty ? '-' : value;
     }

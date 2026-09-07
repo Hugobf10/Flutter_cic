@@ -773,4 +773,507 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get couldNotPreviewDocument => 'No se pudo visualizar el documento';
+
+  @override
+  String get trainingHistory => 'Historial';
+
+  @override
+  String get trainingLoadError => 'No se pudo cargar la formación';
+
+  @override
+  String get trainingLimitedAccess => 'Formación con acceso limitado';
+
+  @override
+  String get trainingLimitedAccessHint =>
+      'Este perfil no puede consultar el historial completo de formaciones por API con sus permisos actuales.';
+
+  @override
+  String get trainingLimitedModeHint =>
+      'La app sigue disponible en modo limitado. Si este perfil debe consultar el historial o certificados, hay que habilitar permisos API de formación en Odoo.';
+
+  @override
+  String get trainingNormalModeHint =>
+      'Registra una formación externa o completa una formación pendiente desde su ficha.';
+
+  @override
+  String get noPendingTraining => 'No tienes formación pendiente';
+
+  @override
+  String get noPendingTrainingHint =>
+      'Las formaciones asignadas o los cursos e-learning aparecerán aquí.';
+
+  @override
+  String get trainingHistoryUnavailable => 'Historial no disponible';
+
+  @override
+  String get trainingHistoryUnavailableHint =>
+      'Este perfil no puede cargar asistencias de formación por API con sus permisos actuales.';
+
+  @override
+  String get noTrainingHistory => 'Sin historial';
+
+  @override
+  String get noTrainingHistoryHint => 'Aún no tienes asistencias de formación.';
+
+  @override
+  String scheduled(String date) {
+    return 'Prevista: $date';
+  }
+
+  @override
+  String completedOn(String date) {
+    return 'Realizada: $date';
+  }
+
+  @override
+  String hours(String count) {
+    return '$count horas';
+  }
+
+  @override
+  String elearningProgress(String progress) {
+    return 'Progreso e-learning: $progress%';
+  }
+
+  @override
+  String get certificate => 'Certificado';
+
+  @override
+  String get openCourse => 'Abrir curso';
+
+  @override
+  String get markCompleted => 'Marcar realizada';
+
+  @override
+  String couldNotOpenCertificate(String error) {
+    return 'No se pudo abrir el certificado: $error';
+  }
+
+  @override
+  String get couldNotOpenElearning => 'No se pudo abrir el curso e-learning.';
+
+  @override
+  String get completeTraining => 'Completar formación';
+
+  @override
+  String get change => 'Cambiar';
+
+  @override
+  String get attachOptionalCertificate => 'Adjuntar certificado (opcional)';
+
+  @override
+  String get upload => 'Subir';
+
+  @override
+  String get confirmCompletion => 'Confirmar realización';
+
+  @override
+  String couldNotCompleteTraining(String error) {
+    return 'No se pudo completar la formación: $error';
+  }
+
+  @override
+  String get registerExternalTraining => 'Registrar formación externa';
+
+  @override
+  String get trainingName => 'Nombre de la formación';
+
+  @override
+  String get entityCentre => 'Entidad / centro';
+
+  @override
+  String get completionDate => 'Fecha de finalización';
+
+  @override
+  String get choose => 'Elegir';
+
+  @override
+  String get attachCertificate => 'Adjuntar certificado (PDF)';
+
+  @override
+  String get sendRequest => 'Enviar solicitud';
+
+  @override
+  String get enterTrainingName => 'Indica el nombre de la formación.';
+
+  @override
+  String get enterTrainingCompletionDate =>
+      'Indica la fecha de finalización de la formación.';
+
+  @override
+  String get trainingSubmitted =>
+      'Formación enviada para validación de Calidad.';
+
+  @override
+  String couldNotRegister(String error) {
+    return 'No se pudo registrar: $error';
+  }
+
+  @override
+  String get available => 'Disponible';
+
+  @override
+  String get comingSoon => 'Próximamente';
+
+  @override
+  String get security => 'Seguridad';
+
+  @override
+  String get informationDelivered => 'Información entregada';
+
+  @override
+  String get payroll => 'Nóminas';
+
+  @override
+  String get planning => 'Planificación';
+
+  @override
+  String get healthSurveillance => 'Vigilancia de la salud';
+
+  @override
+  String get normative => 'Normativa';
+
+  @override
+  String get equipment => 'Equipos';
+
+  @override
+  String get publications => 'Publicaciones';
+
+  @override
+  String get permissionsRoles => 'Permisos y roles';
+
+  @override
+  String get suppliers => 'Proveedores';
+
+  @override
+  String get organisation => 'Organización';
+
+  @override
+  String get purchases => 'Compras';
+
+  @override
+  String get maintenance => 'Mantenimiento';
+
+  @override
+  String get moduleIncidentsDescription =>
+      'Registro, seguimiento y cierre de incidencias de tu unidad';
+
+  @override
+  String get moduleTrainingDescription => 'Formación presencial y online';
+
+  @override
+  String get moduleDocumentsDescription =>
+      'Consulta y descarga de documentos disponibles para ti';
+
+  @override
+  String get moduleSecurityDescription =>
+      'Procedimientos y documentación de seguridad';
+
+  @override
+  String get moduleInformationDescription =>
+      'Información y documentación entregada al usuario';
+
+  @override
+  String get modulePayrollDescription => 'Documentos salariales del portal';
+
+  @override
+  String get moduleRecruitmentDescription =>
+      'Consulta de convocatorias y candidaturas asignadas';
+
+  @override
+  String get moduleReservationsDescription =>
+      'Consulta disponibilidad y gestiona reservas de servicios y recursos';
+
+  @override
+  String get modulePlanningDescription =>
+      'Objetivos, planes de acción, químicos e informes';
+
+  @override
+  String get moduleHealthDescription => 'Seguimiento de vigilancia de la salud';
+
+  @override
+  String get moduleNormativeDescription =>
+      'Consulta de normativa y documentación aplicable';
+
+  @override
+  String get moduleEquipmentDescription =>
+      'Inventario y seguimiento de equipos asociados a calidad';
+
+  @override
+  String get modulePublicationsDescription =>
+      'Consulta de publicaciones y contenidos informativos';
+
+  @override
+  String get modulePermissionsDescription => 'Roles y aprobaciones internas';
+
+  @override
+  String get moduleCommunicationsDescription =>
+      'Comunicaciones, avisos y sugerencias';
+
+  @override
+  String get moduleSuppliersDescription =>
+      'Gestión y seguimiento de proveedores';
+
+  @override
+  String get moduleOrganisationDescription =>
+      'Pendiente de integrar con estructura organizativa';
+
+  @override
+  String get modulePurchasesDescription =>
+      'Consulta de productos, códigos y recepción de compras';
+
+  @override
+  String get moduleMaintenanceDescription =>
+      'Solicitudes de mantenimiento y equipos enlazados con calidad';
+
+  @override
+  String get goals => 'Objetivos';
+
+  @override
+  String get actionPlans => 'Planes de acción';
+
+  @override
+  String get chemicals => 'Químicos';
+
+  @override
+  String get chemicalReport => 'Informe de químicos';
+
+  @override
+  String get goalsPlanningHint =>
+      'Consulta y edición de objetivos de calidad y PRL.';
+
+  @override
+  String get actionPlansPlanningHint =>
+      'Acciones preventivas y planes ligados a objetivos.';
+
+  @override
+  String get chemicalsPlanningHint =>
+      'Inventario, peligrosidad, caducidades y fichas.';
+
+  @override
+  String get chemicalReportPlanningHint =>
+      'Resumen operativo por tipo y peligrosidad.';
+
+  @override
+  String get noAccess => 'Sin acceso';
+
+  @override
+  String get noPlanningAccess =>
+      'No tienes permisos para ver ningún apartado de planificación.';
+
+  @override
+  String get searchPayslips => 'Buscar nóminas...';
+
+  @override
+  String get couldNotLoadPayslips => 'No se pudieron cargar las nóminas';
+
+  @override
+  String get noPayslips => 'Sin nóminas';
+
+  @override
+  String get noPayslipsHint => 'No hay documentos de nómina disponibles.';
+
+  @override
+  String get payslip => 'Nómina';
+
+  @override
+  String get noDate => 'sin fecha';
+
+  @override
+  String couldNotOpen(String error) {
+    return 'No se pudo abrir: $error';
+  }
+
+  @override
+  String documentDownloaded(String path) {
+    return 'Documento descargado: $path';
+  }
+
+  @override
+  String couldNotDownloadError(String error) {
+    return 'No se pudo descargar: $error';
+  }
+
+  @override
+  String get noHealthForms => 'Sin formularios';
+
+  @override
+  String get noHealthFormsHint => 'No hay reconocimientos registrados.';
+
+  @override
+  String get historicalCicCheckup => 'Reconocimiento histórico CIC';
+
+  @override
+  String get healthCheckup => 'Reconocimiento';
+
+  @override
+  String checkupDate(String date) {
+    return 'Reconocimiento: $date';
+  }
+
+  @override
+  String realisationDate(String date) {
+    return 'Realización: $date';
+  }
+
+  @override
+  String couldNotSend(String error) {
+    return 'No se pudo enviar: $error';
+  }
+
+  @override
+  String get send => 'Enviar';
+
+  @override
+  String get healthCheckupStatus => 'Estado del reconocimiento';
+
+  @override
+  String get observations => 'Observaciones';
+
+  @override
+  String get recommendations => 'Recomendaciones';
+
+  @override
+  String get notCompleted => 'No realizado';
+
+  @override
+  String get fit => 'Apto';
+
+  @override
+  String get fitWithLimitations => 'Apto con limitaciones';
+
+  @override
+  String get notFit => 'No apto';
+
+  @override
+  String get loadingMaintenance => 'Cargando mantenimiento...';
+
+  @override
+  String get couldNotLoadMaintenance => 'No se pudo cargar mantenimiento';
+
+  @override
+  String get openRequests => 'Solicitudes abiertas';
+
+  @override
+  String get linkedEquipment => 'Equipos vinculados';
+
+  @override
+  String get pendingInterventions => 'Pendientes de intervención';
+
+  @override
+  String get maintenanceInfo =>
+      'La vista usa las solicitudes de mantenimiento y el enlace real con los equipos de calidad.';
+
+  @override
+  String get editingAllowedInOdoo => 'Edición permitida en Odoo';
+
+  @override
+  String get readOnly => 'Solo lectura';
+
+  @override
+  String get requests => 'Solicitudes';
+
+  @override
+  String get noRequests => 'Sin solicitudes';
+
+  @override
+  String get noRequestsHint =>
+      'No hay solicitudes de mantenimiento visibles para este usuario.';
+
+  @override
+  String get unlinkedEquipment => 'Equipo no vinculado';
+
+  @override
+  String get noResponsible => 'Sin responsable';
+
+  @override
+  String get closedFeminine => 'Cerrada';
+
+  @override
+  String get openFeminine => 'Abierta';
+
+  @override
+  String get maintenanceRequest => 'Solicitud de mantenimiento';
+
+  @override
+  String qualityEquipment(String name) {
+    return 'Equipo de calidad: $name';
+  }
+
+  @override
+  String responsible(String name) {
+    return 'Responsable: $name';
+  }
+
+  @override
+  String requestScheduleClose(String request, String scheduled, String closed) {
+    return 'Solicitud: $request\nProgramada: $scheduled\nCierre: $closed';
+  }
+
+  @override
+  String get noLinkedEquipment => 'Sin equipos enlazados';
+
+  @override
+  String get noLinkedEquipmentHint =>
+      'Todavía no hay equipos de calidad sincronizados con mantenimiento.';
+
+  @override
+  String get interventionRequired => 'Requiere intervención';
+
+  @override
+  String get controlled => 'Controlado';
+
+  @override
+  String code(String code) {
+    return 'Código: $code';
+  }
+
+  @override
+  String equipmentStatus(String status) {
+    return 'Estado: $status';
+  }
+
+  @override
+  String unitLabel(String name) {
+    return 'Unidad: $name';
+  }
+
+  @override
+  String get linkedToMaintenance => 'Vinculado a mantenimiento';
+
+  @override
+  String get noLink => 'Sin vínculo';
+
+  @override
+  String openCount(String count) {
+    return '$count abiertas';
+  }
+
+  @override
+  String totalCount(String count) {
+    return '$count totales';
+  }
+
+  @override
+  String lastRequest(String date) {
+    return 'Última solicitud: $date';
+  }
+
+  @override
+  String get preventive => 'Preventivo';
+
+  @override
+  String get corrective => 'Correctivo';
+
+  @override
+  String get noType => 'Sin tipo';
+
+  @override
+  String get operational => 'Operativo';
+
+  @override
+  String get broken => 'Averiado';
+
+  @override
+  String get retired => 'Retirado';
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
@@ -45,16 +46,14 @@ class _RegisterExternalTrainingScreenState
   Future<void> _save() async {
     final auth = context.read<AuthProvider>();
     if (_titleCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Indica el nombre de la formación.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.enterTrainingName)));
       return;
     }
     if (_endDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Indica la fecha de finalización de la formación.'),
-        ),
+        SnackBar(content: Text(context.l10n.enterTrainingCompletionDate)),
       );
       return;
     }
@@ -75,11 +74,9 @@ class _RegisterExternalTrainingScreenState
           },
         );
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Formación enviada para validación de Calidad.'),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.trainingSubmitted)));
         Navigator.of(context).pop(true);
         return;
       }
@@ -109,17 +106,15 @@ class _RegisterExternalTrainingScreenState
       }
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Formación enviada para validación de Calidad.'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.trainingSubmitted)));
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('No se pudo registrar: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.couldNotRegister(e.toString()))),
+      );
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -135,18 +130,18 @@ class _RegisterExternalTrainingScreenState
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'Registrar formación externa',
+      title: context.l10n.registerExternalTraining,
       child: ListView(
         children: [
           AppInput(
             controller: _titleCtrl,
-            labelText: 'Nombre de la formación',
+            labelText: context.l10n.trainingName,
             prefixIcon: Icons.school_outlined,
           ),
           const SizedBox(height: 10),
           AppInput(
             controller: _entityCtrl,
-            labelText: 'Entidad / centro',
+            labelText: context.l10n.entityCentre,
             prefixIcon: Icons.business_outlined,
           ),
           const SizedBox(height: 10),
@@ -158,7 +153,7 @@ class _RegisterExternalTrainingScreenState
                 Expanded(
                   child: Text(
                     _endDate == null
-                        ? 'Fecha de finalización'
+                        ? context.l10n.completionDate
                         : _formatDate(_endDate!),
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
@@ -176,7 +171,7 @@ class _RegisterExternalTrainingScreenState
                           );
                           if (date != null) setState(() => _endDate = date);
                         },
-                  child: Text('Elegir'),
+                  child: Text(context.l10n.choose),
                 ),
               ],
             ),
@@ -184,7 +179,7 @@ class _RegisterExternalTrainingScreenState
           const SizedBox(height: 10),
           AppInput(
             controller: _hoursCtrl,
-            labelText: 'Horas',
+            labelText: context.l10n.duration,
             prefixIcon: Icons.schedule_rounded,
           ),
           const SizedBox(height: 12),
@@ -195,20 +190,20 @@ class _RegisterExternalTrainingScreenState
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    _pickedCertificate?.name ?? 'Adjuntar certificado (PDF)',
+                    _pickedCertificate?.name ?? context.l10n.attachCertificate,
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
                 TextButton(
                   onPressed: _saving ? null : _pickCertificate,
-                  child: Text('Subir'),
+                  child: Text(context.l10n.upload),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 20),
           AppButton.primary(
-            label: 'Enviar solicitud',
+            label: context.l10n.sendRequest,
             icon: Icons.check_rounded,
             loading: _saving,
             onPressed: _saving ? null : _save,

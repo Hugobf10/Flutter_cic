@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/screens/document_viewer_screen.dart';
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
 import '../../services/odoo_values.dart';
@@ -76,7 +77,10 @@ class _PayrollScreenState extends State<PayrollScreen> {
               'id': row['id'],
               'name': OdooValues.string(
                 row['name'],
-                fallback: OdooValues.string(row['number'], fallback: 'Nómina'),
+                fallback: OdooValues.string(
+                  row['number'],
+                  fallback: context.l10n.payslip,
+                ),
               ),
               'month_label': date == null
                   ? ''
@@ -108,7 +112,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
     }).toList();
 
     return AppScaffold(
-      title: 'Nóminas',
+      title: context.l10n.payroll,
       actions: [
         IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
       ],
@@ -116,7 +120,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
         children: [
           AppSearchBar(
             controller: _searchCtrl,
-            hintText: 'Buscar nóminas...',
+            hintText: context.l10n.searchPayslips,
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 12),
@@ -130,15 +134,15 @@ class _PayrollScreenState extends State<PayrollScreen> {
     if (_loading) return const AppLoadingView();
     if (_error != null) {
       return AppEmptyState(
-        title: 'No se pudieron cargar las nóminas',
+        title: context.l10n.couldNotLoadPayslips,
         subtitle: _error!,
         icon: Icons.error_outline_rounded,
       );
     }
     if (rows.isEmpty) {
-      return const AppEmptyState(
-        title: 'Sin nóminas',
-        subtitle: 'No hay documentos de nómina disponibles.',
+      return AppEmptyState(
+        title: context.l10n.noPayslips,
+        subtitle: context.l10n.noPayslipsHint,
         icon: Icons.picture_as_pdf_rounded,
       );
     }
@@ -146,12 +150,12 @@ class _PayrollScreenState extends State<PayrollScreen> {
       itemCount: rows.length,
       itemBuilder: (context, i) {
         final row = rows[i];
-        final title = (row['name'] ?? 'Nómina').toString();
+        final title = (row['name'] ?? context.l10n.payslip).toString();
         final month = (row['month_label'] ?? row['month'] ?? '-').toString();
         final year = (row['year'] ?? '-').toString();
         final importedAt = (row['imported_at'] ?? '').toString();
         final subtitle =
-            '$month/$year · ${importedAt.isEmpty ? "sin fecha" : importedAt}';
+            '$month/$year · ${importedAt.isEmpty ? context.l10n.noDate : importedAt}';
         final attachmentId = OdooValues.many2oneId(row['attachment_id']);
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
@@ -199,7 +203,7 @@ class _PayrollScreenState extends State<PayrollScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('No se pudo abrir: $e')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.couldNotOpen('$e'))));
     }
   }
 
@@ -217,13 +221,15 @@ class _PayrollScreenState extends State<PayrollScreen> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Documento descargado: ${local.file.path}')),
+        SnackBar(
+          content: Text(context.l10n.documentDownloaded(local.file.path)),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('No se pudo descargar: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.couldNotDownloadError('$e'))),
+      );
     }
   }
 }

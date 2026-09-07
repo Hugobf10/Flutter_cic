@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
 import '../../services/portal_api_service.dart';
@@ -98,7 +99,7 @@ class _HealthScreenState extends State<HealthScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     return AppScaffold(
-      title: 'Vigilancia de la salud',
+      title: context.l10n.healthSurveillance,
       actions: [
         if (auth.canEditModule('health'))
           IconButton(onPressed: _newForm, icon: Icon(Icons.add_rounded)),
@@ -108,14 +109,14 @@ class _HealthScreenState extends State<HealthScreen> {
           ? const AppLoadingView()
           : _error != null
           ? AppEmptyState(
-              title: 'Error',
+              title: context.l10n.error,
               subtitle: _error!,
               icon: Icons.error_outline_rounded,
             )
           : _rows.isEmpty
-          ? const AppEmptyState(
-              title: 'Sin formularios',
-              subtitle: 'No hay reconocimientos registrados.',
+          ? AppEmptyState(
+              title: context.l10n.noHealthForms,
+              subtitle: context.l10n.noHealthFormsHint,
               icon: Icons.monitor_heart_outlined,
             )
           : ListView.separated(
@@ -133,8 +134,8 @@ class _HealthScreenState extends State<HealthScreen> {
                     ? it['salud_fecha_reconocimiento']
                     : it['fecha_realizacion'] ?? it['fecha_prevista'];
                 final title = historical
-                    ? 'Reconocimiento histórico CIC'
-                    : (it['name'] ?? 'Reconocimiento').toString();
+                    ? context.l10n.historicalCicCheckup
+                    : (it['name'] ?? context.l10n.healthCheckup).toString();
                 return AppCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,7 +149,7 @@ class _HealthScreenState extends State<HealthScreen> {
                             ),
                           ),
                           AppStatusChip(
-                            label: _statusLabel(estado),
+                            label: _statusLabel(estado, context),
                             color: color,
                           ),
                         ],
@@ -156,9 +157,9 @@ class _HealthScreenState extends State<HealthScreen> {
                       const SizedBox(height: 6),
                       Text(
                         historical
-                            ? 'Reconocimiento: ${date ?? '-'}'
-                            : 'Prevista: ${it['fecha_prevista'] ?? '-'}\n'
-                                  'Realización: ${it['fecha_realizacion'] ?? '-'}',
+                            ? context.l10n.checkupDate('${date ?? '-'}')
+                            : '${context.l10n.scheduled('${it['fecha_prevista'] ?? '-'}')}\n'
+                                  '${context.l10n.realisationDate('${it['fecha_realizacion'] ?? '-'}')}',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppTheme.textSecondaryFor(context),
@@ -207,10 +208,11 @@ class _HealthScreenState extends State<HealthScreen> {
     };
   }
 
-  String _statusLabel(String status) => switch (status) {
-    'si' => 'Apto',
-    'no' => 'No apto',
-    'no_realizado' => 'No realizado',
+  String _statusLabel(String status, BuildContext context) => switch (status) {
+    'si' || 'apto' => context.l10n.fit,
+    'no' || 'no_apto' => context.l10n.notFit,
+    'no_realizado' => context.l10n.notCompleted,
+    'apto_limitaciones' => context.l10n.fitWithLimitations,
     _ => status.replaceAll('_', ' '),
   };
 }
@@ -264,7 +266,7 @@ class _HealthMultiStepFormState extends State<_HealthMultiStepForm> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('No se pudo enviar: $e')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.couldNotSend('$e'))));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -296,20 +298,20 @@ class _HealthMultiStepFormState extends State<_HealthMultiStepForm> {
             children: [
               ElevatedButton(
                 onPressed: _saving ? null : details.onStepContinue,
-                child: Text(_step < 2 ? 'Siguiente' : 'Enviar'),
+                child: Text(_step < 2 ? context.l10n.next : context.l10n.send),
               ),
               const SizedBox(width: 8),
               if (_step > 0)
                 OutlinedButton(
                   onPressed: _saving ? null : details.onStepCancel,
-                  child: Text('Atrás'),
+                  child: Text(context.l10n.back),
                 ),
             ],
           );
         },
         steps: [
           Step(
-            title: Text('Fecha'),
+            title: Text(context.l10n.date),
             isActive: _step >= 0,
             content: AppCard(
               child: Row(
@@ -317,7 +319,7 @@ class _HealthMultiStepFormState extends State<_HealthMultiStepForm> {
                   Expanded(
                     child: Text(
                       _plannedDate == null
-                          ? 'Sin fecha'
+                          ? context.l10n.noDate
                           : _dateToString(_plannedDate!),
                     ),
                   ),
@@ -332,50 +334,56 @@ class _HealthMultiStepFormState extends State<_HealthMultiStepForm> {
                       );
                       if (date != null) setState(() => _plannedDate = date);
                     },
-                    child: Text('Elegir'),
+                    child: Text(context.l10n.choose),
                   ),
                 ],
               ),
             ),
           ),
           Step(
-            title: Text('Estado'),
+            title: Text(context.l10n.status),
             isActive: _step >= 1,
             content: DropdownButtonFormField<String>(
               initialValue: _estado,
-              items: const [
-                DropdownMenuItem(value: 'pendiente', child: Text('Pendiente')),
+              items: [
+                DropdownMenuItem(
+                  value: 'pendiente',
+                  child: Text(context.l10n.pending),
+                ),
                 DropdownMenuItem(
                   value: 'no_realizado',
-                  child: Text('No realizado'),
+                  child: Text(context.l10n.notCompleted),
                 ),
-                DropdownMenuItem(value: 'apto', child: Text('Apto')),
+                DropdownMenuItem(value: 'apto', child: Text(context.l10n.fit)),
                 DropdownMenuItem(
                   value: 'apto_limitaciones',
-                  child: Text('Apto con limitaciones'),
+                  child: Text(context.l10n.fitWithLimitations),
                 ),
-                DropdownMenuItem(value: 'no_apto', child: Text('No apto')),
+                DropdownMenuItem(
+                  value: 'no_apto',
+                  child: Text(context.l10n.notFit),
+                ),
               ],
               onChanged: (v) => setState(() => _estado = v ?? 'pendiente'),
-              decoration: const InputDecoration(
-                labelText: 'Estado del reconocimiento',
+              decoration: InputDecoration(
+                labelText: context.l10n.healthCheckupStatus,
               ),
             ),
           ),
           Step(
-            title: Text('Observaciones'),
+            title: Text(context.l10n.observations),
             isActive: _step >= 2,
             content: Column(
               children: [
                 AppInput(
                   controller: _obsCtrl,
-                  labelText: 'Observaciones',
+                  labelText: context.l10n.observations,
                   prefixIcon: Icons.notes_rounded,
                 ),
                 const SizedBox(height: 8),
                 AppInput(
                   controller: _recCtrl,
-                  labelText: 'Recomendaciones',
+                  labelText: context.l10n.recommendations,
                   prefixIcon: Icons.health_and_safety_rounded,
                 ),
               ],

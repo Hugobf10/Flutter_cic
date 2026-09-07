@@ -8,6 +8,7 @@ import '../../theme/app_motion.dart';
 import '../../theme/app_theme.dart';
 import '../core/module_router.dart';
 import '../core/module_registry.dart';
+import '../core/module_localization.dart';
 import '../models/app_module.dart';
 import '../providers/app_state_provider.dart';
 import '../ui/app_components.dart';
@@ -38,8 +39,15 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
     late final List<AppModule> modules;
     String? fatalError;
     try {
-      modules = _filter(_intranetModules(ModuleRegistry.all, auth), _query)
-        ..sort((a, b) => a.title.compareTo(b.title));
+      modules =
+          _filter(
+            _intranetModules(ModuleRegistry.all, auth),
+            _query,
+            context,
+          )..sort(
+            (a, b) =>
+                a.localizedTitle(context).compareTo(b.localizedTitle(context)),
+          );
     } catch (e, stackTrace) {
       modules = const [];
       fatalError = context.l10n.modulesLoadError;
@@ -151,8 +159,10 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  ModuleRouter.build(module.key, module.title),
+                              builder: (_) => ModuleRouter.build(
+                                module.key,
+                                module.localizedTitle(context),
+                              ),
                             ),
                           );
                         },
@@ -168,14 +178,20 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
     );
   }
 
-  List<AppModule> _filter(List<AppModule> modules, String query) {
+  List<AppModule> _filter(
+    List<AppModule> modules,
+    String query,
+    BuildContext context,
+  ) {
     if (query.isEmpty) return modules;
     return modules
         .where(
           (m) =>
-              m.title.toLowerCase().contains(query) ||
+              m.localizedTitle(context).toLowerCase().contains(query) ||
               m.key.toLowerCase().contains(query) ||
-              (m.description ?? '').toLowerCase().contains(query),
+              (m.localizedDescription(context) ?? '').toLowerCase().contains(
+                query,
+              ),
         )
         .toList();
   }

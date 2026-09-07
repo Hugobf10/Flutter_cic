@@ -770,4 +770,506 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get couldNotPreviewDocument => 'Could not preview the document';
+
+  @override
+  String get trainingHistory => 'History';
+
+  @override
+  String get trainingLoadError => 'Could not load training';
+
+  @override
+  String get trainingLimitedAccess => 'Training with limited access';
+
+  @override
+  String get trainingLimitedAccessHint =>
+      'This profile cannot access its complete training history through the API with its current permissions.';
+
+  @override
+  String get trainingLimitedModeHint =>
+      'The app remains available in limited mode. If this profile needs to view its history or certificates, training API permissions must be enabled in Odoo.';
+
+  @override
+  String get trainingNormalModeHint =>
+      'Register external training or complete a pending course from its details.';
+
+  @override
+  String get noPendingTraining => 'You have no pending training';
+
+  @override
+  String get noPendingTrainingHint =>
+      'Assigned training and e-learning courses will appear here.';
+
+  @override
+  String get trainingHistoryUnavailable => 'History unavailable';
+
+  @override
+  String get trainingHistoryUnavailableHint =>
+      'This profile cannot load training attendance records through the API with its current permissions.';
+
+  @override
+  String get noTrainingHistory => 'No history';
+
+  @override
+  String get noTrainingHistoryHint =>
+      'You do not have any training attendance records yet.';
+
+  @override
+  String scheduled(String date) {
+    return 'Scheduled: $date';
+  }
+
+  @override
+  String completedOn(String date) {
+    return 'Completed: $date';
+  }
+
+  @override
+  String hours(String count) {
+    return '$count hours';
+  }
+
+  @override
+  String elearningProgress(String progress) {
+    return 'E-learning progress: $progress%';
+  }
+
+  @override
+  String get certificate => 'Certificate';
+
+  @override
+  String get openCourse => 'Open course';
+
+  @override
+  String get markCompleted => 'Mark as completed';
+
+  @override
+  String couldNotOpenCertificate(String error) {
+    return 'Could not open certificate: $error';
+  }
+
+  @override
+  String get couldNotOpenElearning => 'Could not open the e-learning course.';
+
+  @override
+  String get completeTraining => 'Complete training';
+
+  @override
+  String get change => 'Change';
+
+  @override
+  String get attachOptionalCertificate => 'Attach certificate (optional)';
+
+  @override
+  String get upload => 'Upload';
+
+  @override
+  String get confirmCompletion => 'Confirm completion';
+
+  @override
+  String couldNotCompleteTraining(String error) {
+    return 'Could not complete training: $error';
+  }
+
+  @override
+  String get registerExternalTraining => 'Register external training';
+
+  @override
+  String get trainingName => 'Training name';
+
+  @override
+  String get entityCentre => 'Organisation / centre';
+
+  @override
+  String get completionDate => 'Completion date';
+
+  @override
+  String get choose => 'Choose';
+
+  @override
+  String get attachCertificate => 'Attach certificate (PDF)';
+
+  @override
+  String get sendRequest => 'Send request';
+
+  @override
+  String get enterTrainingName => 'Enter the training name.';
+
+  @override
+  String get enterTrainingCompletionDate =>
+      'Enter the training completion date.';
+
+  @override
+  String get trainingSubmitted => 'Training sent to Quality for validation.';
+
+  @override
+  String couldNotRegister(String error) {
+    return 'Could not register: $error';
+  }
+
+  @override
+  String get available => 'Available';
+
+  @override
+  String get comingSoon => 'Coming soon';
+
+  @override
+  String get security => 'Security';
+
+  @override
+  String get informationDelivered => 'Information provided';
+
+  @override
+  String get payroll => 'Payslips';
+
+  @override
+  String get planning => 'Planning';
+
+  @override
+  String get healthSurveillance => 'Health surveillance';
+
+  @override
+  String get normative => 'Regulations';
+
+  @override
+  String get equipment => 'Equipment';
+
+  @override
+  String get publications => 'Publications';
+
+  @override
+  String get permissionsRoles => 'Permissions and roles';
+
+  @override
+  String get suppliers => 'Suppliers';
+
+  @override
+  String get organisation => 'Organisation';
+
+  @override
+  String get purchases => 'Purchases';
+
+  @override
+  String get maintenance => 'Maintenance';
+
+  @override
+  String get moduleIncidentsDescription =>
+      'Log, track and close incidents in your unit';
+
+  @override
+  String get moduleTrainingDescription => 'In-person and online training';
+
+  @override
+  String get moduleDocumentsDescription =>
+      'View and download documents available to you';
+
+  @override
+  String get moduleSecurityDescription =>
+      'Security procedures and documentation';
+
+  @override
+  String get moduleInformationDescription =>
+      'Information and documentation provided to the user';
+
+  @override
+  String get modulePayrollDescription => 'Portal payslip documents';
+
+  @override
+  String get moduleRecruitmentDescription =>
+      'View assigned vacancies and applications';
+
+  @override
+  String get moduleReservationsDescription =>
+      'Check availability and manage service and resource reservations';
+
+  @override
+  String get modulePlanningDescription =>
+      'Goals, action plans, chemicals and reports';
+
+  @override
+  String get moduleHealthDescription => 'Health surveillance follow-up';
+
+  @override
+  String get moduleNormativeDescription =>
+      'View applicable regulations and documentation';
+
+  @override
+  String get moduleEquipmentDescription =>
+      'Inventory and monitoring of quality-related equipment';
+
+  @override
+  String get modulePublicationsDescription =>
+      'View publications and informational content';
+
+  @override
+  String get modulePermissionsDescription => 'Roles and internal approvals';
+
+  @override
+  String get moduleCommunicationsDescription =>
+      'Communications, notices and suggestions';
+
+  @override
+  String get moduleSuppliersDescription => 'Supplier management and follow-up';
+
+  @override
+  String get moduleOrganisationDescription =>
+      'Waiting to be integrated with the organisational structure';
+
+  @override
+  String get modulePurchasesDescription =>
+      'View products, codes and purchase receipts';
+
+  @override
+  String get moduleMaintenanceDescription =>
+      'Maintenance requests and quality-linked equipment';
+
+  @override
+  String get goals => 'Goals';
+
+  @override
+  String get actionPlans => 'Action plans';
+
+  @override
+  String get chemicals => 'Chemicals';
+
+  @override
+  String get chemicalReport => 'Chemical report';
+
+  @override
+  String get goalsPlanningHint =>
+      'View and edit quality and health-and-safety goals.';
+
+  @override
+  String get actionPlansPlanningHint =>
+      'Preventive actions and plans linked to goals.';
+
+  @override
+  String get chemicalsPlanningHint =>
+      'Inventory, hazards, expiry dates and safety data sheets.';
+
+  @override
+  String get chemicalReportPlanningHint =>
+      'Operational summary by type and hazard.';
+
+  @override
+  String get noAccess => 'No access';
+
+  @override
+  String get noPlanningAccess =>
+      'You do not have permission to view any planning section.';
+
+  @override
+  String get searchPayslips => 'Search payslips...';
+
+  @override
+  String get couldNotLoadPayslips => 'Could not load payslips';
+
+  @override
+  String get noPayslips => 'No payslips';
+
+  @override
+  String get noPayslipsHint => 'There are no payslip documents available.';
+
+  @override
+  String get payslip => 'Payslip';
+
+  @override
+  String get noDate => 'no date';
+
+  @override
+  String couldNotOpen(String error) {
+    return 'Could not open: $error';
+  }
+
+  @override
+  String documentDownloaded(String path) {
+    return 'Document downloaded: $path';
+  }
+
+  @override
+  String couldNotDownloadError(String error) {
+    return 'Could not download: $error';
+  }
+
+  @override
+  String get noHealthForms => 'No forms';
+
+  @override
+  String get noHealthFormsHint => 'There are no registered health check-ups.';
+
+  @override
+  String get historicalCicCheckup => 'Historical CIC health check-up';
+
+  @override
+  String get healthCheckup => 'Health check-up';
+
+  @override
+  String checkupDate(String date) {
+    return 'Check-up: $date';
+  }
+
+  @override
+  String realisationDate(String date) {
+    return 'Completed: $date';
+  }
+
+  @override
+  String couldNotSend(String error) {
+    return 'Could not send: $error';
+  }
+
+  @override
+  String get send => 'Send';
+
+  @override
+  String get healthCheckupStatus => 'Health check-up status';
+
+  @override
+  String get observations => 'Observations';
+
+  @override
+  String get recommendations => 'Recommendations';
+
+  @override
+  String get notCompleted => 'Not completed';
+
+  @override
+  String get fit => 'Fit';
+
+  @override
+  String get fitWithLimitations => 'Fit with limitations';
+
+  @override
+  String get notFit => 'Not fit';
+
+  @override
+  String get loadingMaintenance => 'Loading maintenance...';
+
+  @override
+  String get couldNotLoadMaintenance => 'Could not load maintenance';
+
+  @override
+  String get openRequests => 'Open requests';
+
+  @override
+  String get linkedEquipment => 'Linked equipment';
+
+  @override
+  String get pendingInterventions => 'Pending interventions';
+
+  @override
+  String get maintenanceInfo =>
+      'This view uses maintenance requests and the actual link to quality equipment.';
+
+  @override
+  String get editingAllowedInOdoo => 'Editing allowed in Odoo';
+
+  @override
+  String get readOnly => 'Read-only';
+
+  @override
+  String get requests => 'Requests';
+
+  @override
+  String get noRequests => 'No requests';
+
+  @override
+  String get noRequestsHint =>
+      'There are no maintenance requests visible to this user.';
+
+  @override
+  String get unlinkedEquipment => 'Unlinked equipment';
+
+  @override
+  String get noResponsible => 'No person responsible';
+
+  @override
+  String get closedFeminine => 'Closed';
+
+  @override
+  String get openFeminine => 'Open';
+
+  @override
+  String get maintenanceRequest => 'Maintenance request';
+
+  @override
+  String qualityEquipment(String name) {
+    return 'Quality equipment: $name';
+  }
+
+  @override
+  String responsible(String name) {
+    return 'Responsible: $name';
+  }
+
+  @override
+  String requestScheduleClose(String request, String scheduled, String closed) {
+    return 'Request: $request\nScheduled: $scheduled\nClosed: $closed';
+  }
+
+  @override
+  String get noLinkedEquipment => 'No linked equipment';
+
+  @override
+  String get noLinkedEquipmentHint =>
+      'There is no quality equipment synced with maintenance yet.';
+
+  @override
+  String get interventionRequired => 'Intervention required';
+
+  @override
+  String get controlled => 'Controlled';
+
+  @override
+  String code(String code) {
+    return 'Code: $code';
+  }
+
+  @override
+  String equipmentStatus(String status) {
+    return 'Status: $status';
+  }
+
+  @override
+  String unitLabel(String name) {
+    return 'Unit: $name';
+  }
+
+  @override
+  String get linkedToMaintenance => 'Linked to maintenance';
+
+  @override
+  String get noLink => 'No link';
+
+  @override
+  String openCount(String count) {
+    return '$count open';
+  }
+
+  @override
+  String totalCount(String count) {
+    return '$count total';
+  }
+
+  @override
+  String lastRequest(String date) {
+    return 'Last request: $date';
+  }
+
+  @override
+  String get preventive => 'Preventive';
+
+  @override
+  String get corrective => 'Corrective';
+
+  @override
+  String get noType => 'No type';
+
+  @override
+  String get operational => 'Operational';
+
+  @override
+  String get broken => 'Out of service';
+
+  @override
+  String get retired => 'Retired';
 }
