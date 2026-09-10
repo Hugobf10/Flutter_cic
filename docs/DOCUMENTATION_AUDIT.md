@@ -21,8 +21,8 @@ La auditoría de código contabiliza 89 archivos Dart bajo `cic_odoo_app/lib`, 1
 
 ## Verificación realizada
 
-- `flutter analyze`: sin incidencias en el checkout limpio.
-- `flutter test`: iniciado sobre los 16 archivos existentes; la validez de la suite frente a Odoo real no puede certificarse sin entorno autorizado.
+- `flutter analyze`: sin incidencias en el checkout revisado.
+- `flutter test`: 43 pruebas correctas sobre los 16 archivos existentes; la validez de la suite frente a Odoo real no puede certificarse sin entorno autorizado.
 - No se ejecutaron builds de release, despliegues, publicación en stores ni pruebas con datos/usuarios reales.
 
 ## Riesgos técnicos encontrados

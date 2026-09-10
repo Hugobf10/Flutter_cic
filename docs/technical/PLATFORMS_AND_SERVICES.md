@@ -25,4 +25,10 @@ en macOS no está implementado por el código disponible.
 
 ## Push
 
-FCM se inicializa solo con todos los `FIREBASE_*` requeridos y `PUSH_NOTIFICATIONS_ENABLED=true`. Registra el token mediante la acción portal `push_register`; solicita permiso, escucha renovación, primer plano y apertura. No hay configuración Firebase de producción en el repositorio.
+FCM se inicializa solo con `PUSH_NOTIFICATIONS_ENABLED=true` y
+`FIREBASE_API_KEY`, `FIREBASE_APP_ID`, `FIREBASE_MESSAGING_SENDER_ID` y
+`FIREBASE_PROJECT_ID`. `FIREBASE_VAPID_KEY` es opcional en la comprobación de
+arranque y se usa al obtener el token cuando está definido. La app registra el
+token mediante la acción portal `push_register`, solicita permiso y escucha
+renovación, primer plano y apertura. No hay configuración Firebase de
+producción en el repositorio.
