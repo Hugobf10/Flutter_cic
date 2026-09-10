@@ -1,11 +1,11 @@
 {
-    "name": "CICAPP",
-    "short_name": "CICAPP",
+    "name": "Flutter CIC",
+    "short_name": "CIC",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Intranet móvil de CIC conectada con Odoo.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

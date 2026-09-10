@@ -50,7 +50,7 @@ class PushNotificationsService {
     }
   }
 
-  Future<void> configure({VoidCallback? onForegroundMessage}) async {
+  Future<void> configure({ValueChanged<RemoteMessage>? onMessage}) async {
     if (!AppConfig.hasPushConfiguration || _configured || _configuring) return;
     _configuring = true;
     try {
@@ -96,17 +96,20 @@ class PushNotificationsService {
           scope: 'push',
         ),
       );
+      final initialMessage = await messaging.getInitialMessage();
+      if (initialMessage != null) onMessage?.call(initialMessage);
+
       _foregroundSubscription = FirebaseMessaging.onMessage.listen((message) {
         AppLogger.info(
           'Push recibido con la app en primer plano',
           data: {'message_id': message.messageId},
           scope: 'push',
         );
-        onForegroundMessage?.call();
+        onMessage?.call(message);
       });
-      _openedSubscription = FirebaseMessaging.onMessageOpenedApp.listen((_) {
-        onForegroundMessage?.call();
-      });
+      _openedSubscription = FirebaseMessaging.onMessageOpenedApp.listen(
+        (message) => onMessage?.call(message),
+      );
       _configured = true;
     } catch (error, stackTrace) {
       AppLogger.error(
@@ -133,6 +136,46 @@ class PushNotificationsService {
         stackTrace: stackTrace,
         scope: 'push',
       );
+    }
+  }
+
+  /// Removes this device's server registration before the Odoo session ends.
+  ///
+  /// The local FCM token is deleted afterwards, so a shared device has to
+  /// obtain a fresh token under the next authenticated user.
+  Future<void> unregister() async {
+    try {
+      if (AppConfig.hasPushConfiguration && Firebase.apps.isNotEmpty) {
+        final messaging = FirebaseMessaging.instance;
+        try {
+          final token = await messaging.getToken(
+            vapidKey: AppConfig.firebaseVapidKey.isEmpty
+                ? null
+                : AppConfig.firebaseVapidKey,
+          );
+          if (token != null && token.isNotEmpty) {
+            await _portalApi.action(
+              'push_unregister',
+              values: {'token': token},
+            );
+          }
+        } catch (error) {
+          AppLogger.warning(
+            'No se pudo dar de baja el dispositivo de notificaciones en Odoo',
+            data: {'error': error.toString()},
+            scope: 'push',
+          );
+        }
+        await messaging.deleteToken();
+      }
+    } catch (error) {
+      AppLogger.warning(
+        'No se pudo borrar el token local de notificaciones',
+        data: {'error': error.toString()},
+        scope: 'push',
+      );
+    } finally {
+      stop();
     }
   }
 

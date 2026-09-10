@@ -5,7 +5,7 @@
 Esta revisión no certifica todavía la aplicación como lista para producción.
 Las notificaciones push reales siguen fuera del alcance de este cierre.
 
-Verificación local: `flutter analyze` sin incidencias y `flutter test` con 42
+Verificación local: `flutter analyze` sin incidencias y `flutter test` con 43
 pruebas correctas, incluidas migración de sesión sin fallback inseguro, política
 HTTPS, redacción de logs, ausencia de reintentos de escritura y ajustes en español/
 inglés a 320 × 640 con texto al 200 %. `flutter build apk --debug` compila; es una
@@ -69,11 +69,11 @@ Use dart defines per environment:
 - `SENTRY_DSN` (optional, recomendado prod)
 - `SENTRY_ENV` (optional, e.g. production/staging)
 - `SENTRY_TRACES_SAMPLE_RATE` (optional, e.g. 0.1)
-- `USE_OAUTH` (`true|false`)
-- `OAUTH_CLIENT_ID` (required if `USE_OAUTH=true`)
-- `OAUTH_DISCOVERY_URL` (required if `USE_OAUTH=true`)
-- `OAUTH_REDIRECT_URL` (default `app://auth/callback`)
-- `OAUTH_SCOPES` (default `openid profile email offline_access`)
+- `PUSH_NOTIFICATIONS_ENABLED` (optional; only after the Firebase acceptance test)
+- `FIREBASE_API_KEY`, `FIREBASE_APP_ID`, `FIREBASE_MESSAGING_SENDER_ID`,
+  `FIREBASE_PROJECT_ID` (required together when push is enabled)
+- `FIREBASE_VAPID_KEY` (required for web push)
+- `ALLOW_STAGING_IN_RELEASE=true` (only for a deliberate signed staging build)
 
 Example:
 
@@ -90,13 +90,16 @@ Important:
 - The development build keeps the CIC staging server/database as its default so
   testers can sign in without exposing technical fields.
 - A production build must provide its own `ODOO_BASE_URL` and `ODOO_DATABASE`
-  through `--dart-define`; this replaces the staging defaults.
+  through `--dart-define`; this replaces the staging defaults. A release using
+  either repository default is rejected unless it explicitly declares
+  `ALLOW_STAGING_IN_RELEASE=true`.
 
 ## Security
 - Password persistence has been removed.
 - Odoo session snapshot is stored in secure storage (`flutter_secure_storage`).
 - Login/database/url metadata are stored in preferences for convenience.
-- OAuth tokens are stored in secure storage only.
+- FCM remains disabled until its public client configuration and the Odoo server
+  secret are available. See `../docs/operations/FIREBASE_PUSH_NOTIFICATIONS.md`.
 
 ## Runtime resilience
 - RPC calls include bounded timeouts; only explicit read-only operations retry.

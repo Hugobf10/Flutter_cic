@@ -1,5 +1,6 @@
-import '../../services/odoo_service.dart';
 import '../../config/server_policy.dart';
+import '../../config/app_config.dart';
+import '../../services/odoo_service.dart';
 import '../core/auth_models.dart';
 import '../core/auth_provider.dart';
 
@@ -31,6 +32,13 @@ class OdooPasswordAuth implements AuthProvider {
       return const AuthResult(
         success: false,
         errorMessage: 'El servidor debe ser una dirección HTTPS válida.',
+      );
+    }
+    if (!AppConfig.isOdooTargetAllowed(serverUrl, database)) {
+      return const AuthResult(
+        success: false,
+        errorMessage:
+            'La compilación de producción requiere ODOO_BASE_URL y ODOO_DATABASE propios; no puede usar staging por defecto.',
       );
     }
     _odoo.init(baseUrl: serverUrl);

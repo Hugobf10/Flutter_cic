@@ -6,6 +6,7 @@ import '../config/app_config.dart';
 import '../services/odoo_service.dart';
 import '../services/odoo_values.dart';
 import '../services/portal_api_service.dart';
+import '../services/push_notifications_service.dart';
 
 enum AuthState { initial, loading, authenticated, unauthenticated, error }
 
@@ -376,6 +377,10 @@ class AuthProvider extends ChangeNotifier {
 
   /// Cierra sesión.
   Future<void> logout() async {
+    // This still uses the authenticated Odoo session. It must run before the
+    // normal session destruction to prevent notifications leaking to the next
+    // user of a shared device.
+    await PushNotificationsService.instance.unregister();
     try {
       await _authService.destroySession();
     } catch (_) {}

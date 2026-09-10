@@ -62,7 +62,7 @@ class _SuperAppShellState extends State<SuperAppShell>
       context.read<AppStateProvider>().initialize().whenComplete(() {
         if (!mounted) return;
         PushNotificationsService.instance.configure(
-          onForegroundMessage: () {
+          onMessage: (_) {
             context.read<AppStateProvider>().loadNotifications();
           },
         );

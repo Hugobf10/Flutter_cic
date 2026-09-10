@@ -36,6 +36,12 @@ class PickedUploadFile {
 }
 
 class AttachmentService {
+  /// Upper bound applied before a file is converted to Base64.
+  ///
+  /// Keeping this limit client-side prevents accidental memory spikes while
+  /// still leaving the definitive limit to Odoo/server-side configuration.
+  static const int maxFileBytes = 10 * 1024 * 1024;
+
   AttachmentService({OdooService? odoo}) : _odoo = odoo ?? OdooService();
 
   final OdooService _odoo;
@@ -47,6 +53,11 @@ class AttachmentService {
     final file = result.files.single;
     final bytes = file.bytes;
     if (bytes == null || bytes.isEmpty) return null;
+    _validateFile(
+      name: file.name,
+      mimeType: _inferMimeType(file.name),
+      bytes: bytes,
+    );
     return PickedUploadFile(
       name: file.name,
       mimeType: _inferMimeType(file.name),
@@ -65,6 +76,7 @@ class AttachmentService {
     final file = result.files.single;
     final bytes = file.bytes;
     if (bytes == null || bytes.isEmpty) return null;
+    _validateFile(name: file.name, mimeType: 'application/pdf', bytes: bytes);
     return PickedUploadFile(
       name: file.name,
       mimeType: 'application/pdf',
@@ -103,6 +115,7 @@ class AttachmentService {
     final raw = (data['datas'] ?? '').toString();
     if (raw.isEmpty) throw Exception('El adjunto no contiene datos.');
     final bytes = base64Decode(raw);
+    _validateFile(name: name, mimeType: mime, bytes: bytes);
     final file = await _writeCacheFile(
       name: name,
       bytes: bytes,
@@ -118,10 +131,15 @@ class AttachmentService {
     required String resModel,
     required int resId,
   }) async {
+    final bytes = _decodeAndValidateBase64(
+      name: name,
+      mimeType: mimeType,
+      base64Data: base64Data,
+    );
     return _odoo.create('ir.attachment', {
       'name': name,
       'mimetype': mimeType,
-      'datas': base64Data,
+      'datas': base64Encode(bytes),
       'res_model': resModel,
       'res_id': resId,
     });
@@ -187,6 +205,86 @@ class AttachmentService {
   static String sanitizeFileName(String name) {
     return name.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
   }
+
+  /// Validates a payload before handing it to an Odoo attachment endpoint.
+  static void validateUpload({
+    required String name,
+    required String mimeType,
+    required Uint8List bytes,
+  }) => _validateFile(name: name, mimeType: mimeType, bytes: bytes);
+
+  static Uint8List _decodeAndValidateBase64({
+    required String name,
+    required String mimeType,
+    required String base64Data,
+  }) {
+    try {
+      final bytes = Uint8List.fromList(base64Decode(base64Data));
+      _validateFile(name: name, mimeType: mimeType, bytes: bytes);
+      return bytes;
+    } on FormatException {
+      throw ArgumentError.value(base64Data, 'base64Data', 'Base64 no válido.');
+    }
+  }
+
+  static void _validateFile({
+    required String name,
+    required String mimeType,
+    required Uint8List bytes,
+  }) {
+    if (bytes.isEmpty) {
+      throw ArgumentError.value(name, 'name', 'El archivo está vacío.');
+    }
+    if (bytes.length > maxFileBytes) {
+      throw ArgumentError.value(
+        name,
+        'name',
+        'El archivo supera el límite de 10 MB.',
+      );
+    }
+    final extension = _extension(name);
+    final expectedMime = _mimeByExtension[extension];
+    final normalizedMime = mimeType.trim().toLowerCase();
+    if (expectedMime != null && normalizedMime != expectedMime) {
+      throw ArgumentError.value(
+        mimeType,
+        'mimeType',
+        'El MIME no coincide con la extensión .$extension.',
+      );
+    }
+    if (normalizedMime == 'application/x-msdownload' ||
+        normalizedMime == 'application/x-sh' ||
+        const {
+          'exe',
+          'dll',
+          'bat',
+          'cmd',
+          'sh',
+          'js',
+          'html',
+          'htm',
+        }.contains(extension)) {
+      throw ArgumentError.value(name, 'name', 'Tipo de archivo no permitido.');
+    }
+  }
+
+  static String _extension(String name) {
+    final dot = name.lastIndexOf('.');
+    return dot < 0 ? '' : name.substring(dot + 1).toLowerCase();
+  }
+
+  static const _mimeByExtension = <String, String>{
+    'pdf': 'application/pdf',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'webp': 'image/webp',
+    'doc': 'application/msword',
+    'docx':
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  };
 
   String _inferMimeType(String fileName) {
     final lower = fileName.toLowerCase();
