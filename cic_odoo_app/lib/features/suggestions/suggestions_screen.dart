@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/ui/app_components.dart';
 import '../../features/forms/dynamic_form.dart';
+import '../../l10n/strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
 import '../../services/portal_api_service.dart';
@@ -74,12 +75,16 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
             16 + MediaQuery.of(ctx).viewInsets.bottom,
           ),
           child: DynamicForm(
-            submitLabel: 'Enviar sugerencia',
-            fields: const [
-              DynamicFieldConfig(key: 'name', label: 'Título', required: true),
+            submitLabel: context.uiText('Enviar sugerencia', 'Send suggestion'),
+            fields: [
+              DynamicFieldConfig(
+                key: 'name',
+                label: context.l10n.title,
+                required: true,
+              ),
               DynamicFieldConfig(
                 key: 'descripcion',
-                label: 'Descripción',
+                label: context.l10n.description,
                 required: true,
                 type: DynamicFieldType.multiline,
                 maxLines: 4,
@@ -114,14 +119,19 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
     final auth = context.watch<AuthProvider>();
     return Scaffold(
       appBar: AppBar(
-        title: Text('Sugerencias'),
+        title: Text(context.l10n.suggestions),
         actions: [
           if (auth.canEditModule('suggestions'))
             IconButton(
+              tooltip: context.uiText('Nueva sugerencia', 'New suggestion'),
               onPressed: _openCreate,
               icon: Icon(Icons.add_comment_rounded),
             ),
-          IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
+          IconButton(
+            tooltip: context.uiText('Actualizar', 'Refresh'),
+            onPressed: _load,
+            icon: Icon(Icons.refresh_rounded),
+          ),
         ],
       ),
       body: _loading
@@ -136,7 +146,10 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
           : _rows.isEmpty
           ? Center(
               child: Text(
-                'Sin sugerencias enviadas.',
+                context.uiText(
+                  'Sin sugerencias enviadas.',
+                  'No suggestions sent.',
+                ),
                 style: TextStyle(color: AppTheme.textMutedFor(context)),
               ),
             )
@@ -177,7 +190,7 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Estado: ${it['estado'] ?? '-'} · ${it['fecha'] ?? ''}',
+                        '${context.l10n.status}: ${_stateLabel(context, it['estado'])} · ${it['fecha'] ?? ''}',
                         style: TextStyle(
                           fontSize: 11,
                           color: AppTheme.textMutedFor(context),
@@ -190,4 +203,15 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
             ),
     );
   }
+
+  String _stateLabel(BuildContext context, dynamic raw) =>
+      switch (raw?.toString()) {
+        'recibida' => context.uiText('Recibida', 'Received'),
+        'en_analisis' => context.uiText('En análisis', 'In analysis'),
+        'tratada' => context.uiText('Tratada', 'Handled'),
+        'respondida' => context.uiText('Respondida', 'Answered'),
+        'cerrada' => context.uiText('Cerrada', 'Closed'),
+        null || '' => '-',
+        _ => raw.toString(),
+      };
 }

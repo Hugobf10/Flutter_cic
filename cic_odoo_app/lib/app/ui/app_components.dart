@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../l10n/strings.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_theme.dart';
 
@@ -623,7 +624,10 @@ class AppLoadingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(child: AppLoadingIndicator(semanticLabel: label));
+    final effectiveLabel = label == 'Cargando'
+        ? context.uiText('Cargando', 'Loading')
+        : label;
+    return Center(child: AppLoadingIndicator(semanticLabel: effectiveLabel));
   }
 }
 
@@ -689,8 +693,11 @@ class _AppLoadingIndicatorState extends State<AppLoadingIndicator>
 
   @override
   Widget build(BuildContext context) {
+    final effectiveSemanticLabel = widget.semanticLabel == 'Cargando'
+        ? context.uiText('Cargando', 'Loading')
+        : widget.semanticLabel;
     return Semantics(
-      label: widget.semanticLabel,
+      label: effectiveSemanticLabel,
       liveRegion: true,
       child: SizedBox(
         width: widget.size,
@@ -798,12 +805,12 @@ class AppPdfCard extends StatelessWidget {
             IconButton(
               onPressed: onPreview,
               icon: Icon(Icons.visibility_outlined, size: 18),
-              tooltip: 'Previsualizar',
+              tooltip: context.uiText('Previsualizar', 'Preview'),
             ),
           IconButton(
             onPressed: onDownload,
             icon: Icon(Icons.download_rounded, size: 18),
-            tooltip: 'Descargar',
+            tooltip: context.uiText('Descargar', 'Download'),
           ),
         ],
       ),

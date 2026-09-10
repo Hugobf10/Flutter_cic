@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../services/odoo_service.dart';
 import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
@@ -56,9 +57,13 @@ class _EquipmentScreenState extends State<EquipmentScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Equipos'),
+        title: Text(context.uiText('Equipos', 'Equipment')),
         actions: [
-          IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
+          IconButton(
+            tooltip: context.uiText('Actualizar', 'Refresh'),
+            onPressed: _load,
+            icon: Icon(Icons.refresh_rounded),
+          ),
         ],
       ),
       body: _loading
@@ -73,7 +78,10 @@ class _EquipmentScreenState extends State<EquipmentScreen> {
           : _rows.isEmpty
           ? Center(
               child: Text(
-                'Sin equipos visibles.',
+                context.uiText(
+                  'Sin equipos visibles.',
+                  'No visible equipment.',
+                ),
                 style: TextStyle(color: AppTheme.textMutedFor(context)),
               ),
             )
@@ -107,21 +115,21 @@ class _EquipmentScreenState extends State<EquipmentScreen> {
                       ),
                       if ((it['codigo'] ?? '').toString().isNotEmpty)
                         Text(
-                          'Código: ${it['codigo']}',
+                          '${context.uiText('Código', 'Code')}: ${it['codigo']}',
                           style: TextStyle(
                             fontSize: 12,
                             color: AppTheme.textSecondaryFor(context),
                           ),
                         ),
                       Text(
-                        'Estado: ${it['estado'] ?? '-'}',
+                        '${context.l10n.status}: ${_stateLabel(context, it['estado'])}',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppTheme.textSecondaryFor(context),
                         ),
                       ),
                       Text(
-                        'Intervención: ${(it['requiere_intervencion'] == true) ? 'Sí' : 'No'}',
+                        '${context.uiText('Intervención', 'Intervention')}: ${(it['requiere_intervencion'] == true) ? context.uiText('Sí', 'Yes') : context.uiText('No', 'No')}',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppTheme.textMutedFor(context),
@@ -129,7 +137,7 @@ class _EquipmentScreenState extends State<EquipmentScreen> {
                       ),
                       if (unidad.isNotEmpty)
                         Text(
-                          'Unidad: $unidad',
+                          '${context.uiText('Unidad', 'Unit')}: $unidad',
                           style: TextStyle(
                             fontSize: 12,
                             color: AppTheme.textMutedFor(context),
@@ -141,5 +149,16 @@ class _EquipmentScreenState extends State<EquipmentScreen> {
               },
             ),
     );
+  }
+
+  String _stateLabel(BuildContext context, dynamic raw) {
+    final value = raw?.toString();
+    return switch (value) {
+      'activo' => context.uiText('Activo', 'Active'),
+      'inactivo' => context.uiText('Inactivo', 'Inactive'),
+      'mantenimiento' => context.uiText('Mantenimiento', 'Maintenance'),
+      null || '' => '-',
+      _ => value,
+    };
   }
 }

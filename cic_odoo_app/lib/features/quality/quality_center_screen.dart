@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../features/communications/communications_screen.dart';
+import '../../l10n/strings.dart';
 import '../../theme/app_theme.dart';
 
 class QualityCenterScreen extends StatelessWidget {
@@ -9,12 +10,12 @@ class QualityCenterScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Calidad')),
+      appBar: AppBar(title: Text(context.uiText('Calidad', 'Quality'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         children: [
           Text(
-            'Centro de calidad',
+            context.uiText('Centro de calidad', 'Quality center'),
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
@@ -23,15 +24,21 @@ class QualityCenterScreen extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Gestiona comunicaciones y sugerencias relacionadas con calidad.',
+            context.uiText(
+              'Gestiona comunicaciones y sugerencias relacionadas con calidad.',
+              'Manage quality communications and suggestions.',
+            ),
             style: TextStyle(color: AppTheme.textSecondaryFor(context)),
           ),
           const SizedBox(height: 14),
           _entry(
             context,
             icon: Icons.chat_bubble_outline_rounded,
-            title: 'Comunicaciones',
-            subtitle: 'Gestión de comunicaciones de calidad',
+            title: context.l10n.communications,
+            subtitle: context.uiText(
+              'Gestión de comunicaciones de calidad',
+              'Quality communications management',
+            ),
             to: const CommunicationsScreen(),
           ),
         ],

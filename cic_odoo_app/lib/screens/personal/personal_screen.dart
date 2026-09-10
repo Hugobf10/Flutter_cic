@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../providers/data_provider.dart';
 import '../../theme/app_theme.dart';
 
@@ -67,7 +68,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
     return ChangeNotifierProvider.value(
       value: _provider,
       child: AppScaffold(
-        title: 'Personal',
+        title: context.uiText('Personal', 'People'),
         padding: EdgeInsets.zero,
         child: Column(
           children: [
@@ -88,7 +89,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
       child: AppSearchBar(
         controller: _searchCtrl,
-        hintText: 'Buscar persona...',
+        hintText: context.uiText('Buscar persona...', 'Search people...'),
         onSubmitted: (v) => _loadData(search: v),
         onChanged: (v) {
           if (v.isEmpty) _loadData();
@@ -99,19 +100,30 @@ class _PersonalScreenState extends State<PersonalScreen> {
   }
 
   Widget _buildList(DataProvider p) {
-    if (p.isLoading && p.records.isEmpty) return const AppLoadingView();
+    if (p.isLoading && p.records.isEmpty) {
+      return AppLoadingView(label: context.uiText('Cargando', 'Loading'));
+    }
     if (p.errorMessage != null) {
       return AppEmptyState(
-        title: 'No se pudo cargar el personal',
+        title: context.uiText(
+          'No se pudo cargar el personal',
+          'Could not load people',
+        ),
         subtitle: p.errorMessage!,
         icon: Icons.cloud_off_rounded,
-        action: AppButton.primary(label: 'Reintentar', onPressed: _loadData),
+        action: AppButton.primary(
+          label: context.uiText('Reintentar', 'Retry'),
+          onPressed: _loadData,
+        ),
       );
     }
     if (p.records.isEmpty) {
-      return const AppEmptyState(
-        title: 'Sin resultados',
-        subtitle: 'No se encontró personal con esos datos.',
+      return AppEmptyState(
+        title: context.uiText('Sin resultados', 'No results'),
+        subtitle: context.uiText(
+          'No se encontró personal con esos datos.',
+          'No people were found with those details.',
+        ),
         icon: Icons.person_search_rounded,
       );
     }
@@ -126,8 +138,14 @@ class _PersonalScreenState extends State<PersonalScreen> {
             return Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: AppSectionHeader(
-                title: '${p.totalCount} personas',
-                subtitle: 'Directorio interno disponible para tu perfil.',
+                title: context.uiText(
+                  '${p.totalCount} personas',
+                  '${p.totalCount} people',
+                ),
+                subtitle: context.uiText(
+                  'Directorio interno disponible para tu perfil.',
+                  'Internal directory available for your profile.',
+                ),
               ),
             );
           }
@@ -229,13 +247,13 @@ class _PersonalScreenState extends State<PersonalScreen> {
               children: [
                 if (pendientes > 0)
                   AppStatusChip(
-                    label: '$pendientes form.',
+                    label: '$pendientes ${context.uiText('form.', 'training')}',
                     color: AppTheme.warning,
                   ),
                 if (accidentes > 0) ...[
                   const SizedBox(height: 5),
                   AppStatusChip(
-                    label: '$accidentes acc.',
+                    label: '$accidentes ${context.uiText('acc.', 'accidents')}',
                     color: AppTheme.danger,
                   ),
                 ],

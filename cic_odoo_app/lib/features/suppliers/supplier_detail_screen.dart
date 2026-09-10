@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/ui/app_components.dart';
 import '../../features/forms/dynamic_form.dart';
+import '../../l10n/strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
 import '../../services/portal_api_service.dart';
@@ -32,6 +33,10 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
   }
 
   Future<void> _load() async {
+    final unavailableMessage = context.uiText(
+      'El proveedor no está disponible.',
+      'The supplier is not available.',
+    );
     setState(() {
       _loading = true;
       _error = null;
@@ -42,7 +47,9 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
         recordId: widget.id,
         limit: 1,
       );
-      if (rows.isEmpty) throw StateError('El proveedor no está disponible.');
+      if (rows.isEmpty) {
+        throw StateError(unavailableMessage);
+      }
       _record = rows.first;
     } catch (e) {
       _error = OdooService.prettyError(e);
@@ -69,40 +76,52 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _SupplierFormHeader(),
+              _SupplierFormHeader(),
               const SizedBox(height: 18),
               DynamicForm(
-                submitLabel: 'Guardar cambios',
+                submitLabel: context.uiText('Guardar cambios', 'Save changes'),
                 fields: [
                   DynamicFieldConfig(
                     key: 'fecha_homologacion',
-                    label: 'Fecha de homologación',
+                    label: context.uiText(
+                      'Fecha de homologación',
+                      'Approval date',
+                    ),
                     type: DynamicFieldType.date,
                     initialValue: _asDate(_record!['fecha_homologacion']),
                   ),
                   DynamicFieldConfig(
                     key: 'fecha_desestimacion',
-                    label: 'Fecha de desestimación',
+                    label: context.uiText(
+                      'Fecha de desestimación',
+                      'Rejection date',
+                    ),
                     type: DynamicFieldType.date,
                     initialValue: _asDate(_record!['fecha_desestimacion']),
                   ),
                   DynamicFieldConfig(
                     key: 'motivo_homologacion',
-                    label: 'Motivo homologación',
+                    label: context.uiText(
+                      'Motivo homologación',
+                      'Approval reason',
+                    ),
                     type: DynamicFieldType.multiline,
                     initialValue: _record!['motivo_homologacion'],
                     maxLines: 3,
                   ),
                   DynamicFieldConfig(
                     key: 'motivo_desestimacion',
-                    label: 'Motivo desestimación',
+                    label: context.uiText(
+                      'Motivo desestimación',
+                      'Rejection reason',
+                    ),
                     type: DynamicFieldType.multiline,
                     initialValue: _record!['motivo_desestimacion'],
                     maxLines: 3,
                   ),
                   DynamicFieldConfig(
                     key: 'observaciones',
-                    label: 'Observaciones',
+                    label: context.uiText('Observaciones', 'Notes'),
                     type: DynamicFieldType.multiline,
                     initialValue: _record!['observaciones'],
                     maxLines: 3,
@@ -159,17 +178,17 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
     final canEdit = auth.canEditModule('suppliers');
 
     return AppScaffold(
-      title: 'Proveedor',
+      title: context.uiText('Proveedor', 'Supplier'),
       actions: [
         if (!_loading)
           IconButton(
-            tooltip: 'Actualizar',
+            tooltip: context.uiText('Actualizar', 'Refresh'),
             onPressed: _load,
             icon: Icon(Icons.refresh_rounded),
           ),
         if (canEdit && _record != null)
           IconButton(
-            tooltip: 'Editar proveedor',
+            tooltip: context.uiText('Editar proveedor', 'Edit supplier'),
             onPressed: _editing ? null : _edit,
             icon: _editing
                 ? const AppLoadingIndicator(size: 22)
@@ -177,13 +196,21 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
           ),
       ],
       child: _loading
-          ? const AppLoadingView(label: 'Cargando proveedor')
+          ? AppLoadingView(
+              label: context.uiText('Cargando proveedor', 'Loading supplier'),
+            )
           : _error != null
           ? AppEmptyState(
-              title: 'No se pudo abrir el proveedor',
+              title: context.uiText(
+                'No se pudo abrir el proveedor',
+                'Could not open supplier',
+              ),
               subtitle: _error!,
               icon: Icons.cloud_off_rounded,
-              action: AppButton.primary(label: 'Reintentar', onPressed: _load),
+              action: AppButton.primary(
+                label: context.uiText('Reintentar', 'Retry'),
+                onPressed: _load,
+              ),
             )
           : _buildDetail(canEdit),
     );
@@ -196,7 +223,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
     final color = homologated ? AppTheme.success : AppTheme.danger;
     final supplier = _many2oneLabel(
       record['partner_id'],
-      fallback: 'Proveedor',
+      fallback: context.uiText('Proveedor', 'Supplier'),
     );
     final unit = _many2oneLabel(record['unidad_id']);
     final currentDate = homologated
@@ -237,7 +264,12 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          unit == '-' ? 'Unidad no indicada' : unit,
+                          unit == '-'
+                              ? context.uiText(
+                                  'Unidad no indicada',
+                                  'Unit not specified',
+                                )
+                              : unit,
                           style: TextStyle(
                             color: AppTheme.textSecondaryFor(context),
                           ),
@@ -246,7 +278,10 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  AppStatusChip(label: _stateLabel(state), color: color),
+                  AppStatusChip(
+                    label: _stateLabel(context, state),
+                    color: color,
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -264,8 +299,11 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
                     Expanded(
                       child: Text(
                         currentDate == '-'
-                            ? 'Sin fecha registrada para el estado actual'
-                            : '${homologated ? 'Homologado' : 'Desestimado'} el $currentDate',
+                            ? context.uiText(
+                                'Sin fecha registrada para el estado actual',
+                                'No date recorded for the current status',
+                              )
+                            : '${homologated ? context.uiText('Homologado', 'Approved') : context.uiText('Desestimado', 'Rejected')} ${context.uiText('el', 'on')} $currentDate',
                         style: TextStyle(
                           color: AppTheme.textPrimaryFor(context),
                           fontWeight: FontWeight.w700,
@@ -281,8 +319,14 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
                   width: double.infinity,
                   child: AppButton.outline(
                     label: homologated
-                        ? 'Desestimar proveedor'
-                        : 'Reactivar proveedor',
+                        ? context.uiText(
+                            'Desestimar proveedor',
+                            'Reject supplier',
+                          )
+                        : context.uiText(
+                            'Reactivar proveedor',
+                            'Reactivate supplier',
+                          ),
                     icon: homologated
                         ? Icons.block_rounded
                         : Icons.restart_alt_rounded,
@@ -301,24 +345,33 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
           ),
         ),
         const SizedBox(height: 22),
-        const AppSectionHeader(
-          title: 'Ficha de homologación',
-          subtitle: 'Información sincronizada con el registro de Odoo.',
+        AppSectionHeader(
+          title: context.uiText('Ficha de homologación', 'Approval record'),
+          subtitle: context.uiText(
+            'Información sincronizada con el registro de Odoo.',
+            'Information synced with the Odoo record.',
+          ),
         ),
         LayoutBuilder(
           builder: (context, constraints) {
             final dates = _SupplierDetailSection(
               icon: Icons.calendar_month_rounded,
               color: AppTheme.primary,
-              title: 'Fechas y unidad',
+              title: context.uiText('Fechas y unidad', 'Dates and unit'),
               children: [
-                _SupplierInfoRow(label: 'Unidad', value: unit),
                 _SupplierInfoRow(
-                  label: 'Fecha homologación',
+                  label: context.uiText('Unidad', 'Unit'),
+                  value: unit,
+                ),
+                _SupplierInfoRow(
+                  label: context.uiText('Fecha homologación', 'Approval date'),
                   value: _display(record['fecha_homologacion']),
                 ),
                 _SupplierInfoRow(
-                  label: 'Fecha desestimación',
+                  label: context.uiText(
+                    'Fecha desestimación',
+                    'Rejection date',
+                  ),
                   value: _display(record['fecha_desestimacion']),
                 ),
               ],
@@ -326,22 +379,22 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
             final history = _SupplierDetailSection(
               icon: Icons.history_rounded,
               color: AppTheme.accent,
-              title: 'Historial',
+              title: context.uiText('Historial', 'History'),
               children: [
                 _SupplierInfoRow(
-                  label: 'Movimientos',
+                  label: context.uiText('Movimientos', 'Changes'),
                   value: _display(record['historial_count'], fallback: '0'),
                 ),
                 _SupplierInfoRow(
-                  label: 'Último movimiento',
+                  label: context.uiText('Último movimiento', 'Last change'),
                   value: _display(record['ultima_fecha_evento']),
                 ),
                 _SupplierInfoRow(
-                  label: 'Año homologación',
+                  label: context.uiText('Año homologación', 'Approval year'),
                   value: _display(record['anio_homologacion']),
                 ),
                 _SupplierInfoRow(
-                  label: 'Año desestimación',
+                  label: context.uiText('Año desestimación', 'Rejection year'),
                   value: _display(record['anio_desestimacion']),
                 ),
               ],
@@ -367,16 +420,22 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
               ? Icons.thumb_up_alt_rounded
               : Icons.do_not_disturb_alt_rounded,
           color: color,
-          title: 'Motivos',
+          title: context.uiText('Motivos', 'Reasons'),
           children: [
             _SupplierTextBlock(
-              label: 'Motivo de homologación',
+              label: context.uiText(
+                'Motivo de homologación',
+                'Approval reason',
+              ),
               value: _display(record['motivo_homologacion']),
               highlighted: homologated,
             ),
             const SizedBox(height: 12),
             _SupplierTextBlock(
-              label: 'Motivo de desestimación',
+              label: context.uiText(
+                'Motivo de desestimación',
+                'Rejection reason',
+              ),
               value: _display(record['motivo_desestimacion']),
               highlighted: !homologated,
             ),
@@ -386,7 +445,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
         _SupplierDetailSection(
           icon: Icons.notes_rounded,
           color: AppTheme.warning,
-          title: 'Observaciones',
+          title: context.uiText('Observaciones', 'Notes'),
           children: [
             Text(
               _display(record['observaciones']),
@@ -406,10 +465,10 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
     return DateTime.tryParse(value?.toString() ?? '');
   }
 
-  String _stateLabel(String state) => switch (state) {
-    'homologado' => 'Homologado',
-    'desestimado' => 'Desestimado',
-    _ => state.isEmpty ? 'Sin estado' : state,
+  String _stateLabel(BuildContext context, String state) => switch (state) {
+    'homologado' => context.uiText('Homologado', 'Approved'),
+    'desestimado' => context.uiText('Desestimado', 'Rejected'),
+    _ => state.isEmpty ? context.uiText('Sin estado', 'No status') : state,
   };
 
   String? _dateString(dynamic value) {
@@ -574,12 +633,15 @@ class _SupplierFormHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Editar homologación',
+                context.uiText('Editar homologación', 'Edit approval'),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 4),
               Text(
-                'Actualiza las fechas, motivos y observaciones del registro.',
+                context.uiText(
+                  'Actualiza las fechas, motivos y observaciones del registro.',
+                  'Update the dates, reasons and notes for the record.',
+                ),
                 style: TextStyle(color: AppTheme.textSecondaryFor(context)),
               ),
             ],

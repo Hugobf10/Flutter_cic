@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../theme/app_theme.dart';
 
 class NewsArticle {
@@ -32,7 +33,7 @@ class NewsDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final body = article.content.isEmpty ? article.excerpt : article.content;
     return AppScaffold(
-      title: 'Novedad',
+      title: context.uiText('Novedad', 'News'),
       child: ListView(
         children: [
           AppCard(
@@ -55,7 +56,10 @@ class NewsDetailScreen extends StatelessWidget {
           const SizedBox(height: 22),
           Row(
             children: [
-              const AppStatusChip(label: 'COMUNICADO', color: AppTheme.primary),
+              AppStatusChip(
+                label: context.uiText('COMUNICADO', 'ANNOUNCEMENT'),
+                color: AppTheme.primary,
+              ),
               const Spacer(),
               Icon(
                 Icons.calendar_today_outlined,
@@ -120,7 +124,10 @@ class NewsDetailScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: AppButton.primary(
-                label: 'Abrir noticia original',
+                label: context.uiText(
+                  'Abrir noticia original',
+                  'Open original article',
+                ),
                 icon: Icons.open_in_new_rounded,
                 onPressed: () => launchUrl(
                   article.link!,

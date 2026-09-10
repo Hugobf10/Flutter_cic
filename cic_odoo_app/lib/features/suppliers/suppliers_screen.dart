@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../app/ui/app_components.dart';
 import '../../features/forms/dynamic_form.dart';
 import '../../features/suppliers/supplier_detail_screen.dart';
+import '../../l10n/strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
 import '../../services/portal_api_service.dart';
@@ -72,7 +73,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'No se pudo ejecutar la acción: ${OdooService.prettyError(e)}',
+            '${context.uiText('No se pudo ejecutar la acción', 'Could not run the action')}: ${OdooService.prettyError(e)}',
           ),
           backgroundColor: AppTheme.danger,
         ),
@@ -84,6 +85,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
 
   Future<void> _openCreateDialog() async {
     if (_openingCreate) return;
+    final supplierFallback = context.uiText('Proveedor', 'Supplier');
     setState(() => _openingCreate = true);
     List<DynamicFieldOption> partnerOptions = const [];
     String? optionsError;
@@ -112,7 +114,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
           .map(
             (m) => DynamicFieldOption(
               value: m['id'],
-              label: m['name']?.toString() ?? 'Proveedor',
+              label: m['name']?.toString() ?? supplierFallback,
             ),
           )
           .toList();
@@ -129,7 +131,10 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
           content: Text(
             optionsError?.isNotEmpty == true
                 ? optionsError!
-                : 'No hay empresas proveedoras disponibles para crear un registro.',
+                : context.uiText(
+                    'No hay empresas proveedoras disponibles para crear un registro.',
+                    'There are no supplier companies available to create a record.',
+                  ),
           ),
         ),
       );
@@ -152,38 +157,49 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _FormHeader(
+              _FormHeader(
                 icon: Icons.add_business_rounded,
-                title: 'Nueva homologación',
-                subtitle:
-                    'Selecciona una empresa y registra los datos iniciales.',
+                title: context.uiText('Nueva homologación', 'New approval'),
+                subtitle: context.uiText(
+                  'Selecciona una empresa y registra los datos iniciales.',
+                  'Select a company and enter the initial details.',
+                ),
               ),
               const SizedBox(height: 18),
               DynamicForm(
-                submitLabel: 'Crear homologación',
+                submitLabel: context.uiText(
+                  'Crear homologación',
+                  'Create approval',
+                ),
                 fields: [
                   DynamicFieldConfig(
                     key: 'partner_id',
-                    label: 'Proveedor',
+                    label: context.uiText('Proveedor', 'Supplier'),
                     type: DynamicFieldType.select,
                     required: true,
                     options: partnerOptions,
                   ),
-                  const DynamicFieldConfig(
+                  DynamicFieldConfig(
                     key: 'fecha_homologacion',
-                    label: 'Fecha homologación',
+                    label: context.uiText(
+                      'Fecha homologación',
+                      'Approval date',
+                    ),
                     type: DynamicFieldType.date,
                     required: true,
                   ),
-                  const DynamicFieldConfig(
+                  DynamicFieldConfig(
                     key: 'motivo_homologacion',
-                    label: 'Motivo homologación',
+                    label: context.uiText(
+                      'Motivo homologación',
+                      'Approval reason',
+                    ),
                     type: DynamicFieldType.multiline,
                     maxLines: 3,
                   ),
-                  const DynamicFieldConfig(
+                  DynamicFieldConfig(
                     key: 'observaciones',
-                    label: 'Observaciones',
+                    label: context.uiText('Observaciones', 'Notes'),
                     type: DynamicFieldType.multiline,
                     maxLines: 3,
                   ),
@@ -241,10 +257,10 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
         .length;
 
     return AppScaffold(
-      title: 'Proveedores',
+      title: context.uiText('Proveedores', 'Suppliers'),
       actions: [
         IconButton(
-          tooltip: 'Actualizar',
+          tooltip: context.uiText('Actualizar', 'Refresh'),
           onPressed: _loading ? null : _load,
           icon: Icon(Icons.refresh_rounded),
         ),
@@ -255,17 +271,32 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
               icon: _openingCreate
                   ? const AppLoadingIndicator(size: 22)
                   : Icon(Icons.add_business_rounded),
-              label: Text(_openingCreate ? 'Preparando' : 'Homologar'),
+              label: Text(
+                _openingCreate
+                    ? context.uiText('Preparando', 'Preparing')
+                    : context.uiText('Homologar', 'Approve'),
+              ),
             )
           : null,
       child: _loading
-          ? const AppLoadingView(label: 'Cargando proveedores')
+          ? AppLoadingView(
+              label: context.uiText(
+                'Cargando proveedores',
+                'Loading suppliers',
+              ),
+            )
           : _error != null
           ? AppEmptyState(
-              title: 'No se pudieron cargar los proveedores',
+              title: context.uiText(
+                'No se pudieron cargar los proveedores',
+                'Could not load suppliers',
+              ),
               subtitle: _error!,
               icon: Icons.cloud_off_rounded,
-              action: AppButton.primary(label: 'Reintentar', onPressed: _load),
+              action: AppButton.primary(
+                label: context.uiText('Reintentar', 'Retry'),
+                onPressed: _load,
+              ),
             )
           : Column(
               children: [
@@ -273,19 +304,19 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                   builder: (context, constraints) {
                     final cards = [
                       _SupplierStatCard(
-                        label: 'Visibles',
+                        label: context.uiText('Visibles', 'Visible'),
                         value: _rows.length.toString(),
                         icon: Icons.storefront_rounded,
                         color: AppTheme.primary,
                       ),
                       _SupplierStatCard(
-                        label: 'Homologados',
+                        label: context.uiText('Homologados', 'Approved'),
                         value: homologated.toString(),
                         icon: Icons.verified_rounded,
                         color: AppTheme.success,
                       ),
                       _SupplierStatCard(
-                        label: 'Desestimados',
+                        label: context.uiText('Desestimados', 'Rejected'),
                         value: rejected.toString(),
                         icon: Icons.block_rounded,
                         color: AppTheme.danger,
@@ -314,7 +345,10 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                 const SizedBox(height: 16),
                 AppSearchBar(
                   controller: _searchController,
-                  hintText: 'Buscar proveedor, unidad o motivo',
+                  hintText: context.uiText(
+                    'Buscar proveedor, unidad o motivo',
+                    'Search supplier, unit or reason',
+                  ),
                   onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: 12),
@@ -323,21 +357,21 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                   child: Row(
                     children: [
                       AppChoicePill(
-                        label: 'Todos',
+                        label: context.uiText('Todos', 'All'),
                         icon: Icons.apps_rounded,
                         selected: _filter == 'todos',
                         onTap: () => setState(() => _filter = 'todos'),
                       ),
                       const SizedBox(width: 8),
                       AppChoicePill(
-                        label: 'Homologados',
+                        label: context.uiText('Homologados', 'Approved'),
                         icon: Icons.verified_rounded,
                         selected: _filter == 'homologado',
                         onTap: () => setState(() => _filter = 'homologado'),
                       ),
                       const SizedBox(width: 8),
                       AppChoicePill(
-                        label: 'Desestimados',
+                        label: context.uiText('Desestimados', 'Rejected'),
                         icon: Icons.block_rounded,
                         selected: _filter == 'desestimado',
                         onTap: () => setState(() => _filter = 'desestimado'),
@@ -357,10 +391,18 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
     if (rows.isEmpty) {
       final filtering = _filter != 'todos' || _searchController.text.isNotEmpty;
       return AppEmptyState(
-        title: filtering ? 'Sin coincidencias' : 'Sin proveedores',
+        title: filtering
+            ? context.uiText('Sin coincidencias', 'No matches')
+            : context.uiText('Sin proveedores', 'No suppliers'),
         subtitle: filtering
-            ? 'Prueba con otra búsqueda o cambia el filtro de estado.'
-            : 'No hay proveedores visibles para este usuario.',
+            ? context.uiText(
+                'Prueba con otra búsqueda o cambia el filtro de estado.',
+                'Try another search or change the status filter.',
+              )
+            : context.uiText(
+                'No hay proveedores visibles para este usuario.',
+                'There are no suppliers visible for this user.',
+              ),
         icon: filtering
             ? Icons.search_off_rounded
             : Icons.store_mall_directory_outlined,
@@ -465,7 +507,10 @@ class _SupplierCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final id = (row['id'] as num).toInt();
     final state = (row['estado'] ?? 'homologado').toString();
-    final supplier = _many2oneLabel(row['partner_id'], fallback: 'Proveedor');
+    final supplier = _many2oneLabel(
+      row['partner_id'],
+      fallback: context.uiText('Proveedor', 'Supplier'),
+    );
     final unit = _many2oneLabel(row['unidad_id']);
     final reason = state == 'desestimado'
         ? _display(row['motivo_desestimacion'])
@@ -504,7 +549,12 @@ class _SupplierCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      unit == '-' ? 'Unidad no indicada' : unit,
+                      unit == '-'
+                          ? context.uiText(
+                              'Unidad no indicada',
+                              'Unit not specified',
+                            )
+                          : unit,
                       style: TextStyle(
                         color: AppTheme.textSecondaryFor(context),
                         fontSize: 12,
@@ -515,7 +565,9 @@ class _SupplierCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               AppStatusChip(
-                label: state == 'homologado' ? 'Homologado' : 'Desestimado',
+                label: state == 'homologado'
+                    ? context.uiText('Homologado', 'Approved')
+                    : context.uiText('Desestimado', 'Rejected'),
                 color: color,
               ),
             ],
@@ -535,7 +587,12 @@ class _SupplierCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        date == '-' ? 'Sin fecha registrada' : date,
+                        date == '-'
+                            ? context.uiText(
+                                'Sin fecha registrada',
+                                'No date recorded',
+                              )
+                            : date,
                         style: TextStyle(
                           color: AppTheme.textPrimaryFor(context),
                           fontWeight: FontWeight.w700,
@@ -571,7 +628,9 @@ class _SupplierCard extends StatelessWidget {
             Align(
               alignment: Alignment.centerRight,
               child: AppButton.outline(
-                label: state == 'homologado' ? 'Desestimar' : 'Reactivar',
+                label: state == 'homologado'
+                    ? context.uiText('Desestimar', 'Reject')
+                    : context.uiText('Reactivar', 'Reactivate'),
                 icon: state == 'homologado'
                     ? Icons.block_rounded
                     : Icons.restart_alt_rounded,

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../app/screens/document_viewer_screen.dart';
 import '../../app/ui/app_components.dart';
 import '../../features/forms/dynamic_form.dart';
+import '../../l10n/strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
@@ -85,24 +86,34 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
             16 + MediaQuery.of(ctx).viewInsets.bottom,
           ),
           child: DynamicForm(
-            submitLabel: 'Registrar químico',
-            fields: const [
-              DynamicFieldConfig(key: 'name', label: 'Nombre', required: true),
-              DynamicFieldConfig(key: 'codigo', label: 'Código'),
+            submitLabel: context.l10n.registerChemical,
+            fields: [
+              DynamicFieldConfig(
+                key: 'name',
+                label: context.l10n.name,
+                required: true,
+              ),
+              DynamicFieldConfig(key: 'codigo', label: context.l10n.codeLabel),
               DynamicFieldConfig(
                 key: 'tipo',
-                label: 'Tipo',
+                label: context.l10n.type,
                 type: DynamicFieldType.select,
                 initialValue: 'otro',
                 options: [
-                  DynamicFieldOption(value: 'reactivo', label: 'Reactivo'),
-                  DynamicFieldOption(value: 'producto', label: 'Producto'),
-                  DynamicFieldOption(value: 'otro', label: 'Otro'),
+                  DynamicFieldOption(
+                    value: 'reactivo',
+                    label: context.l10n.reagent,
+                  ),
+                  DynamicFieldOption(
+                    value: 'producto',
+                    label: context.l10n.product,
+                  ),
+                  DynamicFieldOption(value: 'otro', label: context.l10n.other),
                 ],
               ),
               DynamicFieldConfig(
                 key: 'fecha_caducidad',
-                label: 'Fecha caducidad',
+                label: context.l10n.expiryDate,
                 type: DynamicFieldType.date,
               ),
             ],
@@ -113,9 +124,7 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
               final d = date?.day.toString().padLeft(2, '0');
               final name = values['name']?.toString().trim() ?? '';
               if (name.isEmpty) {
-                throw const FormatException(
-                  'El nombre del químico es obligatorio.',
-                );
+                throw FormatException(context.l10n.chemicalNameRequired);
               }
               final code = values['codigo']?.toString().trim() ?? '';
               final type = values['tipo']?.toString().trim() ?? '';
@@ -147,7 +156,7 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
     final auth = context.watch<AuthProvider>();
     return Scaffold(
       appBar: AppBar(
-        title: Text('Químicos'),
+        title: Text(context.l10n.chemicals),
         actions: [
           if (auth.canEditModule('chemicals'))
             IconButton(onPressed: _openCreate, icon: Icon(Icons.add_rounded)),
@@ -166,7 +175,7 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
           : _rows.isEmpty
           ? Center(
               child: Text(
-                'Sin productos químicos.',
+                context.l10n.noChemicals,
                 style: TextStyle(color: AppTheme.textMutedFor(context)),
               ),
             )
@@ -197,7 +206,12 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
                         style: TextStyle(fontWeight: FontWeight.w700),
                       ),
                       Text(
-                        'Tipo: ${OdooValues.string(it['tipo'], fallback: '-')} · Peligroso: ${OdooValues.boolValue(it['es_peligroso']) ? 'Sí' : 'No'}',
+                        context.l10n.chemicalTypeDangerous(
+                          OdooValues.string(it['tipo'], fallback: '-'),
+                          OdooValues.boolValue(it['es_peligroso'])
+                              ? context.l10n.yes
+                              : context.l10n.no,
+                        ),
                         style: TextStyle(
                           fontSize: 12,
                           color: AppTheme.textSecondaryFor(context),
@@ -205,7 +219,9 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
                       ),
                       if (OdooValues.string(it['fecha_caducidad']).isNotEmpty)
                         Text(
-                          'Caducidad: ${OdooValues.string(it['fecha_caducidad'])}',
+                          context.l10n.expiry(
+                            OdooValues.string(it['fecha_caducidad']),
+                          ),
                           style: TextStyle(
                             fontSize: 12,
                             color: AppTheme.textMutedFor(context),
@@ -213,7 +229,7 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
                         ),
                       if (unidad.isNotEmpty)
                         Text(
-                          'Unidad: $unidad',
+                          context.l10n.chemicalUnit(unidad),
                           style: TextStyle(
                             fontSize: 12,
                             color: AppTheme.textMutedFor(context),
@@ -225,13 +241,13 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
                           OutlinedButton.icon(
                             onPressed: () => _openDetails(it),
                             icon: Icon(Icons.info_outline_rounded, size: 16),
-                            label: Text('Detalle'),
+                            label: Text(context.l10n.details),
                           ),
                           const SizedBox(width: 8),
                           OutlinedButton.icon(
                             onPressed: () => _openSafetySheet(it),
                             icon: Icon(Icons.description_outlined, size: 16),
-                            label: Text('Ficha'),
+                            label: Text(context.l10n.safetySheet),
                           ),
                         ],
                       ),
@@ -259,13 +275,26 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
-            Text('Código: ${OdooValues.string(it['codigo'], fallback: '-')}'),
-            Text('Tipo: ${OdooValues.string(it['tipo'], fallback: '-')}'),
             Text(
-              'Peligroso: ${OdooValues.boolValue(it['es_peligroso']) ? 'Sí' : 'No'}',
+              context.l10n.code(OdooValues.string(it['codigo'], fallback: '-')),
             ),
             Text(
-              'Caducidad: ${OdooValues.string(it['fecha_caducidad'], fallback: '-')}',
+              context.l10n.incidentType(
+                OdooValues.string(it['tipo'], fallback: '-'),
+              ),
+            ),
+            Text(
+              context.l10n.chemicalTypeDangerous(
+                OdooValues.string(it['tipo'], fallback: '-'),
+                OdooValues.boolValue(it['es_peligroso'])
+                    ? context.l10n.yes
+                    : context.l10n.no,
+              ),
+            ),
+            Text(
+              context.l10n.expiry(
+                OdooValues.string(it['fecha_caducidad'], fallback: '-'),
+              ),
             ),
             if (context.read<AuthProvider>().canEditModule('chemicals')) ...[
               const SizedBox(height: 12),
@@ -277,7 +306,7 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
                     _openEdit(it);
                   },
                   icon: Icon(Icons.edit_outlined),
-                  label: Text('Editar químico'),
+                  label: Text(context.l10n.editChemical),
                 ),
               ),
             ],
@@ -313,114 +342,132 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
         ),
         child: SingleChildScrollView(
           child: DynamicForm(
-            submitLabel: 'Guardar químico',
+            submitLabel: context.l10n.saveChemical,
             fields: [
               DynamicFieldConfig(
                 key: 'name',
-                label: 'Nombre',
+                label: context.l10n.name,
                 required: true,
                 initialValue: chemical['name'],
               ),
               DynamicFieldConfig(
                 key: 'codigo',
-                label: 'Código',
+                label: context.l10n.codeLabel,
                 initialValue: chemical['codigo'],
               ),
               DynamicFieldConfig(
                 key: 'referencia',
-                label: 'Referencia',
+                label: context.l10n.reference,
                 initialValue: chemical['referencia'],
               ),
               DynamicFieldConfig(
                 key: 'tipo',
-                label: 'Tipo',
+                label: context.l10n.type,
                 type: DynamicFieldType.select,
                 initialValue: chemical['tipo'] ?? 'reactivo',
-                options: const [
-                  DynamicFieldOption(value: 'reactivo', label: 'Reactivo'),
-                  DynamicFieldOption(value: 'producto', label: 'Producto'),
-                  DynamicFieldOption(value: 'otro', label: 'Otro'),
+                options: [
+                  DynamicFieldOption(
+                    value: 'reactivo',
+                    label: context.l10n.reagent,
+                  ),
+                  DynamicFieldOption(
+                    value: 'producto',
+                    label: context.l10n.product,
+                  ),
+                  DynamicFieldOption(value: 'otro', label: context.l10n.other),
                 ],
               ),
               DynamicFieldConfig(
                 key: 'descripcion',
-                label: 'Descripción',
+                label: context.l10n.description,
                 type: DynamicFieldType.multiline,
                 maxLines: 3,
                 initialValue: chemical['descripcion'],
               ),
               DynamicFieldConfig(
                 key: 'almacenamiento',
-                label: 'Almacenamiento',
+                label: context.l10n.storage,
                 type: DynamicFieldType.multiline,
                 maxLines: 2,
                 initialValue: chemical['almacenamiento'],
               ),
               DynamicFieldConfig(
                 key: 'fecha_caducidad',
-                label: 'Fecha de caducidad',
+                label: context.l10n.expiryDate,
                 type: DynamicFieldType.date,
                 initialValue: _dateValue(chemical['fecha_caducidad']),
               ),
               DynamicFieldConfig(
                 key: 'unidades',
-                label: 'Unidades',
+                label: context.l10n.units,
                 initialValue: chemical['unidades'],
               ),
               DynamicFieldConfig(
                 key: 'a_punto_agotarse',
-                label: 'A punto de agotarse',
+                label: context.l10n.runningLow,
                 type: DynamicFieldType.select,
                 initialValue: OdooValues.boolValue(
                   chemical['a_punto_agotarse'],
                 ),
-                options: const [
-                  DynamicFieldOption(value: false, label: 'No'),
-                  DynamicFieldOption(value: true, label: 'Sí'),
+                options: [
+                  DynamicFieldOption(value: false, label: context.l10n.no),
+                  DynamicFieldOption(value: true, label: context.l10n.yes),
                 ],
               ),
               DynamicFieldConfig(
                 key: 'es_peligroso',
-                label: 'Peligroso',
+                label: context.l10n.dangerous,
                 type: DynamicFieldType.select,
                 initialValue: OdooValues.boolValue(chemical['es_peligroso']),
-                options: const [
-                  DynamicFieldOption(value: false, label: 'No'),
-                  DynamicFieldOption(value: true, label: 'Sí'),
+                options: [
+                  DynamicFieldOption(value: false, label: context.l10n.no),
+                  DynamicFieldOption(value: true, label: context.l10n.yes),
                 ],
               ),
               DynamicFieldConfig(
                 key: 'categoria_peligro',
-                label: 'Categoría de peligro',
+                label: context.l10n.hazardCategory,
                 type: DynamicFieldType.select,
                 initialValue: chemical['categoria_peligro'],
-                options: const [
-                  DynamicFieldOption(value: 'explosivo', label: 'Explosivo'),
-                  DynamicFieldOption(value: 'inflamable', label: 'Inflamable'),
-                  DynamicFieldOption(value: 'toxico', label: 'Tóxico'),
-                  DynamicFieldOption(value: 'corrosivo', label: 'Corrosivo'),
+                options: [
+                  DynamicFieldOption(
+                    value: 'explosivo',
+                    label: context.l10n.explosive,
+                  ),
+                  DynamicFieldOption(
+                    value: 'inflamable',
+                    label: context.l10n.flammable,
+                  ),
+                  DynamicFieldOption(
+                    value: 'toxico',
+                    label: context.l10n.toxic,
+                  ),
+                  DynamicFieldOption(
+                    value: 'corrosivo',
+                    label: context.l10n.corrosive,
+                  ),
                   DynamicFieldOption(
                     value: 'peligro_ambiental',
-                    label: 'Ambiental',
+                    label: context.l10n.environmental,
                   ),
-                  DynamicFieldOption(value: 'otro', label: 'Otro'),
+                  DynamicFieldOption(value: 'otro', label: context.l10n.other),
                 ],
               ),
               DynamicFieldConfig(
                 key: 'peligrosidad',
-                label: 'Peligrosidad',
+                label: context.l10n.hazard,
                 type: DynamicFieldType.multiline,
                 maxLines: 2,
                 initialValue: chemical['peligrosidad'],
               ),
               DynamicFieldConfig(
                 key: 'frases_h',
-                label: 'Frases H',
+                label: context.l10n.hStatements,
                 initialValue: chemical['frases_h'],
               ),
               DynamicFieldConfig(
                 key: 'frases_p',
-                label: 'Frases P',
+                label: context.l10n.pStatements,
                 initialValue: chemical['frases_p'],
               ),
             ],
@@ -469,7 +516,7 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
         it['ficha_seguridad_attachment_id'],
       );
       if (attachmentId == null) {
-        throw Exception('No hay fichas de seguridad adjuntas.');
+        throw Exception(context.l10n.safetySheetsUnavailable);
       }
       final file = await _attachments.fetchAttachmentToCache(
         attachmentId: attachmentId,
@@ -491,9 +538,9 @@ class _ChemicalsScreenState extends State<ChemicalsScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('No se pudo abrir la ficha: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.couldNotOpenSafetySheet('$e'))),
+      );
     }
   }
 }

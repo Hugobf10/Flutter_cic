@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/strings.dart';
 import '../../providers/auth_provider.dart';
 import 'module_router.dart';
 
@@ -15,8 +16,10 @@ class ModuleNavigation {
     if (!auth.canViewModule(moduleKey)) return;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) =>
-            ModuleRouter.build(moduleKey, title ?? _defaultTitle(moduleKey)),
+        builder: (_) => ModuleRouter.build(
+          moduleKey,
+          title ?? _defaultTitle(context, moduleKey),
+        ),
       ),
     );
   }
@@ -56,35 +59,35 @@ class ModuleNavigation {
     return null;
   }
 
-  static String _defaultTitle(String moduleKey) {
+  static String _defaultTitle(BuildContext context, String moduleKey) {
     switch (moduleKey) {
       case 'dashboard':
-        return 'Inicio';
+        return context.l10n.home;
       case 'incidents':
-        return 'Incidencias';
+        return context.l10n.incidents;
       case 'documents':
-        return 'Documentos';
+        return context.uiText('Documentos', 'Documents');
       case 'communications':
-        return 'Comunicaciones';
+        return context.l10n.communications;
       case 'suppliers':
-        return 'Proveedores';
+        return context.uiText('Proveedores', 'Suppliers');
       case 'training':
       case 'elearning':
-        return 'Formación';
+        return context.l10n.training;
       case 'goals':
-        return 'Objetivos';
+        return context.uiText('Objetivos', 'Goals');
       case 'planning':
-        return 'Planificación';
+        return context.uiText('Planificación', 'Planning');
       case 'reservas':
-        return 'Reservas';
+        return context.l10n.reservations;
       case 'payroll':
-        return 'Nóminas';
+        return context.l10n.payroll;
       case 'health':
-        return 'Vigilancia de la salud';
+        return context.uiText('Vigilancia de la salud', 'Health surveillance');
       case 'portal':
-        return 'Inicio';
+        return context.l10n.home;
       case 'maintenance':
-        return 'Mantenimiento';
+        return context.uiText('Mantenimiento', 'Maintenance');
       default:
         return moduleKey;
     }

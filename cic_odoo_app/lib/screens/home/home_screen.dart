@@ -149,7 +149,9 @@ class _HomeHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = auth.userName.trim().isEmpty ? 'Usuario' : auth.userName;
+    final name = auth.userName.trim().isEmpty
+        ? context.uiText('Usuario', 'User')
+        : auth.userName;
     final firstName = name.split(' ').first;
     final hour = DateTime.now().hour;
     final t = context.l10n;
@@ -457,7 +459,7 @@ class _QuickActions extends StatelessWidget {
         <({String title, IconData icon, Color color, VoidCallback onTap})>[
           if (auth.isInternalUser)
             (
-              title: 'Personal',
+              title: context.uiText('Personal', 'People'),
               icon: Icons.people_alt_rounded,
               color: AppTheme.accent,
               onTap: () => Navigator.of(
@@ -466,7 +468,7 @@ class _QuickActions extends StatelessWidget {
             ),
           if (auth.canViewModule('documents'))
             (
-              title: 'Documentos',
+              title: context.uiText('Documentos', 'Documents'),
               icon: Icons.description_rounded,
               color: AppTheme.primary,
               onTap: () => ModuleNavigation.openModule(
@@ -477,7 +479,7 @@ class _QuickActions extends StatelessWidget {
             ),
           if (auth.canViewModule('purchases'))
             (
-              title: 'Compras',
+              title: context.uiText('Compras', 'Purchases'),
               icon: Icons.shopping_cart_checkout_rounded,
               color: AppTheme.info,
               onTap: () => Navigator.of(context).push(
@@ -486,7 +488,7 @@ class _QuickActions extends StatelessWidget {
             ),
           if (auth.canViewModule('communications'))
             (
-              title: 'Calidad',
+              title: context.l10n.quality,
               icon: Icons.verified_user_rounded,
               color: AppTheme.success,
               onTap: () => Navigator.of(context).push(
@@ -498,7 +500,7 @@ class _QuickActions extends StatelessWidget {
         <({String title, IconData icon, Color color, VoidCallback onTap})>[
           if (auth.canViewModule('documents'))
             (
-              title: 'Documentos',
+              title: context.uiText('Documentos', 'Documents'),
               icon: Icons.description_rounded,
               color: AppTheme.primary,
               onTap: () => ModuleNavigation.openModule(
@@ -509,7 +511,7 @@ class _QuickActions extends StatelessWidget {
             ),
           if (auth.canViewModule('reservas'))
             (
-              title: 'Reservas',
+              title: context.l10n.reservations,
               icon: Icons.calendar_month_rounded,
               color: AppTheme.success,
               onTap: () => ModuleNavigation.openModule(
@@ -520,7 +522,7 @@ class _QuickActions extends StatelessWidget {
             ),
           if (auth.canViewModule('training'))
             (
-              title: 'Formación',
+              title: context.l10n.training,
               icon: Icons.school_rounded,
               color: AppTheme.info,
               onTap: () => ModuleNavigation.openModule(
@@ -531,7 +533,7 @@ class _QuickActions extends StatelessWidget {
             ),
           if (auth.canViewModule('communications'))
             (
-              title: 'Comunicaciones',
+              title: context.l10n.communications,
               icon: Icons.campaign_rounded,
               color: AppTheme.warning,
               onTap: () => ModuleNavigation.openModule(
@@ -542,7 +544,7 @@ class _QuickActions extends StatelessWidget {
             ),
           if (auth.canViewModule('payroll'))
             (
-              title: 'Nóminas',
+              title: context.l10n.payroll,
               icon: Icons.receipt_long_rounded,
               color: AppTheme.success,
               onTap: () => ModuleNavigation.openModule(
@@ -557,9 +559,12 @@ class _QuickActions extends StatelessWidget {
         : internalActions;
 
     if (actions.isEmpty) {
-      return const AppEmptyState(
-        title: 'Sin accesos rápidos',
-        subtitle: 'No hay módulos destacados disponibles para este usuario.',
+      return AppEmptyState(
+        title: context.uiText('Sin accesos rápidos', 'No quick actions'),
+        subtitle: context.uiText(
+          'No hay módulos destacados disponibles para este usuario.',
+          'There are no highlighted modules available for this user.',
+        ),
         icon: Icons.apps_outlined,
       );
     }
@@ -665,12 +670,17 @@ class _NewsSectionState extends State<_NewsSection> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const AppSectionHeader(title: 'Novedades'),
+            AppSectionHeader(title: context.uiText('Novedades', 'News')),
             if (snapshot.connectionState == ConnectionState.waiting)
-              const AppCard(
+              AppCard(
                 child: SizedBox(
                   height: 184,
-                  child: AppLoadingView(label: 'Cargando noticias...'),
+                  child: AppLoadingView(
+                    label: context.uiText(
+                      'Cargando noticias...',
+                      'Loading news...',
+                    ),
+                  ),
                 ),
               )
             else ...[
@@ -682,7 +692,7 @@ class _NewsSectionState extends State<_NewsSection> {
                   itemCount: posts.length,
                   onPageChanged: (value) => setState(() => _page = value),
                   itemBuilder: (context, index) {
-                    final post = posts[index];
+                    final post = posts[index].localized(context);
                     return Padding(
                       padding: EdgeInsets.only(
                         right: index == posts.length - 1 ? 0 : 10,
@@ -720,9 +730,12 @@ class _NewsSectionState extends State<_NewsSection> {
                                           ),
                                           borderRadius: AppTheme.radiusXl,
                                         ),
-                                        child: const Text(
-                                          'COMUNICADO',
-                                          style: TextStyle(
+                                        child: Text(
+                                          context.uiText(
+                                            'COMUNICADO',
+                                            'ANNOUNCEMENT',
+                                          ),
+                                          style: const TextStyle(
                                             color: AppTheme.primary,
                                             fontSize: 10,
                                             letterSpacing: 0.7,
@@ -818,16 +831,17 @@ class _NewsSectionState extends State<_NewsSection> {
   }
 
   void _openNews(BuildContext context, _WordPressPost post) {
+    final localizedPost = post.localized(context);
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => NewsDetailScreen(
           article: NewsArticle(
-            title: post.title,
-            excerpt: post.excerpt,
-            content: post.content,
-            link: post.link,
-            imageUrl: post.imageUrl,
-            dateLabel: post.dateLabel,
+            title: localizedPost.title,
+            excerpt: localizedPost.excerpt,
+            content: localizedPost.content,
+            link: localizedPost.link,
+            imageUrl: localizedPost.imageUrl,
+            dateLabel: localizedPost.dateLabel,
           ),
         ),
       ),
@@ -895,6 +909,27 @@ class _WordPressPost {
   final Uri? link;
   final Uri? imageUrl;
   final String dateLabel;
+
+  _WordPressPost localized(BuildContext context) {
+    if (!identical(this, mock)) return this;
+    return _WordPressPost(
+      title: context.uiText(
+        'Nueva intranet móvil del CIC',
+        'New CIC mobile intranet',
+      ),
+      excerpt: context.uiText(
+        'Consulta tus documentos, reservas, formación y comunicaciones desde la aplicación.',
+        'View your documents, reservations, training and communications from the app.',
+      ),
+      content: context.uiText(
+        'La nueva intranet móvil reúne en un solo lugar la información y las gestiones disponibles para cada usuario.',
+        'The new mobile intranet brings each user’s available information and actions into one place.',
+      ),
+      link: link,
+      imageUrl: imageUrl,
+      dateLabel: dateLabel,
+    );
+  }
 
   static const mock = _WordPressPost(
     title: 'Nueva intranet móvil del CIC',
@@ -971,9 +1006,12 @@ class _ActivityList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return const AppEmptyState(
-        title: 'Sin actividad reciente',
-        subtitle: 'Cuando haya novedades aparecerán aquí.',
+      return AppEmptyState(
+        title: context.uiText('Sin actividad reciente', 'No recent activity'),
+        subtitle: context.uiText(
+          'Cuando haya novedades aparecerán aquí.',
+          'Updates will appear here.',
+        ),
         icon: Icons.notifications_none_rounded,
       );
     }
@@ -1002,13 +1040,30 @@ class _ActivityList extends StatelessWidget {
               height: 10,
               decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
-            title: n.title,
-            subtitle: '${n.subtitle} · ${n.createdAtLabel}',
+            title: _notificationText(context, n.title),
+            subtitle:
+                '${_notificationText(context, n.subtitle)} · ${_notificationText(context, n.createdAtLabel)}',
           ),
         );
       }).toList(),
     );
   }
+
+  String _notificationText(BuildContext context, String value) =>
+      switch (value) {
+        'Incidencia' => context.uiText('Incidencia', 'Incident'),
+        'Nueva incidencia' => context.uiText(
+          'Nueva incidencia',
+          'New incident',
+        ),
+        'Comunicación' => context.uiText('Comunicación', 'Communication'),
+        'Nueva comunicación' => context.uiText(
+          'Nueva comunicación',
+          'New communication',
+        ),
+        'Ahora' => context.uiText('Ahora', 'Now'),
+        _ => value,
+      };
 }
 
 class _AccessScopeBanner extends StatelessWidget {
@@ -1025,7 +1080,10 @@ class _AccessScopeBanner extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Algunas métricas globales no están disponibles para este perfil. La app seguirá mostrando solo la información permitida dentro de sus permisos actuales.',
+                context.uiText(
+                  'Algunas métricas globales no están disponibles para este perfil. La app seguirá mostrando solo la información permitida dentro de sus permisos actuales.',
+                  'Some global metrics are not available for this profile. The app will continue showing only the information allowed by the current permissions.',
+                ),
                 style: TextStyle(
                   color: AppTheme.textSecondaryFor(context),
                   fontSize: 12,

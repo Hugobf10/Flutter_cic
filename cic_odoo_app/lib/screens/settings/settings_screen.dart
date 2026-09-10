@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/app_config.dart';
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 
@@ -14,7 +15,7 @@ class SettingsScreen extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
 
     return AppScaffold(
-      title: 'Ajustes',
+      title: context.uiText('Ajustes', 'Settings'),
       child: ListView(
         children: [
           AppCard(
@@ -50,8 +51,8 @@ class SettingsScreen extends StatelessWidget {
                       const SizedBox(height: 7),
                       AppStatusChip(
                         label: auth.isPortalOnlyUser
-                            ? 'Usuario portal'
-                            : 'Usuario interno · ID ${auth.userId}',
+                            ? context.uiText('Usuario portal', 'Portal user')
+                            : '${context.uiText('Usuario interno', 'Internal user')} · ID ${auth.userId}',
                         color: auth.isPortalOnlyUser
                             ? AppTheme.accent
                             : AppTheme.success,
@@ -63,17 +64,20 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          _buildSectionTitle(context, 'Información de conexión'),
+          _buildSectionTitle(
+            context,
+            context.uiText('Información de conexión', 'Connection information'),
+          ),
           _buildTile(
             context,
             Icons.dns_outlined,
-            'Servidor',
+            context.uiText('Servidor', 'Server'),
             auth.serverUrl.isNotEmpty ? auth.serverUrl : AppConfig.odooBaseUrl,
           ),
           _buildTile(
             context,
             Icons.storage_outlined,
-            'Base de datos',
+            context.uiText('Base de datos', 'Database'),
             auth.database.isNotEmpty
                 ? auth.database
                 : AppConfig.odooDatabaseName,
@@ -81,16 +85,19 @@ class SettingsScreen extends StatelessWidget {
           _buildTile(
             context,
             Icons.info_outline_rounded,
-            'Versión de la app',
+            context.uiText('Versión de la app', 'App version'),
             AppConfig.appVersion,
           ),
           const SizedBox(height: 20),
-          _buildSectionTitle(context, 'Cuenta'),
+          _buildSectionTitle(context, context.uiText('Cuenta', 'Account')),
           _buildActionTile(
             context: context,
             icon: Icons.logout_rounded,
-            title: 'Cerrar sesión',
-            subtitle: 'Desconectarse de este dispositivo',
+            title: context.uiText('Cerrar sesión', 'Sign out'),
+            subtitle: context.uiText(
+              'Desconectarse de este dispositivo',
+              'Sign out from this device',
+            ),
             color: AppTheme.danger,
             onTap: () => _confirmLogout(context, auth),
           ),
@@ -204,17 +211,20 @@ class SettingsScreen extends StatelessWidget {
         backgroundColor: AppTheme.cardFor(context),
         shape: RoundedRectangleBorder(borderRadius: AppTheme.radiusMd),
         title: Text(
-          'Cerrar sesión',
+          context.uiText('Cerrar sesión', 'Sign out'),
           style: TextStyle(color: AppTheme.textPrimaryFor(context)),
         ),
         content: Text(
-          '¿Estás seguro de que deseas cerrar sesión?',
+          context.uiText(
+            '¿Estás seguro de que deseas cerrar sesión?',
+            'Are you sure you want to sign out?',
+          ),
           style: TextStyle(color: AppTheme.textSecondaryFor(context)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancelar'),
+            child: Text(context.uiText('Cancelar', 'Cancel')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
@@ -222,7 +232,7 @@ class SettingsScreen extends StatelessWidget {
               Navigator.pop(context);
               auth.logout();
             },
-            child: Text('Cerrar sesión'),
+            child: Text(context.uiText('Cerrar sesión', 'Sign out')),
           ),
         ],
       ),

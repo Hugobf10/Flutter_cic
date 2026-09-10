@@ -266,11 +266,28 @@ class _NotificationCard extends StatelessWidget {
         size: 40,
         iconSize: 18,
       ),
-      title: item.title,
-      subtitle: '${item.subtitle} · ${item.createdAtLabel}',
+      title: _notificationText(context, item.title),
+      subtitle:
+          '${_notificationText(context, item.subtitle)} · ${_notificationText(context, item.createdAtLabel)}',
       trailing: item.unread
           ? Icon(Icons.circle, size: 10, color: AppTheme.primary)
           : null,
     );
   }
+
+  String _notificationText(BuildContext context, String value) =>
+      switch (value) {
+        'Incidencia' => context.uiText('Incidencia', 'Incident'),
+        'Nueva incidencia' => context.uiText(
+          'Nueva incidencia',
+          'New incident',
+        ),
+        'Comunicación' => context.uiText('Comunicación', 'Communication'),
+        'Nueva comunicación' => context.uiText(
+          'Nueva comunicación',
+          'New communication',
+        ),
+        'Ahora' => context.uiText('Ahora', 'Now'),
+        _ => value,
+      };
 }

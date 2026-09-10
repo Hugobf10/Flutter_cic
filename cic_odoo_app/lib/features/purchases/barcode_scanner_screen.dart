@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../services/app_permission_service.dart';
 import '../../theme/app_theme.dart';
 
@@ -28,8 +29,13 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     if (!mounted) return;
     if (!granted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Necesitamos permiso de cámara para leer códigos.'),
+        SnackBar(
+          content: Text(
+            context.uiText(
+              'Necesitamos permiso de cámara para leer códigos.',
+              'Camera permission is required to scan codes.',
+            ),
+          ),
         ),
       );
       Navigator.of(context).pop<String>();
@@ -64,11 +70,12 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text('Escanear código'),
+        title: Text(context.uiText('Escanear código', 'Scan code')),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
+            tooltip: context.uiText('Linterna', 'Torch'),
             onPressed: () => _controller.toggleTorch(),
             icon: Icon(Icons.flash_on_rounded),
           ),
@@ -89,12 +96,15 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                     ),
                   ),
                 ),
-                const Positioned(
+                Positioned(
                   left: 24,
                   right: 24,
                   bottom: 42,
                   child: Text(
-                    'Coloca el código de barras dentro del marco',
+                    context.uiText(
+                      'Coloca el código de barras dentro del marco',
+                      'Place the barcode inside the frame',
+                    ),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white,

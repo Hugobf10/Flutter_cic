@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
+import '../../l10n/strings.dart';
 import '../../theme/app_theme.dart';
 
 class DocumentViewerScreen extends StatelessWidget {
@@ -33,7 +34,7 @@ class DocumentViewerScreen extends StatelessWidget {
             IconButton(
               onPressed: () => OpenFilex.open(file.path),
               icon: Icon(Icons.open_in_new_rounded),
-              tooltip: 'Abrir archivo',
+              tooltip: context.uiText('Abrir archivo', 'Open file'),
             ),
         ],
       ),
@@ -64,7 +65,10 @@ class DocumentViewerScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Vista previa no disponible para este formato.',
+              context.uiText(
+                'Vista previa no disponible para este formato.',
+                'Preview is not available for this format.',
+              ),
               style: TextStyle(color: AppTheme.textSecondaryFor(context)),
               textAlign: TextAlign.center,
             ),
@@ -73,11 +77,14 @@ class DocumentViewerScreen extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: () => OpenFilex.open(file.path),
                 icon: Icon(Icons.open_in_new_rounded),
-                label: Text('Abrir archivo'),
+                label: Text(context.uiText('Abrir archivo', 'Open file')),
               )
             else
               Text(
-                'Este documento solo puede consultarse como PDF o imagen.',
+                context.uiText(
+                  'Este documento solo puede consultarse como PDF o imagen.',
+                  'This document can only be viewed as a PDF or image.',
+                ),
                 style: TextStyle(color: AppTheme.textMutedFor(context)),
                 textAlign: TextAlign.center,
               ),

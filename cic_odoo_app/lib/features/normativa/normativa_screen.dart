@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../services/odoo_service.dart';
 import '../../services/portal_api_service.dart';
 import '../../theme/app_theme.dart';
@@ -65,9 +66,13 @@ class _NormativaScreenState extends State<NormativaScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Normativa'),
+        title: Text(context.uiText('Normativa', 'Regulations')),
         actions: [
-          IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
+          IconButton(
+            tooltip: context.uiText('Actualizar', 'Refresh'),
+            onPressed: _load,
+            icon: Icon(Icons.refresh_rounded),
+          ),
         ],
       ),
       body: _loading
@@ -82,7 +87,10 @@ class _NormativaScreenState extends State<NormativaScreen> {
           : _items.isEmpty
           ? Center(
               child: Text(
-                'Sin normativa disponible.',
+                context.uiText(
+                  'Sin normativa disponible.',
+                  'No regulations available.',
+                ),
                 style: TextStyle(color: AppTheme.textMutedFor(context)),
               ),
             )
@@ -127,7 +135,7 @@ class _NormativaScreenState extends State<NormativaScreen> {
                       ),
                       if ((it['fecha_publicacion'] ?? '').toString().isNotEmpty)
                         Text(
-                          'Publicación: ${it['fecha_publicacion']}',
+                          '${context.uiText('Publicación', 'Published')}: ${it['fecha_publicacion']}',
                           style: TextStyle(
                             fontSize: 12,
                             color: AppTheme.textSecondaryFor(context),
@@ -135,7 +143,7 @@ class _NormativaScreenState extends State<NormativaScreen> {
                         ),
                       if (unidad.isNotEmpty)
                         Text(
-                          'Unidad: $unidad',
+                          '${context.uiText('Unidad', 'Unit')}: $unidad',
                           style: TextStyle(
                             fontSize: 12,
                             color: AppTheme.textMutedFor(context),

@@ -346,8 +346,8 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
                     padding: const EdgeInsets.only(bottom: 8),
                     child: AppListTile(
                       onTap: () => _previewDocument(applicant, document),
-                      title: document.label,
-                      subtitle: _documentName(applicant, document),
+                      title: _documentLabel(context, document),
+                      subtitle: _documentName(context, applicant, document),
                       trailing: const Icon(Icons.visibility_rounded),
                     ),
                   ),
@@ -396,13 +396,38 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
   ];
 
   String _documentName(
+    BuildContext context,
     Map<String, dynamic> applicant,
     _CandidateDocument document,
   ) {
     return OdooValues.string(
       applicant[document.fileNameField],
-      fallback: 'Documento disponible para consulta',
+      fallback: context.uiText(
+        'Documento disponible para consulta',
+        'Document available for review',
+      ),
     );
+  }
+
+  String _documentLabel(BuildContext context, _CandidateDocument document) {
+    return switch (document.field) {
+      'cic_documento_identidad' => context.uiText(
+        'DNI o pasaporte',
+        'ID or passport',
+      ),
+      'cic_cv' => context.uiText('Currículum', 'CV'),
+      'cic_titulacion' => context.uiText('Titulación', 'Degree'),
+      'cic_expedientes' => context.uiText('Expediente', 'Transcript'),
+      'cic_otros_documentos' => context.uiText(
+        'Otros documentos',
+        'Other documents',
+      ),
+      'cic_carta_presentacion' => context.uiText(
+        'Carta de presentación',
+        'Cover letter',
+      ),
+      _ => document.label,
+    };
   }
 
   Future<void> _previewDocument(
@@ -414,7 +439,7 @@ class _RecruitmentScreenState extends State<RecruitmentScreen> {
     try {
       final local = await _attachments.fetchAttachmentToCache(
         attachmentId: 0,
-        defaultName: _documentName(applicant, document),
+        defaultName: _documentName(context, applicant, document),
         portalSection: 'recruitment',
         portalRecordId: applicantId,
         portalFieldName: document.field,

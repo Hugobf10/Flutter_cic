@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../forms/dynamic_form.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/attachment_service.dart';
@@ -33,6 +34,10 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
   }
 
   Future<void> _load() async {
+    final unavailableMessage = context.uiText(
+      'La comunicación no está disponible.',
+      'The communication is not available.',
+    );
     setState(() {
       _loading = true;
       _error = null;
@@ -53,7 +58,7 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
           limit: 1,
         );
       }
-      if (rows.isEmpty) throw StateError('La comunicación no está disponible.');
+      if (rows.isEmpty) throw StateError(unavailableMessage);
       _record = rows.first;
     } catch (error) {
       _error = OdooService.prettyError(error);
@@ -80,38 +85,41 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
           16 + MediaQuery.of(ctx).viewInsets.bottom,
         ),
         child: DynamicForm(
-          submitLabel: 'Guardar cambios',
+          submitLabel: context.uiText('Guardar cambios', 'Save changes'),
           fields: [
             DynamicFieldConfig(
               key: 'name',
-              label: 'Título',
+              label: context.l10n.title,
               required: true,
               initialValue: record['name'],
             ),
             DynamicFieldConfig(
               key: 'tipo',
-              label: 'Tipo',
+              label: context.l10n.type,
               type: DynamicFieldType.select,
               required: true,
               initialValue: record['tipo'],
-              options: const [
-                DynamicFieldOption(value: 'sugerencia', label: 'Sugerencia'),
+              options: [
+                DynamicFieldOption(
+                  value: 'sugerencia',
+                  label: context.l10n.suggestion,
+                ),
                 DynamicFieldOption(
                   value: 'comunicacion',
-                  label: 'Comunicación',
+                  label: context.l10n.communication,
                 ),
               ],
             ),
             DynamicFieldConfig(
               key: 'fecha',
-              label: 'Fecha',
+              label: context.l10n.date,
               type: DynamicFieldType.date,
               initialValue: _asDate(record['fecha']),
               required: true,
             ),
             DynamicFieldConfig(
               key: 'descripcion',
-              label: 'Descripción',
+              label: context.l10n.description,
               type: DynamicFieldType.multiline,
               required: true,
               maxLines: 4,
@@ -120,7 +128,7 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
             if (requiresWorkflow)
               DynamicFieldConfig(
                 key: 'analisis',
-                label: 'Análisis',
+                label: context.uiText('Análisis', 'Analysis'),
                 type: DynamicFieldType.multiline,
                 maxLines: 4,
                 initialValue: record['analisis'],
@@ -128,7 +136,10 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
             if (requiresWorkflow)
               DynamicFieldConfig(
                 key: 'tratamiento',
-                label: 'Tratamiento previsto',
+                label: context.uiText(
+                  'Tratamiento previsto',
+                  'Planned treatment',
+                ),
                 type: DynamicFieldType.multiline,
                 maxLines: 4,
                 initialValue: record['tratamiento'],
@@ -136,7 +147,10 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
             if (requiresWorkflow)
               DynamicFieldConfig(
                 key: 'respuesta',
-                label: 'Respuesta al trabajador',
+                label: context.uiText(
+                  'Respuesta al trabajador',
+                  'Response to employee',
+                ),
                 type: DynamicFieldType.multiline,
                 maxLines: 4,
                 initialValue: record['respuesta'],
@@ -207,8 +221,16 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
     }
     if (_error != null || _record == null) {
       return Scaffold(
-        appBar: AppBar(title: Text('Comunicación')),
-        body: Center(child: Text(_error ?? 'No se encontró el registro.')),
+        appBar: AppBar(title: Text(context.l10n.communication)),
+        body: Center(
+          child: Text(
+            _error ??
+                context.uiText(
+                  'No se encontró el registro.',
+                  'Record not found.',
+                ),
+          ),
+        ),
       );
     }
 
@@ -224,11 +246,13 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Detalle de comunicación'),
+        title: Text(
+          context.uiText('Detalle de comunicación', 'Communication details'),
+        ),
         actions: [
           if (canEdit)
             IconButton(
-              tooltip: 'Editar',
+              tooltip: context.l10n.edit,
               onPressed: _edit,
               icon: Icon(Icons.edit_rounded),
             ),
@@ -245,9 +269,10 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
           Wrap(
             spacing: 8,
             children: [
-              _chip('Tipo: ${record['tipo'] ?? '-'}'),
-              if (requiresWorkflow) _chip('Estado: ${_stateLabel(state)}'),
-              _chip('Fecha: ${record['fecha'] ?? '-'}'),
+              _chip('${context.l10n.type}: ${_typeLabel(record['tipo'])}'),
+              if (requiresWorkflow)
+                _chip('${context.l10n.status}: ${_stateLabel(state)}'),
+              _chip('${context.l10n.date}: ${record['fecha'] ?? '-'}'),
             ],
           ),
           if (canEdit && requiresWorkflow) ...[
@@ -258,19 +283,25 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
               children: [
                 if (state == 'recibida')
                   _actionButton(
-                    'Pasar a análisis',
+                    context.uiText('Pasar a análisis', 'Move to analysis'),
                     'communication_mark_en_analisis',
                   ),
                 if (state == 'en_analisis')
-                  _actionButton('Marcar tratada', 'communication_mark_tratada'),
+                  _actionButton(
+                    context.uiText('Marcar tratada', 'Mark as handled'),
+                    'communication_mark_tratada',
+                  ),
                 if (!responseSent && state != 'cerrada')
                   _actionButton(
-                    'Enviar respuesta',
+                    context.uiText('Enviar respuesta', 'Send response'),
                     'communication_send_response',
                   ),
                 if ((state == 'tratada' || state == 'respondida') &&
                     state != 'cerrada')
-                  _actionButton('Cerrar', 'communication_close'),
+                  _actionButton(
+                    context.uiText('Cerrar', 'Close'),
+                    'communication_close',
+                  ),
               ],
             ),
           ],
@@ -281,18 +312,32 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
             Padding(
               padding: const EdgeInsets.only(top: 12),
               child: _actionButton(
-                'Enviar notificación',
+                context.uiText('Enviar notificación', 'Send notification'),
                 'communication_send_notification',
               ),
             ),
-          _section('Descripción', record['descripcion']),
-          if (requiresWorkflow) _section('Análisis', record['analisis']),
+          _section(context.l10n.description, record['descripcion']),
           if (requiresWorkflow)
-            _section('Tratamiento previsto', record['tratamiento']),
-          if (requiresWorkflow) _section('Respuesta', record['respuesta']),
+            _section(
+              context.uiText('Análisis', 'Analysis'),
+              record['analisis'],
+            ),
+          if (requiresWorkflow)
+            _section(
+              context.uiText('Tratamiento previsto', 'Planned treatment'),
+              record['tratamiento'],
+            ),
+          if (requiresWorkflow)
+            _section(
+              context.uiText('Respuesta', 'Response'),
+              record['respuesta'],
+            ),
           _recipientSummary(record),
           const SizedBox(height: 12),
-          Text('Documentos', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            context.uiText('Documentos', 'Documents'),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 4),
           ..._attachmentTiles(record['attachment_ids']),
           if (canEdit)
@@ -301,7 +346,7 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
               child: OutlinedButton.icon(
                 onPressed: _uploadAttachment,
                 icon: Icon(Icons.attach_file_rounded),
-                label: Text('Subir archivo'),
+                label: Text(context.uiText('Subir archivo', 'Upload file')),
               ),
             ),
         ],
@@ -340,13 +385,27 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Destinatarios', style: Theme.of(context).textTheme.titleMedium),
-          if (units.isNotEmpty) _recipientLine('Unidades', units),
-          if (posts.isNotEmpty) _recipientLine('Puestos funcionales', posts),
+          Text(
+            context.uiText('Destinatarios', 'Recipients'),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          if (units.isNotEmpty)
+            _recipientLine(context.uiText('Unidades', 'Units'), units),
+          if (posts.isNotEmpty)
+            _recipientLine(
+              context.uiText('Puestos funcionales', 'Functional positions'),
+              posts,
+            ),
           Text(
             sent
-                ? 'Notificación enviada por correo y disponible en la aplicación.'
-                : 'Notificación pendiente de envío.',
+                ? context.uiText(
+                    'Notificación enviada por correo y disponible en la aplicación.',
+                    'Notification sent by email and available in the app.',
+                  )
+                : context.uiText(
+                    'Notificación pendiente de envío.',
+                    'Notification pending delivery.',
+                  ),
             style: TextStyle(color: Colors.grey.shade700),
           ),
         ],
@@ -372,10 +431,17 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
 
   List<Widget> _attachmentTiles(dynamic raw) {
     if (raw is! List || raw.isEmpty) {
-      return [Text('Sin documentos', style: TextStyle(color: Colors.grey))];
+      return [
+        Text(
+          context.uiText('Sin documentos', 'No documents'),
+          style: TextStyle(color: Colors.grey),
+        ),
+      ];
     }
     return raw.whereType<List>().map((item) {
-      final name = item.length > 1 ? item[1].toString() : 'Archivo';
+      final name = item.length > 1
+          ? item[1].toString()
+          : context.uiText('Archivo', 'File');
       return ListTile(
         contentPadding: EdgeInsets.zero,
         leading: Icon(Icons.insert_drive_file_outlined),
@@ -387,12 +453,19 @@ class _CommunicationDetailScreenState extends State<CommunicationDetailScreen> {
   Widget _chip(String text) => Chip(label: Text(text));
 
   String _stateLabel(String state) => switch (state) {
-    'recibida' => 'Recibida',
-    'en_analisis' => 'En análisis',
-    'tratada' => 'Tratada',
-    'respondida' => 'Respondida',
-    'cerrada' => 'Cerrada',
+    'recibida' => context.uiText('Recibida', 'Received'),
+    'en_analisis' => context.uiText('En análisis', 'In analysis'),
+    'tratada' => context.uiText('Tratada', 'Handled'),
+    'respondida' => context.uiText('Respondida', 'Answered'),
+    'cerrada' => context.uiText('Cerrada', 'Closed'),
     _ => state,
+  };
+
+  String _typeLabel(dynamic value) => switch (value?.toString()) {
+    'sugerencia' => context.l10n.suggestion,
+    'comunicacion' => context.l10n.communication,
+    null || '' => '-',
+    _ => value.toString(),
   };
 
   DateTime? _asDate(dynamic value) =>

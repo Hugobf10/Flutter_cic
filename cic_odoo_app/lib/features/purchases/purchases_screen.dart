@@ -8,6 +8,7 @@ import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 import '../../app/ui/app_components.dart';
 import '../../app/screens/document_viewer_screen.dart';
+import '../../l10n/strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/app_permission_service.dart';
 import '../../services/attachment_service.dart';
@@ -44,7 +45,7 @@ class _PurchasesScreenState extends State<PurchasesScreen>
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'Compras',
+      title: context.uiText('Compras', 'Purchases'),
       padding: EdgeInsets.zero,
       actions: const [_PurchasesRefreshButton()],
       child: Column(
@@ -53,10 +54,10 @@ class _PurchasesScreenState extends State<PurchasesScreen>
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
             child: TabBar(
               controller: _tabController,
-              tabs: const [
-                Tab(text: 'Productos'),
-                Tab(text: 'Pedidos'),
-                Tab(text: 'Recepción'),
+              tabs: [
+                Tab(text: context.uiText('Productos', 'Products')),
+                Tab(text: context.uiText('Pedidos', 'Orders')),
+                Tab(text: context.uiText('Recepción', 'Receipt')),
               ],
             ),
           ),
@@ -199,7 +200,10 @@ class _ProductsTabState extends State<_ProductsTab> {
               Expanded(
                 child: AppSearchBar(
                   controller: _searchCtrl,
-                  hintText: 'Buscar producto, referencia o código...',
+                  hintText: context.uiText(
+                    'Buscar producto, referencia o código...',
+                    'Search product, reference or code...',
+                  ),
                   onSubmitted: _load,
                 ),
               ),
@@ -207,14 +211,14 @@ class _ProductsTabState extends State<_ProductsTab> {
               IconButton.filledTonal(
                 onPressed: _scanSearch,
                 icon: Icon(Icons.qr_code_scanner_rounded),
-                tooltip: 'Escanear código',
+                tooltip: context.uiText('Escanear código', 'Scan code'),
               ),
             ],
           ),
           const SizedBox(height: 12),
           if (auth.canEditModule('purchases')) ...[
             AppButton.primary(
-              label: 'Nuevo producto',
+              label: context.uiText('Nuevo producto', 'New product'),
               icon: Icons.add_rounded,
               onPressed: _openCreateProduct,
             ),
@@ -222,29 +226,48 @@ class _ProductsTabState extends State<_ProductsTab> {
           ] else
             const SizedBox(height: 6),
           if (_loading)
-            const SizedBox(
+            SizedBox(
               height: 260,
-              child: AppLoadingView(label: 'Cargando productos...'),
+              child: AppLoadingView(
+                label: context.uiText(
+                  'Cargando productos...',
+                  'Loading products...',
+                ),
+              ),
             )
           else if (_error != null)
             AppEmptyState(
-              title: 'No se pudieron cargar productos',
+              title: context.uiText(
+                'No se pudieron cargar productos',
+                'Could not load products',
+              ),
               subtitle: _error!,
               icon: Icons.lock_outline_rounded,
               action: AppButton.outline(
-                label: 'Reintentar',
+                label: context.uiText('Reintentar', 'Retry'),
                 icon: Icons.refresh_rounded,
                 onPressed: () => _load(_searchCtrl.text),
               ),
             )
           else if (_products.isEmpty)
-            const AppEmptyState(
-              title: 'Sin productos visibles',
-              subtitle: 'Busca por nombre, referencia o código de barras.',
+            AppEmptyState(
+              title: context.uiText(
+                'Sin productos visibles',
+                'No visible products',
+              ),
+              subtitle: context.uiText(
+                'Busca por nombre, referencia o código de barras.',
+                'Search by name, reference or barcode.',
+              ),
               icon: Icons.inventory_2_outlined,
             )
           else ...[
-            AppSectionHeader(title: '${_products.length} productos'),
+            AppSectionHeader(
+              title: context.uiText(
+                '${_products.length} productos',
+                '${_products.length} products',
+              ),
+            ),
             ..._products.map(
               (product) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
@@ -388,7 +411,14 @@ class _ProductFormScreenState extends State<_ProductFormScreen> {
   Future<void> _save() async {
     if (_nameCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El nombre del producto es obligatorio.')),
+        SnackBar(
+          content: Text(
+            context.uiText(
+              'El nombre del producto es obligatorio.',
+              'Product name is required.',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -413,7 +443,14 @@ class _ProductFormScreenState extends State<_ProductFormScreen> {
         final id =
             OdooValues.many2oneId(widget.product!['product_tmpl_id']) ??
             OdooValues.intValue(widget.product!['id']);
-        if (id == null) throw StateError('Producto sin plantilla asociada.');
+        if (id == null) {
+          throw StateError(
+            context.uiText(
+              'Producto sin plantilla asociada.',
+              'Product has no linked template.',
+            ),
+          );
+        }
         await _odoo.write('product.template', id, payload);
       } else {
         await _odoo.create('product.template', payload);
@@ -423,7 +460,9 @@ class _ProductFormScreenState extends State<_ProductFormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            _isEditing ? 'Producto actualizado.' : 'Producto creado.',
+            _isEditing
+                ? context.uiText('Producto actualizado.', 'Product updated.')
+                : context.uiText('Producto creado.', 'Product created.'),
           ),
         ),
       );
@@ -431,7 +470,9 @@ class _ProductFormScreenState extends State<_ProductFormScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('No se pudo crear: ${OdooService.prettyError(e)}'),
+          content: Text(
+            '${context.uiText('No se pudo guardar', 'Could not save')}: ${OdooService.prettyError(e)}',
+          ),
         ),
       );
     } finally {
@@ -442,7 +483,9 @@ class _ProductFormScreenState extends State<_ProductFormScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: _isEditing ? 'Editar producto' : 'Nuevo producto',
+      title: _isEditing
+          ? context.uiText('Editar producto', 'Edit product')
+          : context.uiText('Nuevo producto', 'New product'),
       actions: [
         IconButton(
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
@@ -453,25 +496,31 @@ class _ProductFormScreenState extends State<_ProductFormScreen> {
         key: _formKey,
         child: ListView(
           children: [
-            const AppSectionHeader(
-              title: 'Nuevo producto',
-              subtitle: 'Crea la ficha básica de compra en Odoo.',
+            AppSectionHeader(
+              title: context.uiText('Nuevo producto', 'New product'),
+              subtitle: context.uiText(
+                'Crea la ficha básica de compra en Odoo.',
+                'Create the basic purchase record in Odoo.',
+              ),
             ),
             AppInput(
               controller: _nameCtrl,
-              labelText: 'Nombre',
+              labelText: context.uiText('Nombre', 'Name'),
               prefixIcon: Icons.inventory_2_outlined,
             ),
             const SizedBox(height: 10),
             AppInput(
               controller: _refCtrl,
-              labelText: 'Referencia interna',
+              labelText: context.uiText(
+                'Referencia interna',
+                'Internal reference',
+              ),
               prefixIcon: Icons.tag_rounded,
             ),
             const SizedBox(height: 10),
             AppInput(
               controller: _barcodeCtrl,
-              labelText: 'Código de barras',
+              labelText: context.uiText('Código de barras', 'Barcode'),
               prefixIcon: Icons.qr_code_2_rounded,
               suffixIcon: IconButton(
                 onPressed: _scanBarcode,
@@ -484,7 +533,7 @@ class _ProductFormScreenState extends State<_ProductFormScreen> {
                 Expanded(
                   child: AppInput(
                     controller: _costCtrl,
-                    labelText: 'Coste',
+                    labelText: context.uiText('Coste', 'Cost'),
                     keyboardType: TextInputType.number,
                     prefixIcon: Icons.euro_rounded,
                   ),
@@ -493,7 +542,7 @@ class _ProductFormScreenState extends State<_ProductFormScreen> {
                 Expanded(
                   child: AppInput(
                     controller: _priceCtrl,
-                    labelText: 'Precio',
+                    labelText: context.uiText('Precio', 'Price'),
                     keyboardType: TextInputType.number,
                     prefixIcon: Icons.sell_outlined,
                   ),
@@ -502,7 +551,9 @@ class _ProductFormScreenState extends State<_ProductFormScreen> {
             ),
             const SizedBox(height: 18),
             AppButton.primary(
-              label: _isEditing ? 'Guardar cambios' : 'Crear producto',
+              label: _isEditing
+                  ? context.uiText('Guardar cambios', 'Save changes')
+                  : context.uiText('Crear producto', 'Create product'),
               icon: Icons.check_rounded,
               loading: _saving,
               onPressed: _saving ? null : _save,
@@ -581,7 +632,10 @@ class _PurchaseOrdersTabState extends State<_PurchaseOrdersTab> {
         children: [
           if (auth.canEditModule('purchases')) ...[
             AppButton.primary(
-              label: 'Nuevo pedido de compra',
+              label: context.uiText(
+                'Nuevo pedido de compra',
+                'New purchase order',
+              ),
               icon: Icons.add_shopping_cart_rounded,
               onPressed: _openCreateOrder,
             ),
@@ -589,30 +643,48 @@ class _PurchaseOrdersTabState extends State<_PurchaseOrdersTab> {
           ] else
             const SizedBox(height: 6),
           if (_loading)
-            const SizedBox(
+            SizedBox(
               height: 260,
-              child: AppLoadingView(label: 'Cargando pedidos...'),
+              child: AppLoadingView(
+                label: context.uiText(
+                  'Cargando pedidos...',
+                  'Loading orders...',
+                ),
+              ),
             )
           else if (_error != null)
             AppEmptyState(
-              title: 'No se pudieron cargar pedidos',
+              title: context.uiText(
+                'No se pudieron cargar pedidos',
+                'Could not load orders',
+              ),
               subtitle: _error!,
               icon: Icons.shopping_cart_outlined,
               action: AppButton.outline(
-                label: 'Reintentar',
+                label: context.uiText('Reintentar', 'Retry'),
                 icon: Icons.refresh_rounded,
                 onPressed: _load,
               ),
             )
           else if (_orders.isEmpty)
-            const AppEmptyState(
-              title: 'Sin pedidos visibles',
-              subtitle:
-                  'No hay pedidos de compra disponibles para este usuario.',
+            AppEmptyState(
+              title: context.uiText(
+                'Sin pedidos visibles',
+                'No visible orders',
+              ),
+              subtitle: context.uiText(
+                'No hay pedidos de compra disponibles para este usuario.',
+                'There are no purchase orders available to this user.',
+              ),
               icon: Icons.receipt_long_outlined,
             )
           else ...[
-            AppSectionHeader(title: '${_orders.length} pedidos recientes'),
+            AppSectionHeader(
+              title: context.uiText(
+                '${_orders.length} pedidos recientes',
+                '${_orders.length} recent orders',
+              ),
+            ),
             ..._orders.map(
               (order) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
@@ -748,14 +820,25 @@ class _CreatePurchaseOrderScreenState
 
   Future<void> _save() async {
     if (_supplierId == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Selecciona un proveedor.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.uiText('Selecciona un proveedor.', 'Select a supplier.'),
+          ),
+        ),
+      );
       return;
     }
     if (_lines.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Añade al menos una línea.')),
+        SnackBar(
+          content: Text(
+            context.uiText(
+              'Añade al menos una línea.',
+              'Add at least one line.',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -767,7 +850,9 @@ class _CreatePurchaseOrderScreenState
           .where((p) => OdooValues.intValue(p['id']) == line.productId)
           .toList();
       if (matches.isEmpty) {
-        invalidLines.add('producto no disponible');
+        invalidLines.add(
+          context.uiText('producto no disponible', 'product unavailable'),
+        );
         continue;
       }
       final product = matches.first;
@@ -780,11 +865,15 @@ class _CreatePurchaseOrderScreenState
         fallback: 'Producto',
       );
       if (variantId == null || uomId == null) {
-        invalidLines.add('$productName sin unidad de compra');
+        invalidLines.add(
+          '$productName ${context.uiText('sin unidad de compra', 'without purchase unit')}',
+        );
         continue;
       }
       if (line.qty <= 0 || line.price < 0) {
-        invalidLines.add('$productName con cantidad o precio inválido');
+        invalidLines.add(
+          '$productName ${context.uiText('con cantidad o precio inválido', 'with invalid quantity or price')}',
+        );
         continue;
       }
       orderLines.add([
@@ -815,8 +904,11 @@ class _CreatePurchaseOrderScreenState
         SnackBar(
           content: Text(
             invalidLines.isEmpty
-                ? 'No hay líneas válidas para crear el pedido.'
-                : 'Revisa las líneas: ${invalidLines.join(', ')}.',
+                ? context.uiText(
+                    'No hay líneas válidas para crear el pedido.',
+                    'There are no valid lines to create the order.',
+                  )
+                : '${context.uiText('Revisa las líneas', 'Review the lines')}: ${invalidLines.join(', ')}.',
           ),
         ),
       );
@@ -838,14 +930,21 @@ class _CreatePurchaseOrderScreenState
       if (!mounted) return;
       Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pedido de compra creado en borrador.')),
+        SnackBar(
+          content: Text(
+            context.uiText(
+              'Pedido de compra creado en borrador.',
+              'Purchase order created as a draft.',
+            ),
+          ),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'No se pudo crear el pedido: ${OdooService.prettyError(e)}',
+            '${context.uiText('No se pudo crear el pedido', 'Could not create the order')}: ${OdooService.prettyError(e)}',
           ),
         ),
       );
@@ -857,7 +956,7 @@ class _CreatePurchaseOrderScreenState
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'Nuevo pedido de compra',
+      title: context.uiText('Nuevo pedido de compra', 'New purchase order'),
       actions: [
         IconButton(
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
@@ -865,19 +964,29 @@ class _CreatePurchaseOrderScreenState
         ),
       ],
       child: _loading
-          ? const AppLoadingView(label: 'Cargando opciones...')
+          ? AppLoadingView(
+              label: context.uiText(
+                'Cargando opciones...',
+                'Loading options...',
+              ),
+            )
           : _error != null
           ? AppEmptyState(
-              title: 'No se pudo preparar el pedido',
+              title: context.uiText(
+                'No se pudo preparar el pedido',
+                'Could not prepare the order',
+              ),
               subtitle: _error!,
               icon: Icons.error_outline_rounded,
             )
           : ListView(
               children: [
-                const AppSectionHeader(
-                  title: 'Pedido en borrador',
-                  subtitle:
-                      'Selecciona proveedor y añade las líneas de compra.',
+                AppSectionHeader(
+                  title: context.uiText('Pedido en borrador', 'Draft order'),
+                  subtitle: context.uiText(
+                    'Selecciona proveedor y añade las líneas de compra.',
+                    'Select a supplier and add purchase lines.',
+                  ),
                 ),
                 DropdownButtonFormField<int>(
                   initialValue: _supplierId,
@@ -895,13 +1004,13 @@ class _CreatePurchaseOrderScreenState
                       )
                       .toList(),
                   onChanged: (value) => setState(() => _supplierId = value),
-                  decoration: const InputDecoration(
-                    labelText: 'Proveedor',
+                  decoration: InputDecoration(
+                    labelText: context.uiText('Proveedor', 'Supplier'),
                     prefixIcon: Icon(Icons.business_rounded),
                   ),
                 ),
                 const SizedBox(height: 16),
-                const AppSectionHeader(title: 'Líneas'),
+                AppSectionHeader(title: context.uiText('Líneas', 'Lines')),
                 ..._lines.map((line) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
@@ -914,13 +1023,13 @@ class _CreatePurchaseOrderScreenState
                 }),
                 const SizedBox(height: 8),
                 AppButton.outline(
-                  label: 'Añadir línea',
+                  label: context.uiText('Añadir línea', 'Add line'),
                   icon: Icons.add_rounded,
                   onPressed: _addLine,
                 ),
                 const SizedBox(height: 18),
                 AppButton.primary(
-                  label: 'Crear pedido',
+                  label: context.uiText('Crear pedido', 'Create order'),
                   icon: Icons.check_rounded,
                   loading: _saving,
                   onPressed: _saving ? null : _save,
@@ -1011,8 +1120,8 @@ class _DraftPurchaseLineCardState extends State<_DraftPurchaseLineCard> {
                 _priceCtrl.text = _formatQty(widget.line.price);
               });
             },
-            decoration: const InputDecoration(
-              labelText: 'Producto',
+            decoration: InputDecoration(
+              labelText: context.uiText('Producto', 'Product'),
               prefixIcon: Icon(Icons.inventory_2_outlined),
             ),
           ),
@@ -1022,7 +1131,7 @@ class _DraftPurchaseLineCardState extends State<_DraftPurchaseLineCard> {
               Expanded(
                 child: AppInput(
                   controller: _qtyCtrl,
-                  labelText: 'Cantidad',
+                  labelText: context.uiText('Cantidad', 'Quantity'),
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
@@ -1034,7 +1143,7 @@ class _DraftPurchaseLineCardState extends State<_DraftPurchaseLineCard> {
               Expanded(
                 child: AppInput(
                   controller: _priceCtrl,
-                  labelText: 'Precio unitario',
+                  labelText: context.uiText('Precio unitario', 'Unit price'),
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
@@ -1051,7 +1160,7 @@ class _DraftPurchaseLineCardState extends State<_DraftPurchaseLineCard> {
             child: TextButton.icon(
               onPressed: widget.onRemove,
               icon: Icon(Icons.delete_outline_rounded),
-              label: Text('Quitar línea'),
+              label: Text(context.uiText('Quitar línea', 'Remove line')),
             ),
           ),
         ],
@@ -1091,6 +1200,14 @@ class _ReceptionTabState extends State<_ReceptionTab> {
   }
 
   Future<void> _pickInvoice() async {
+    final noOrderDetected = context.uiText(
+      'No detecté número de pedido en',
+      'I could not detect an order number in',
+    );
+    final enterManually = context.uiText(
+      'Escríbelo manualmente.',
+      'Enter it manually.',
+    );
     final file = await _attachments.pickAnyFile();
     if (file == null) return;
     String? detected;
@@ -1102,9 +1219,7 @@ class _ReceptionTabState extends State<_ReceptionTab> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'No detecté número de pedido en "${file.name}". Escríbelo manualmente.',
-          ),
+          content: Text('$noOrderDetected "${file.name}". $enterManually'),
         ),
       );
       return;
@@ -1118,9 +1233,12 @@ class _ReceptionTabState extends State<_ReceptionTab> {
         (defaultTargetPlatform != TargetPlatform.iOS &&
             defaultTargetPlatform != TargetPlatform.android)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'La lectura por cámara está disponible en iOS y Android.',
+            context.uiText(
+              'La lectura por cámara está disponible en iOS y Android.',
+              'Camera scanning is available on iOS and Android.',
+            ),
           ),
         ),
       );
@@ -1131,8 +1249,13 @@ class _ReceptionTabState extends State<_ReceptionTab> {
     if (!granted) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Necesitamos permiso de cámara para leer el pedido.'),
+        SnackBar(
+          content: Text(
+            context.uiText(
+              'Necesitamos permiso de cámara para leer el pedido.',
+              'Camera permission is required to scan the order.',
+            ),
+          ),
         ),
       );
       return;
@@ -1157,9 +1280,12 @@ class _ReceptionTabState extends State<_ReceptionTab> {
       if (detected == null) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'No detecté el código del pedido. Prueba con más luz o escríbelo manualmente.',
+              context.uiText(
+                'No detecté el código del pedido. Prueba con más luz o escríbelo manualmente.',
+                'I could not detect the order code. Try more light or enter it manually.',
+              ),
             ),
           ),
         );
@@ -1169,9 +1295,13 @@ class _ReceptionTabState extends State<_ReceptionTab> {
       await _loadOrder();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('No se pudo leer la imagen: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${context.uiText('No se pudo leer la imagen', 'Could not read the image')}: $e',
+          ),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -1180,6 +1310,8 @@ class _ReceptionTabState extends State<_ReceptionTab> {
   Future<void> _loadOrder() async {
     final query = _orderCtrl.text.trim();
     if (query.isEmpty) return;
+    final notFoundMessage =
+        '${context.uiText('No he encontrado ningún pedido con', 'No order was found with')} "$query".';
     setState(() {
       _loading = true;
       _error = null;
@@ -1214,7 +1346,7 @@ class _ReceptionTabState extends State<_ReceptionTab> {
           limit: 1,
         );
         if (orders.isEmpty) {
-          _error = 'No he encontrado ningún pedido con "$query".';
+          _error = notFoundMessage;
         } else {
           _order = Map<String, dynamic>.from(orders.first as Map);
           final ids = OdooValues.ids(_order!['order_line']);
@@ -1267,6 +1399,34 @@ class _ReceptionTabState extends State<_ReceptionTab> {
   Future<void> _saveReception() async {
     final order = _order;
     if (order == null || _lines.isEmpty) return;
+    final positiveQuantityMessage = context.uiText(
+      'Indica una cantidad recibida mayor que cero.',
+      'Enter a received quantity greater than zero.',
+    );
+    final exceedsPendingMessage = context.uiText(
+      'Una cantidad supera la pendiente real del pedido. Revisa las líneas antes de guardar.',
+      'A quantity exceeds the real pending amount for the order. Review the lines before saving.',
+    );
+    final savedMessage = context.uiText(
+      'Recepción guardada y validada en Odoo.',
+      'Receipt saved and validated in Odoo.',
+    );
+    final partialSavedPrefix = context.uiText(
+      'Recepción parcial guardada. Queda pendiente',
+      'Partial receipt saved. Still pending',
+    );
+    final noPickingsMessage = context.uiText(
+      'No hay albaranes abiertos para este pedido o no tienes permisos de inventario.',
+      'There are no open pickings for this order or you do not have inventory permissions.',
+    );
+    final noMovesMessage = context.uiText(
+      'No hay movimientos pendientes en los albaranes visibles.',
+      'There are no pending moves in the visible pickings.',
+    );
+    final couldNotSaveReceiptPrefix = context.uiText(
+      'No se pudo guardar recepción',
+      'Could not save receipt',
+    );
     setState(() => _saving = true);
     try {
       final orderId = (order['id'] as num).toInt();
@@ -1292,15 +1452,13 @@ class _ReceptionTabState extends State<_ReceptionTab> {
             .where((line) => _num(line['quantity']) > 0)
             .toList();
         if (quantities.isEmpty) {
-          throw Exception('Indica una cantidad recibida mayor que cero.');
+          throw Exception(positiveQuantityMessage);
         }
         final invalid = quantities.where((line) {
           return _num(line['quantity']) > _num(line['pending']) + 0.000001;
         }).toList();
         if (invalid.isNotEmpty) {
-          throw Exception(
-            'Una cantidad supera la pendiente real del pedido. Revisa las líneas antes de guardar.',
-          );
+          throw Exception(exceedsPendingMessage);
         }
         for (final line in quantities) {
           line.remove('pending');
@@ -1315,8 +1473,8 @@ class _ReceptionTabState extends State<_ReceptionTab> {
           SnackBar(
             content: Text(
               remaining.isEmpty
-                  ? 'Recepción guardada y validada en Odoo.'
-                  : 'Recepción parcial guardada. Queda pendiente: ${remaining.join(', ')}.',
+                  ? savedMessage
+                  : '$partialSavedPrefix: ${remaining.join(', ')}.',
             ),
           ),
         );
@@ -1325,9 +1483,7 @@ class _ReceptionTabState extends State<_ReceptionTab> {
       }
       final pickings = await _findOpenPurchasePickings(orderId);
       if (pickings.isEmpty) {
-        throw Exception(
-          'No hay albaranes abiertos para este pedido o no tienes permisos de inventario.',
-        );
+        throw Exception(noPickingsMessage);
       }
       final moveIds = <int>{};
       final pickingIds = <int>{};
@@ -1338,9 +1494,7 @@ class _ReceptionTabState extends State<_ReceptionTab> {
         moveIds.addAll(OdooValues.ids(picking['move_ids_without_package']));
       }
       if (moveIds.isEmpty) {
-        throw Exception(
-          'No hay movimientos pendientes en los albaranes visibles.',
-        );
+        throw Exception(noMovesMessage);
       }
       final moves = await _odoo.searchRead(
         'stock.move',
@@ -1374,7 +1528,7 @@ class _ReceptionTabState extends State<_ReceptionTab> {
         appliedQuantity = true;
       }
       if (!appliedQuantity) {
-        throw Exception('Indica una cantidad recibida mayor que cero.');
+        throw Exception(positiveQuantityMessage);
       }
       for (final pickingId in pickingIds) {
         try {
@@ -1390,16 +1544,16 @@ class _ReceptionTabState extends State<_ReceptionTab> {
         await _processPickingValidationResult(result);
       }
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Recepción guardada y validada en Odoo.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(savedMessage)));
       await _loadOrder();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'No se pudo guardar recepción: ${OdooService.prettyError(e)}',
+            '$couldNotSaveReceiptPrefix: ${OdooService.prettyError(e)}',
           ),
         ),
       );
@@ -1444,17 +1598,19 @@ class _ReceptionTabState extends State<_ReceptionTab> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 110),
         children: [
-          const AppSectionHeader(
-            title: 'Recepción de pedidos',
-            subtitle:
-                'Busca un pedido o adjunta la factura para detectar el número.',
+          AppSectionHeader(
+            title: context.uiText('Recepción de pedidos', 'Order receipt'),
+            subtitle: context.uiText(
+              'Busca un pedido o adjunta la factura para detectar el número.',
+              'Search for an order or attach the invoice to detect the number.',
+            ),
           ),
           Row(
             children: [
               Expanded(
                 child: AppInput(
                   controller: _orderCtrl,
-                  labelText: 'Número de pedido',
+                  labelText: context.uiText('Número de pedido', 'Order number'),
                   hintText: 'PO00042 / P00042',
                   prefixIcon: Icons.receipt_long_rounded,
                   onSubmitted: (_) => _loadOrder(),
@@ -1464,50 +1620,66 @@ class _ReceptionTabState extends State<_ReceptionTab> {
               IconButton.filledTonal(
                 onPressed: _pickInvoice,
                 icon: Icon(Icons.upload_file_rounded),
-                tooltip: 'Cargar factura',
+                tooltip: context.uiText('Cargar factura', 'Load invoice'),
               ),
               const SizedBox(width: 8),
               IconButton.filled(
                 onPressed: _scanOrderWithCamera,
                 icon: Icon(Icons.document_scanner_rounded),
-                tooltip: 'Escanear con cámara',
+                tooltip: context.uiText(
+                  'Escanear con cámara',
+                  'Scan with camera',
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           AppButton.primary(
-            label: 'Buscar pedido',
+            label: context.uiText('Buscar pedido', 'Search order'),
             icon: Icons.search_rounded,
             loading: _loading,
             onPressed: _loading ? null : _loadOrder,
           ),
           const SizedBox(height: 18),
           if (_loading)
-            const SizedBox(
+            SizedBox(
               height: 260,
-              child: AppLoadingView(label: 'Cargando pedido...'),
+              child: AppLoadingView(
+                label: context.uiText('Cargando pedido...', 'Loading order...'),
+              ),
             )
           else if (_error != null)
             AppEmptyState(
-              title: 'No se pudo cargar el pedido',
+              title: context.uiText(
+                'No se pudo cargar el pedido',
+                'Could not load order',
+              ),
               subtitle: _error!,
               icon: Icons.receipt_long_outlined,
             )
           else if (order == null)
-            const AppEmptyState(
-              title: 'Busca un pedido',
-              subtitle:
-                  'Introduce el número del pedido de compra o sube la factura para intentar detectarlo.',
+            AppEmptyState(
+              title: context.uiText('Busca un pedido', 'Search an order'),
+              subtitle: context.uiText(
+                'Introduce el número del pedido de compra o sube la factura para intentar detectarlo.',
+                'Enter the purchase order number or upload the invoice to try to detect it.',
+              ),
               icon: Icons.local_shipping_outlined,
             )
           else ...[
             _OrderHeader(order: order),
             const SizedBox(height: 14),
             AppSectionHeader(
-              title: 'Líneas del pedido',
+              title: context.uiText('Líneas del pedido', 'Order lines'),
               subtitle: auth.canEditModule('purchases')
-                  ? 'Indica cuántas unidades han llegado.'
-                  : 'Consulta las cantidades pedidas y recibidas.',
+                  ? context.uiText(
+                      'Indica cuántas unidades han llegado.',
+                      'Enter how many units have arrived.',
+                    )
+                  : context.uiText(
+                      'Consulta las cantidades pedidas y recibidas.',
+                      'Review the ordered and received quantities.',
+                    ),
             ),
             ..._lines.map(
               (line) => Padding(
@@ -1524,7 +1696,7 @@ class _ReceptionTabState extends State<_ReceptionTab> {
             const SizedBox(height: 8),
             if (auth.canEditModule('purchases'))
               AppButton.primary(
-                label: 'Guardar recepción',
+                label: context.uiText('Guardar recepción', 'Save receipt'),
                 icon: Icons.task_alt_rounded,
                 loading: _saving,
                 onPressed: _saving ? null : _saveReception,
@@ -1546,7 +1718,7 @@ class _OrderHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final supplier = OdooValues.many2oneLabel(
       order['partner_id'],
-      fallback: 'Proveedor',
+      fallback: context.uiText('Proveedor', 'Supplier'),
     );
     final state = OdooValues.string(order['state']);
     return AppCard(
@@ -1571,7 +1743,8 @@ class _OrderHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  (order['name'] ?? 'Pedido').toString(),
+                  (order['name'] ?? context.uiText('Pedido', 'Order'))
+                      .toString(),
                   style: TextStyle(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 3),
@@ -1586,7 +1759,7 @@ class _OrderHeader extends StatelessWidget {
             ),
           ),
           AppStatusChip(
-            label: _purchaseStateLabel(state),
+            label: _purchaseStateLabel(context, state),
             color: AppTheme.primary,
           ),
           if (onTap != null) ...[
@@ -1699,7 +1872,14 @@ class _PurchaseOrderDetailScreenState
       await _load();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pedido confirmado en Odoo.')),
+          SnackBar(
+            content: Text(
+              context.uiText(
+                'Pedido confirmado en Odoo.',
+                'Order confirmed in Odoo.',
+              ),
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -1707,7 +1887,7 @@ class _PurchaseOrderDetailScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'No se pudo confirmar: ${OdooService.prettyError(e)}',
+              '${context.uiText('No se pudo confirmar', 'Could not confirm')}: ${OdooService.prettyError(e)}',
             ),
           ),
         );
@@ -1726,23 +1906,47 @@ class _PurchaseOrderDetailScreenState
         auth.canEditModule('purchases') &&
         const {'draft', 'sent', 'to approve'}.contains(state);
     return AppScaffold(
-      title: OdooValues.string(order?['name'], fallback: 'Detalle del pedido'),
+      title: OdooValues.string(
+        order?['name'],
+        fallback: context.uiText('Detalle del pedido', 'Order details'),
+      ),
       actions: [
-        IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
+        IconButton(
+          tooltip: context.uiText('Actualizar', 'Refresh'),
+          onPressed: _load,
+          icon: Icon(Icons.refresh_rounded),
+        ),
       ],
       child: _loading
-          ? const AppLoadingView(label: 'Cargando detalle...')
+          ? AppLoadingView(
+              label: context.uiText(
+                'Cargando detalle...',
+                'Loading details...',
+              ),
+            )
           : _error != null
           ? AppEmptyState(
-              title: 'No se pudo cargar el pedido',
+              title: context.uiText(
+                'No se pudo cargar el pedido',
+                'Could not load order',
+              ),
               subtitle: _error!,
               icon: Icons.error_outline_rounded,
-              action: AppButton.outline(label: 'Reintentar', onPressed: _load),
+              action: AppButton.outline(
+                label: context.uiText('Reintentar', 'Retry'),
+                onPressed: _load,
+              ),
             )
           : order == null
-          ? const AppEmptyState(
-              title: 'Pedido no disponible',
-              subtitle: 'Odoo no devolvió el registro solicitado.',
+          ? AppEmptyState(
+              title: context.uiText(
+                'Pedido no disponible',
+                'Order unavailable',
+              ),
+              subtitle: context.uiText(
+                'Odoo no devolvió el registro solicitado.',
+                'Odoo did not return the requested record.',
+              ),
               icon: Icons.receipt_long_outlined,
             )
           : ListView(
@@ -1750,21 +1954,23 @@ class _PurchaseOrderDetailScreenState
                 _OrderHeader(order: order),
                 const SizedBox(height: 14),
                 Text(
-                  'Fecha: ${OdooValues.string(order['date_order'], fallback: 'Sin fecha')}',
+                  '${context.l10n.date}: ${OdooValues.string(order['date_order'], fallback: context.uiText('Sin fecha', 'No date'))}',
                   style: TextStyle(color: AppTheme.textSecondaryFor(context)),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Total: ${_formatQty(OdooValues.number(order['amount_total']))} ${OdooValues.many2oneLabel(order['currency_id'])}',
+                  '${context.uiText('Total', 'Total')}: ${_formatQty(OdooValues.number(order['amount_total']))} ${OdooValues.many2oneLabel(order['currency_id'])}',
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 18),
-                const AppSectionHeader(title: 'Líneas'),
+                AppSectionHeader(title: context.uiText('Líneas', 'Lines')),
                 if (_lines.isEmpty)
-                  const AppEmptyState(
-                    title: 'Sin líneas',
-                    subtitle:
-                        'Este pedido no tiene líneas visibles para el usuario.',
+                  AppEmptyState(
+                    title: context.uiText('Sin líneas', 'No lines'),
+                    subtitle: context.uiText(
+                      'Este pedido no tiene líneas visibles para el usuario.',
+                      'This order has no lines visible to the user.',
+                    ),
                     icon: Icons.list_alt_outlined,
                   )
                 else
@@ -1782,7 +1988,7 @@ class _PurchaseOrderDetailScreenState
                 if (canConfirm) ...[
                   const SizedBox(height: 8),
                   AppButton.primary(
-                    label: 'Confirmar pedido',
+                    label: context.uiText('Confirmar pedido', 'Confirm order'),
                     icon: Icons.check_circle_outline_rounded,
                     loading: _saving,
                     onPressed: _saving ? null : _confirm,
@@ -1821,7 +2027,7 @@ class _ReceiptLineCard extends StatelessWidget {
           Text(product, style: TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
           Text(
-            'Pedido: ${_formatQty(ordered)} $unit · Recibido: ${_formatQty(received)} $unit',
+            '${context.uiText('Pedido', 'Ordered')}: ${_formatQty(ordered)} $unit · ${context.uiText('Recibido', 'Received')}: ${_formatQty(received)} $unit',
             style: TextStyle(
               color: AppTheme.textSecondaryFor(context),
               fontSize: 12,
@@ -1832,7 +2038,10 @@ class _ReceiptLineCard extends StatelessWidget {
               context.watch<AuthProvider>().canEditModule('purchases'))
             AppInput(
               controller: controller,
-              labelText: 'Cantidad recibida ahora',
+              labelText: context.uiText(
+                'Cantidad recibida ahora',
+                'Quantity received now',
+              ),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -1863,9 +2072,12 @@ class _PurchaseInvoices extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const AppSectionHeader(
-            title: 'Facturas',
-            subtitle: 'Consulta la factura de proveedor asociada al pedido.',
+          AppSectionHeader(
+            title: context.uiText('Facturas', 'Invoices'),
+            subtitle: context.uiText(
+              'Consulta la factura de proveedor asociada al pedido.',
+              'View the supplier invoice linked to this order.',
+            ),
           ),
           ...invoices.map(
             (invoice) => Padding(
@@ -1897,6 +2109,14 @@ class _PurchaseInvoiceCardState extends State<_PurchaseInvoiceCard> {
   Future<void> _open() async {
     final invoiceId = OdooValues.intValue(widget.invoice['id']);
     if (invoiceId == null || _opening) return;
+    final emptyPdfMessage = context.uiText(
+      'La factura no contiene un PDF.',
+      'The invoice does not contain a PDF.',
+    );
+    final couldNotOpenPrefix = context.uiText(
+      'No se pudo abrir la factura',
+      'Could not open the invoice',
+    );
     setState(() => _opening = true);
     try {
       final payload = await _purchasesApi.invoiceDocument(
@@ -1904,7 +2124,9 @@ class _PurchaseInvoiceCardState extends State<_PurchaseInvoiceCard> {
         invoiceId: invoiceId,
       );
       final encoded = OdooValues.string(payload['content']);
-      if (encoded.isEmpty) throw StateError('La factura no contiene un PDF.');
+      if (encoded.isEmpty) {
+        throw StateError(emptyPdfMessage);
+      }
       final name = OdooValues.string(
         payload['name'],
         fallback: 'factura-$invoiceId.pdf',
@@ -1932,7 +2154,7 @@ class _PurchaseInvoiceCardState extends State<_PurchaseInvoiceCard> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'No se pudo abrir la factura: ${OdooService.prettyError(error)}',
+            '$couldNotOpenPrefix: ${OdooService.prettyError(error)}',
           ),
         ),
       );
@@ -1945,7 +2167,10 @@ class _PurchaseInvoiceCardState extends State<_PurchaseInvoiceCard> {
   Widget build(BuildContext context) {
     final title = OdooValues.string(
       widget.invoice['name'],
-      fallback: OdooValues.string(widget.invoice['ref'], fallback: 'Factura'),
+      fallback: OdooValues.string(
+        widget.invoice['ref'],
+        fallback: context.uiText('Factura', 'Invoice'),
+      ),
     );
     final reference = OdooValues.string(widget.invoice['ref']);
     final date = OdooValues.string(widget.invoice['invoice_date']);
@@ -2020,22 +2245,22 @@ String _formatQty(num value) {
   return doubleValue.toStringAsFixed(2);
 }
 
-String _purchaseStateLabel(String state) {
+String _purchaseStateLabel(BuildContext context, String state) {
   switch (state) {
     case 'draft':
-      return 'Borrador';
+      return context.uiText('Borrador', 'Draft');
     case 'sent':
-      return 'Enviado';
+      return context.uiText('Enviado', 'Sent');
     case 'to approve':
-      return 'Pendiente de aprobación';
+      return context.uiText('Pendiente de aprobación', 'Pending approval');
     case 'purchase':
-      return 'Pedido confirmado';
+      return context.uiText('Pedido confirmado', 'Order confirmed');
     case 'done':
-      return 'Finalizado';
+      return context.uiText('Finalizado', 'Done');
     case 'cancel':
-      return 'Cancelado';
+      return context.uiText('Cancelado', 'Cancelled');
     default:
-      return state.isEmpty ? 'Pedido' : state;
+      return state.isEmpty ? context.uiText('Pedido', 'Order') : state;
   }
 }
 

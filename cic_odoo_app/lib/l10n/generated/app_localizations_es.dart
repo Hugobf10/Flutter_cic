@@ -1276,4 +1276,261 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get retired => 'Retirado';
+
+  @override
+  String get incidentUnavailable => 'La incidencia no está disponible.';
+
+  @override
+  String get analysis => 'Análisis';
+
+  @override
+  String get treatment => 'Tratamiento';
+
+  @override
+  String get correctiveAction => 'Acción correctiva';
+
+  @override
+  String get createCorrectiveAction => 'Crear acción correctiva';
+
+  @override
+  String get saveAction => 'Guardar acción';
+
+  @override
+  String get effectiveness => 'Eficacia';
+
+  @override
+  String get completedFeminine => 'Finalizada';
+
+  @override
+  String get effective => 'Eficaz';
+
+  @override
+  String get notEffective => 'No eficaz';
+
+  @override
+  String get incidentDetail => 'Detalle de incidencia';
+
+  @override
+  String get closeIncident => 'Cerrar incidencia';
+
+  @override
+  String get attachments => 'Adjuntos';
+
+  @override
+  String get uploadFile => 'Subir archivo';
+
+  @override
+  String progress(String value) {
+    return 'Avance: $value%';
+  }
+
+  @override
+  String get correctiveActions => 'Acciones correctivas';
+
+  @override
+  String get noAttachments => 'Sin adjuntos';
+
+  @override
+  String get file => 'Archivo';
+
+  @override
+  String get noCorrectiveActions => 'Sin acciones correctivas';
+
+  @override
+  String get editAction => 'Editar acción';
+
+  @override
+  String incidentType(String value) {
+    return 'Tipo: $value';
+  }
+
+  @override
+  String incidentStatus(String value) {
+    return 'Estado: $value';
+  }
+
+  @override
+  String incidentCategory(String value) {
+    return 'Categoría: $value';
+  }
+
+  @override
+  String get registerChemical => 'Registrar químico';
+
+  @override
+  String get chemicalNameRequired => 'El nombre del químico es obligatorio.';
+
+  @override
+  String get noChemicals => 'Sin productos químicos.';
+
+  @override
+  String chemicalTypeDangerous(String type, String dangerous) {
+    return 'Tipo: $type · Peligroso: $dangerous';
+  }
+
+  @override
+  String expiry(String date) {
+    return 'Caducidad: $date';
+  }
+
+  @override
+  String chemicalUnit(String name) {
+    return 'Unidad: $name';
+  }
+
+  @override
+  String get details => 'Detalle';
+
+  @override
+  String get safetySheet => 'Ficha';
+
+  @override
+  String get editChemical => 'Editar químico';
+
+  @override
+  String get saveChemical => 'Guardar químico';
+
+  @override
+  String get name => 'Nombre';
+
+  @override
+  String get reference => 'Referencia';
+
+  @override
+  String get storage => 'Almacenamiento';
+
+  @override
+  String get expiryDate => 'Fecha de caducidad';
+
+  @override
+  String get units => 'Unidades';
+
+  @override
+  String get runningLow => 'A punto de agotarse';
+
+  @override
+  String get dangerous => 'Peligroso';
+
+  @override
+  String get hazardCategory => 'Categoría de peligro';
+
+  @override
+  String get hazard => 'Peligrosidad';
+
+  @override
+  String get yes => 'Sí';
+
+  @override
+  String get no => 'No';
+
+  @override
+  String get reagent => 'Reactivo';
+
+  @override
+  String get product => 'Producto';
+
+  @override
+  String get explosive => 'Explosivo';
+
+  @override
+  String get flammable => 'Inflamable';
+
+  @override
+  String get toxic => 'Tóxico';
+
+  @override
+  String get corrosive => 'Corrosivo';
+
+  @override
+  String get environmental => 'Ambiental';
+
+  @override
+  String get safetySheetsUnavailable => 'No hay fichas de seguridad adjuntas.';
+
+  @override
+  String couldNotOpenSafetySheet(String error) {
+    return 'No se pudo abrir la ficha: $error';
+  }
+
+  @override
+  String get codeLabel => 'Código';
+
+  @override
+  String get hStatements => 'Frases H';
+
+  @override
+  String get pStatements => 'Frases P';
+
+  @override
+  String get goalName => 'Nombre del objetivo';
+
+  @override
+  String get createGoal => 'Crear objetivo';
+
+  @override
+  String get saveGoal => 'Guardar objetivo';
+
+  @override
+  String get indicator => 'Indicador';
+
+  @override
+  String get targetValue => 'Valor objetivo';
+
+  @override
+  String get actualValue => 'Valor real';
+
+  @override
+  String get startDate => 'Fecha de inicio';
+
+  @override
+  String get endDate => 'Fecha fin';
+
+  @override
+  String get overallProgress => 'Progreso global';
+
+  @override
+  String goalsProgress(int completed, int total) {
+    return '$completed de $total objetivos';
+  }
+
+  @override
+  String get noGoals => 'Sin objetivos';
+
+  @override
+  String get noGoalsHint => 'Crea tu primer objetivo desde el botón +.';
+
+  @override
+  String get goalRequiredForPlan =>
+      'Necesitas al menos un objetivo para crear un plan.';
+
+  @override
+  String get planName => 'Nombre del plan';
+
+  @override
+  String get createPlan => 'Crear plan';
+
+  @override
+  String get savePlan => 'Guardar plan';
+
+  @override
+  String get action => 'Acción';
+
+  @override
+  String get preventiveFeminine => 'Preventiva';
+
+  @override
+  String get noPlans => 'Sin planes';
+
+  @override
+  String get noPlansHint => 'Crea tu primer plan de acción desde el botón +.';
+
+  @override
+  String goalLabel(String name) {
+    return 'Objetivo: $name';
+  }
+
+  @override
+  String dueDate(String date) {
+    return 'Fecha límite: $date';
+  }
 }

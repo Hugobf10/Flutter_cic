@@ -38,10 +38,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _load() async {
     final auth = context.read<AuthProvider>();
+    final missingProfileMessage = context.uiText(
+      'No se encontró el perfil del usuario.',
+      'The user profile was not found.',
+    );
+    final emptyPortalProfileMessage = context.uiText(
+      'El servidor no devolvió el perfil de la intranet.',
+      'The server did not return the intranet profile.',
+    );
     if (auth.partnerId <= 0) {
       setState(() {
         _loading = false;
-        _error = 'No se encontró el perfil del usuario.';
+        _error = missingProfileMessage;
       });
       return;
     }
@@ -55,7 +63,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final first = rows.isEmpty ? const <String, dynamic>{} : rows.first;
         _partner = OdooValues.map(first['partner']);
         if (_partner.isEmpty) {
-          throw StateError('El servidor no devolvió el perfil de la intranet.');
+          throw StateError(emptyPortalProfileMessage);
         }
         if (mounted) setState(() => _loading = false);
         return;
@@ -104,7 +112,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final appState = context.watch<AppStateProvider>();
     final name = OdooValues.string(
       _partner['name'],
-      fallback: auth.userName.isEmpty ? 'Usuario' : auth.userName,
+      fallback: auth.userName.isEmpty
+          ? context.uiText('Usuario', 'User')
+          : auth.userName,
     );
 
     return AppScaffold(
@@ -176,9 +186,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   value: OdooValues.string(_partner['function'], fallback: '—'),
                 ),
                 const SizedBox(height: 14),
-                const AppSectionHeader(
-                  title: 'Documentación',
-                  subtitle: 'Archivos asociados al perfil',
+                AppSectionHeader(
+                  title: context.uiText('Documentación', 'Documentation'),
+                  subtitle: context.uiText(
+                    'Archivos asociados al perfil',
+                    'Files associated with the profile',
+                  ),
                 ),
                 _buildCvCard(),
                 const SizedBox(height: 14),
@@ -294,7 +307,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              cvId == null ? 'No hay CV cargado' : cvName,
+              cvId == null
+                  ? context.uiText('No hay CV cargado', 'No CV uploaded')
+                  : cvName,
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
@@ -319,11 +334,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 } catch (e) {
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('No se pudo abrir el CV: $e')),
+                    SnackBar(
+                      content: Text(
+                        '${context.uiText('No se pudo abrir el CV', 'Could not open the CV')}: $e',
+                      ),
+                    ),
                   );
                 }
               },
-              child: Text('Ver'),
+              child: Text(context.uiText('Ver', 'View')),
             ),
         ],
       ),
@@ -431,7 +450,7 @@ class _ProfileHero extends StatelessWidget {
                 if (unitName.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
-                    'Unidad: $unitName',
+                    '${context.uiText('Unidad', 'Unit')}: $unitName',
                     style: TextStyle(
                       color: AppTheme.textMutedFor(context),
                       fontSize: 12,

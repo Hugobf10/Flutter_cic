@@ -2389,6 +2389,474 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Retirado'**
   String get retired;
+
+  /// No description provided for @incidentUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'La incidencia no está disponible.'**
+  String get incidentUnavailable;
+
+  /// No description provided for @analysis.
+  ///
+  /// In es, this message translates to:
+  /// **'Análisis'**
+  String get analysis;
+
+  /// No description provided for @treatment.
+  ///
+  /// In es, this message translates to:
+  /// **'Tratamiento'**
+  String get treatment;
+
+  /// No description provided for @correctiveAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Acción correctiva'**
+  String get correctiveAction;
+
+  /// No description provided for @createCorrectiveAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Crear acción correctiva'**
+  String get createCorrectiveAction;
+
+  /// No description provided for @saveAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar acción'**
+  String get saveAction;
+
+  /// No description provided for @effectiveness.
+  ///
+  /// In es, this message translates to:
+  /// **'Eficacia'**
+  String get effectiveness;
+
+  /// No description provided for @completedFeminine.
+  ///
+  /// In es, this message translates to:
+  /// **'Finalizada'**
+  String get completedFeminine;
+
+  /// No description provided for @effective.
+  ///
+  /// In es, this message translates to:
+  /// **'Eficaz'**
+  String get effective;
+
+  /// No description provided for @notEffective.
+  ///
+  /// In es, this message translates to:
+  /// **'No eficaz'**
+  String get notEffective;
+
+  /// No description provided for @incidentDetail.
+  ///
+  /// In es, this message translates to:
+  /// **'Detalle de incidencia'**
+  String get incidentDetail;
+
+  /// No description provided for @closeIncident.
+  ///
+  /// In es, this message translates to:
+  /// **'Cerrar incidencia'**
+  String get closeIncident;
+
+  /// No description provided for @attachments.
+  ///
+  /// In es, this message translates to:
+  /// **'Adjuntos'**
+  String get attachments;
+
+  /// No description provided for @uploadFile.
+  ///
+  /// In es, this message translates to:
+  /// **'Subir archivo'**
+  String get uploadFile;
+
+  /// No description provided for @progress.
+  ///
+  /// In es, this message translates to:
+  /// **'Avance: {value}%'**
+  String progress(String value);
+
+  /// No description provided for @correctiveActions.
+  ///
+  /// In es, this message translates to:
+  /// **'Acciones correctivas'**
+  String get correctiveActions;
+
+  /// No description provided for @noAttachments.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin adjuntos'**
+  String get noAttachments;
+
+  /// No description provided for @file.
+  ///
+  /// In es, this message translates to:
+  /// **'Archivo'**
+  String get file;
+
+  /// No description provided for @noCorrectiveActions.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin acciones correctivas'**
+  String get noCorrectiveActions;
+
+  /// No description provided for @editAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar acción'**
+  String get editAction;
+
+  /// No description provided for @incidentType.
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo: {value}'**
+  String incidentType(String value);
+
+  /// No description provided for @incidentStatus.
+  ///
+  /// In es, this message translates to:
+  /// **'Estado: {value}'**
+  String incidentStatus(String value);
+
+  /// No description provided for @incidentCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'Categoría: {value}'**
+  String incidentCategory(String value);
+
+  /// No description provided for @registerChemical.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar químico'**
+  String get registerChemical;
+
+  /// No description provided for @chemicalNameRequired.
+  ///
+  /// In es, this message translates to:
+  /// **'El nombre del químico es obligatorio.'**
+  String get chemicalNameRequired;
+
+  /// No description provided for @noChemicals.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin productos químicos.'**
+  String get noChemicals;
+
+  /// No description provided for @chemicalTypeDangerous.
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo: {type} · Peligroso: {dangerous}'**
+  String chemicalTypeDangerous(String type, String dangerous);
+
+  /// No description provided for @expiry.
+  ///
+  /// In es, this message translates to:
+  /// **'Caducidad: {date}'**
+  String expiry(String date);
+
+  /// No description provided for @chemicalUnit.
+  ///
+  /// In es, this message translates to:
+  /// **'Unidad: {name}'**
+  String chemicalUnit(String name);
+
+  /// No description provided for @details.
+  ///
+  /// In es, this message translates to:
+  /// **'Detalle'**
+  String get details;
+
+  /// No description provided for @safetySheet.
+  ///
+  /// In es, this message translates to:
+  /// **'Ficha'**
+  String get safetySheet;
+
+  /// No description provided for @editChemical.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar químico'**
+  String get editChemical;
+
+  /// No description provided for @saveChemical.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar químico'**
+  String get saveChemical;
+
+  /// No description provided for @name.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre'**
+  String get name;
+
+  /// No description provided for @reference.
+  ///
+  /// In es, this message translates to:
+  /// **'Referencia'**
+  String get reference;
+
+  /// No description provided for @storage.
+  ///
+  /// In es, this message translates to:
+  /// **'Almacenamiento'**
+  String get storage;
+
+  /// No description provided for @expiryDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha de caducidad'**
+  String get expiryDate;
+
+  /// No description provided for @units.
+  ///
+  /// In es, this message translates to:
+  /// **'Unidades'**
+  String get units;
+
+  /// No description provided for @runningLow.
+  ///
+  /// In es, this message translates to:
+  /// **'A punto de agotarse'**
+  String get runningLow;
+
+  /// No description provided for @dangerous.
+  ///
+  /// In es, this message translates to:
+  /// **'Peligroso'**
+  String get dangerous;
+
+  /// No description provided for @hazardCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'Categoría de peligro'**
+  String get hazardCategory;
+
+  /// No description provided for @hazard.
+  ///
+  /// In es, this message translates to:
+  /// **'Peligrosidad'**
+  String get hazard;
+
+  /// No description provided for @yes.
+  ///
+  /// In es, this message translates to:
+  /// **'Sí'**
+  String get yes;
+
+  /// No description provided for @no.
+  ///
+  /// In es, this message translates to:
+  /// **'No'**
+  String get no;
+
+  /// No description provided for @reagent.
+  ///
+  /// In es, this message translates to:
+  /// **'Reactivo'**
+  String get reagent;
+
+  /// No description provided for @product.
+  ///
+  /// In es, this message translates to:
+  /// **'Producto'**
+  String get product;
+
+  /// No description provided for @explosive.
+  ///
+  /// In es, this message translates to:
+  /// **'Explosivo'**
+  String get explosive;
+
+  /// No description provided for @flammable.
+  ///
+  /// In es, this message translates to:
+  /// **'Inflamable'**
+  String get flammable;
+
+  /// No description provided for @toxic.
+  ///
+  /// In es, this message translates to:
+  /// **'Tóxico'**
+  String get toxic;
+
+  /// No description provided for @corrosive.
+  ///
+  /// In es, this message translates to:
+  /// **'Corrosivo'**
+  String get corrosive;
+
+  /// No description provided for @environmental.
+  ///
+  /// In es, this message translates to:
+  /// **'Ambiental'**
+  String get environmental;
+
+  /// No description provided for @safetySheetsUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay fichas de seguridad adjuntas.'**
+  String get safetySheetsUnavailable;
+
+  /// No description provided for @couldNotOpenSafetySheet.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo abrir la ficha: {error}'**
+  String couldNotOpenSafetySheet(String error);
+
+  /// No description provided for @codeLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Código'**
+  String get codeLabel;
+
+  /// No description provided for @hStatements.
+  ///
+  /// In es, this message translates to:
+  /// **'Frases H'**
+  String get hStatements;
+
+  /// No description provided for @pStatements.
+  ///
+  /// In es, this message translates to:
+  /// **'Frases P'**
+  String get pStatements;
+
+  /// No description provided for @goalName.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre del objetivo'**
+  String get goalName;
+
+  /// No description provided for @createGoal.
+  ///
+  /// In es, this message translates to:
+  /// **'Crear objetivo'**
+  String get createGoal;
+
+  /// No description provided for @saveGoal.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar objetivo'**
+  String get saveGoal;
+
+  /// No description provided for @indicator.
+  ///
+  /// In es, this message translates to:
+  /// **'Indicador'**
+  String get indicator;
+
+  /// No description provided for @targetValue.
+  ///
+  /// In es, this message translates to:
+  /// **'Valor objetivo'**
+  String get targetValue;
+
+  /// No description provided for @actualValue.
+  ///
+  /// In es, this message translates to:
+  /// **'Valor real'**
+  String get actualValue;
+
+  /// No description provided for @startDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha de inicio'**
+  String get startDate;
+
+  /// No description provided for @endDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha fin'**
+  String get endDate;
+
+  /// No description provided for @overallProgress.
+  ///
+  /// In es, this message translates to:
+  /// **'Progreso global'**
+  String get overallProgress;
+
+  /// No description provided for @goalsProgress.
+  ///
+  /// In es, this message translates to:
+  /// **'{completed} de {total} objetivos'**
+  String goalsProgress(int completed, int total);
+
+  /// No description provided for @noGoals.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin objetivos'**
+  String get noGoals;
+
+  /// No description provided for @noGoalsHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Crea tu primer objetivo desde el botón +.'**
+  String get noGoalsHint;
+
+  /// No description provided for @goalRequiredForPlan.
+  ///
+  /// In es, this message translates to:
+  /// **'Necesitas al menos un objetivo para crear un plan.'**
+  String get goalRequiredForPlan;
+
+  /// No description provided for @planName.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre del plan'**
+  String get planName;
+
+  /// No description provided for @createPlan.
+  ///
+  /// In es, this message translates to:
+  /// **'Crear plan'**
+  String get createPlan;
+
+  /// No description provided for @savePlan.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar plan'**
+  String get savePlan;
+
+  /// No description provided for @action.
+  ///
+  /// In es, this message translates to:
+  /// **'Acción'**
+  String get action;
+
+  /// No description provided for @preventiveFeminine.
+  ///
+  /// In es, this message translates to:
+  /// **'Preventiva'**
+  String get preventiveFeminine;
+
+  /// No description provided for @noPlans.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin planes'**
+  String get noPlans;
+
+  /// No description provided for @noPlansHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Crea tu primer plan de acción desde el botón +.'**
+  String get noPlansHint;
+
+  /// No description provided for @goalLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Objetivo: {name}'**
+  String goalLabel(String name);
+
+  /// No description provided for @dueDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha límite: {date}'**
+  String dueDate(String date);
 }
 
 class _AppLocalizationsDelegate

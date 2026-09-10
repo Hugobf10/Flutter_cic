@@ -9,7 +9,7 @@ extension LocalizedAppModule on AppModule {
     return switch (key) {
       'incidents' => t.incidents,
       'training' => t.training,
-      'documents' => t.documentation,
+      'documents' => context.uiText('Documentos', 'Documents'),
       'security' => t.security,
       'information' => t.informationDelivered,
       'payroll' => t.payroll,

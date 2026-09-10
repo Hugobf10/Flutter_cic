@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../services/odoo_service.dart';
 
 class DynamicFieldConfig {
@@ -82,6 +83,12 @@ class _DynamicFormState extends State<DynamicForm> {
 
   @override
   Widget build(BuildContext context) {
+    final submitLabel = widget.submitLabel == 'Guardar'
+        ? context.uiText('Guardar', 'Save')
+        : widget.submitLabel;
+    final cancelLabel = widget.cancelLabel == 'Cancelar'
+        ? context.uiText('Cancelar', 'Cancel')
+        : widget.cancelLabel;
     return Form(
       key: _formKey,
       child: Column(
@@ -96,7 +103,7 @@ class _DynamicFormState extends State<DynamicForm> {
                   onPressed: _submitting
                       ? null
                       : () => Navigator.of(context).maybePop(),
-                  child: Text(widget.cancelLabel),
+                  child: Text(cancelLabel),
                 ),
               ),
               const SizedBox(width: 10),
@@ -105,7 +112,7 @@ class _DynamicFormState extends State<DynamicForm> {
                   onPressed: _submitting ? null : _submit,
                   child: _submitting
                       ? const AppLoadingIndicator(size: 18)
-                      : Text(widget.submitLabel),
+                      : Text(submitLabel),
                 ),
               ),
             ],
@@ -118,7 +125,9 @@ class _DynamicFormState extends State<DynamicForm> {
   Widget _buildField(DynamicFieldConfig f) {
     String? requiredValidator(String? value) {
       if (!f.required) return null;
-      if (value == null || value.trim().isEmpty) return 'Campo obligatorio';
+      if (value == null || value.trim().isEmpty) {
+        return context.uiText('Campo obligatorio', 'Required field');
+      }
       return null;
     }
 
@@ -151,7 +160,9 @@ class _DynamicFormState extends State<DynamicForm> {
             onChanged: (v) => _values[f.key] = v,
             validator: (v) {
               if (!f.required) return null;
-              if (v == null) return 'Campo obligatorio';
+              if (v == null) {
+                return context.uiText('Campo obligatorio', 'Required field');
+              }
               return null;
             },
           ),
@@ -166,7 +177,9 @@ class _DynamicFormState extends State<DynamicForm> {
             initialValue: selected,
             validator: (value) {
               if (!f.required) return null;
-              if (value == null || value.isEmpty) return 'Campo obligatorio';
+              if (value == null || value.isEmpty) {
+                return context.uiText('Campo obligatorio', 'Required field');
+              }
               return null;
             },
             builder: (field) => InputDecorator(

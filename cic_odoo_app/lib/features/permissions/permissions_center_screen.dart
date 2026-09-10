@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../services/odoo_service.dart';
 import '../../theme/app_theme.dart';
 
@@ -89,29 +90,43 @@ class _PermissionsCenterScreenState extends State<PermissionsCenterScreen> {
     return DefaultTabController(
       length: 2,
       child: AppScaffold(
-        title: 'Permisos y roles',
+        title: context.uiText('Permisos y roles', 'Permissions and roles'),
         actions: [
           IconButton(
-            tooltip: 'Actualizar',
+            tooltip: context.uiText('Actualizar', 'Refresh'),
             onPressed: _loading ? null : _load,
             icon: Icon(Icons.refresh_rounded),
           ),
         ],
-        appBarBottom: const TabBar(
+        appBarBottom: TabBar(
           tabs: [
-            Tab(icon: Icon(Icons.admin_panel_settings_rounded), text: 'Roles'),
-            Tab(icon: Icon(Icons.fact_check_rounded), text: 'Seguimiento'),
+            Tab(
+              icon: Icon(Icons.admin_panel_settings_rounded),
+              text: context.uiText('Roles', 'Roles'),
+            ),
+            Tab(
+              icon: Icon(Icons.fact_check_rounded),
+              text: context.uiText('Seguimiento', 'Tracking'),
+            ),
           ],
         ),
         child: _loading
-            ? const AppLoadingView(label: 'Cargando permisos y roles')
+            ? AppLoadingView(
+                label: context.uiText(
+                  'Cargando permisos y roles',
+                  'Loading permissions and roles',
+                ),
+              )
             : _error != null
             ? AppEmptyState(
-                title: 'No se pudo cargar la administración',
+                title: context.uiText(
+                  'No se pudo cargar la administración',
+                  'Could not load administration',
+                ),
                 subtitle: _error!,
                 icon: Icons.admin_panel_settings_outlined,
                 action: AppButton.primary(
-                  label: 'Reintentar',
+                  label: context.uiText('Reintentar', 'Retry'),
                   onPressed: _load,
                 ),
               )
@@ -121,7 +136,7 @@ class _PermissionsCenterScreenState extends State<PermissionsCenterScreen> {
                     children: [
                       Expanded(
                         child: _PermissionMetric(
-                          label: 'Perfiles',
+                          label: context.uiText('Perfiles', 'Profiles'),
                           value: _roles.length.toString(),
                           icon: Icons.verified_user_rounded,
                           color: AppTheme.primary,
@@ -130,7 +145,7 @@ class _PermissionsCenterScreenState extends State<PermissionsCenterScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: _PermissionMetric(
-                          label: 'Abiertas',
+                          label: context.uiText('Abiertas', 'Open'),
                           value: open.toString(),
                           icon: Icons.error_outline_rounded,
                           color: AppTheme.danger,
@@ -139,7 +154,7 @@ class _PermissionsCenterScreenState extends State<PermissionsCenterScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: _PermissionMetric(
-                          label: 'En proceso',
+                          label: context.uiText('En proceso', 'In progress'),
                           value: inProgress.toString(),
                           icon: Icons.pending_actions_rounded,
                           color: AppTheme.warning,
@@ -162,10 +177,16 @@ class _PermissionsCenterScreenState extends State<PermissionsCenterScreen> {
   Widget _buildRoles() {
     if (_roles.isEmpty) {
       return AppEmptyState(
-        title: 'Sin perfiles disponibles',
+        title: context.uiText(
+          'Sin perfiles disponibles',
+          'No profiles available',
+        ),
         subtitle:
             _rolesError ??
-            'Odoo no ha devuelto perfiles de permisos para mostrar.',
+            context.uiText(
+              'Odoo no ha devuelto perfiles de permisos para mostrar.',
+              'Odoo did not return permission profiles to display.',
+            ),
         icon: _rolesError == null
             ? Icons.manage_accounts_outlined
             : Icons.lock_outline_rounded,
@@ -178,26 +199,35 @@ class _PermissionsCenterScreenState extends State<PermissionsCenterScreen> {
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         if (index == 0) {
-          return const AppSectionHeader(
-            title: 'Perfiles configurados',
-            subtitle: 'Roles de acceso definidos en calidad.perfil.',
+          return AppSectionHeader(
+            title: context.uiText(
+              'Perfiles configurados',
+              'Configured profiles',
+            ),
+            subtitle: context.uiText(
+              'Roles de acceso definidos en calidad.perfil.',
+              'Access roles defined in calidad.perfil.',
+            ),
           );
         }
         final role = _roles[index - 1];
         final id = (role['id'] as num?)?.toInt();
         return AppListTile(
-          title: _display(role['name'], fallback: 'Rol sin nombre'),
+          title: _display(
+            role['name'],
+            fallback: context.uiText('Rol sin nombre', 'Unnamed role'),
+          ),
           subtitle: id == null
-              ? 'Perfil de permisos'
-              : 'Perfil de permisos · #$id',
+              ? context.uiText('Perfil de permisos', 'Permission profile')
+              : '${context.uiText('Perfil de permisos', 'Permission profile')} · #$id',
           leading: const AppIconSurface(
             icon: Icons.verified_user_rounded,
             color: AppTheme.primary,
             size: 44,
             iconSize: 20,
           ),
-          trailing: const AppStatusChip(
-            label: 'Configurado',
+          trailing: AppStatusChip(
+            label: context.uiText('Configurado', 'Configured'),
             color: AppTheme.success,
           ),
         );
@@ -208,10 +238,13 @@ class _PermissionsCenterScreenState extends State<PermissionsCenterScreen> {
   Widget _buildTracking() {
     if (_tracking.isEmpty) {
       return AppEmptyState(
-        title: 'Sin incidencias activas',
+        title: context.uiText('Sin incidencias activas', 'No active incidents'),
         subtitle:
             _trackingError ??
-            'No hay incidencias abiertas o en proceso que requieran seguimiento.',
+            context.uiText(
+              'No hay incidencias abiertas o en proceso que requieran seguimiento.',
+              'There are no open or in-progress incidents requiring tracking.',
+            ),
         icon: _trackingError == null
             ? Icons.task_alt_rounded
             : Icons.lock_outline_rounded,
@@ -224,10 +257,15 @@ class _PermissionsCenterScreenState extends State<PermissionsCenterScreen> {
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         if (index == 0) {
-          return const AppSectionHeader(
-            title: 'Seguimiento administrativo',
-            subtitle:
-                'Incidencias abiertas o en proceso visibles para este usuario.',
+          return AppSectionHeader(
+            title: context.uiText(
+              'Seguimiento administrativo',
+              'Administrative tracking',
+            ),
+            subtitle: context.uiText(
+              'Incidencias abiertas o en proceso visibles para este usuario.',
+              'Open or in-progress incidents visible to this user.',
+            ),
           );
         }
         return _TrackingCard(item: _tracking[index - 1]);
@@ -292,7 +330,9 @@ class _TrackingCard extends StatelessWidget {
     final state = (item['estado'] ?? 'pendiente').toString();
     final open = state == 'abierta';
     final color = open ? AppTheme.danger : AppTheme.warning;
-    final stateLabel = open ? 'Abierta' : 'En proceso';
+    final stateLabel = open
+        ? context.uiText('Abierta', 'Open')
+        : context.uiText('En proceso', 'In progress');
     final date = _display(item['fecha']);
 
     return AppCard(
@@ -315,7 +355,10 @@ class _TrackingCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        _display(item['name'], fallback: 'Incidencia'),
+                        _display(
+                          item['name'],
+                          fallback: context.uiText('Incidencia', 'Incident'),
+                        ),
                         style: TextStyle(
                           color: AppTheme.textPrimaryFor(context),
                           fontWeight: FontWeight.w800,
@@ -336,7 +379,12 @@ class _TrackingCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      date == '-' ? 'Sin fecha registrada' : date,
+                      date == '-'
+                          ? context.uiText(
+                              'Sin fecha registrada',
+                              'No date recorded',
+                            )
+                          : date,
                       style: TextStyle(
                         color: AppTheme.textSecondaryFor(context),
                         fontSize: 12,

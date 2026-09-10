@@ -150,7 +150,7 @@ class _SuperAppShellState extends State<SuperAppShell>
             onPressed: _openQuickActions,
             backgroundColor: AppTheme.primaryDark,
             icon: Icon(Icons.flash_on_rounded),
-            label: Text('Acciones'),
+            label: Text(context.uiText('Acciones', 'Actions')),
           ),
           body: Row(
             children: [
@@ -210,7 +210,7 @@ class _SuperAppShellState extends State<SuperAppShell>
                     if (auth.canViewModule('reservas'))
                       ListTile(
                         leading: Icon(Icons.calendar_month_rounded),
-                        title: Text('Reservas'),
+                        title: Text(context.l10n.reservations),
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
@@ -289,12 +289,15 @@ class _SuperAppShellState extends State<SuperAppShell>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Acceso rápido',
+                            context.uiText('Acceso rápido', 'Quick access'),
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            'Crea y revisa elementos sin perder el contexto.',
+                            context.uiText(
+                              'Crea y revisa elementos sin perder el contexto.',
+                              'Create and review items without losing context.',
+                            ),
                             style: TextStyle(
                               color: AppTheme.textSecondaryFor(context),
                               fontSize: 12,
@@ -312,37 +315,40 @@ class _SuperAppShellState extends State<SuperAppShell>
                   children: [
                     if (auth.canEditModule('incidents'))
                       _quickAction(
-                        'Nueva incidencia',
+                        context.uiText('Nueva incidencia', 'New incident'),
                         Icons.warning_amber_rounded,
                         const IncidenciasScreen(),
                       ),
                     if (auth.canEditModule('documents'))
                       _quickAction(
-                        'Nuevo documento',
+                        context.uiText('Nuevo documento', 'New document'),
                         Icons.description_rounded,
                         const DocumentosScreen(),
                       ),
                     if (auth.canEditModule('communications'))
                       _quickAction(
-                        'Nueva comunicación',
+                        context.uiText(
+                          'Nueva comunicación',
+                          'New communication',
+                        ),
                         Icons.chat_bubble_outline_rounded,
                         const CommunicationsScreen(),
                       ),
                     if (auth.canEditModule('suppliers'))
                       _quickAction(
-                        'Nuevo proveedor',
+                        context.uiText('Nuevo proveedor', 'New supplier'),
                         Icons.local_shipping_rounded,
                         const SuppliersScreen(),
                       ),
                     if (auth.canEditModule('reservas'))
                       _quickAction(
-                        'Nueva reserva',
+                        context.uiText('Nueva reserva', 'New reservation'),
                         Icons.calendar_month_rounded,
                         const ReservasScreen(),
                       ),
                     if (auth.isAdmin)
                       _quickAction(
-                        'Aprobaciones',
+                        context.uiText('Aprobaciones', 'Approvals'),
                         Icons.fact_check_rounded,
                         const ApprovalsInboxScreen(),
                       ),
@@ -431,7 +437,7 @@ class _SuperAppShellState extends State<SuperAppShell>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Espacio de trabajo',
+                  context.uiText('Espacio de trabajo', 'Workspace'),
                   style: TextStyle(
                     color: AppTheme.textMutedFor(context),
                     fontSize: 12,
@@ -464,7 +470,9 @@ class _SuperAppShellState extends State<SuperAppShell>
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              auth.userName.isEmpty ? 'Usuario' : auth.userName,
+              auth.userName.isEmpty
+                  ? context.uiText('Usuario', 'User')
+                  : auth.userName,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),

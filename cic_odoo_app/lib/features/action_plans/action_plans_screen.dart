@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/ui/app_components.dart';
 import '../../features/forms/dynamic_form.dart';
+import '../../l10n/strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
 import '../../services/portal_api_service.dart';
@@ -78,11 +79,9 @@ class _ActionPlansScreenState extends State<ActionPlansScreen> {
 
   Future<void> _newPlan() async {
     if (_goals.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Necesitas al menos un objetivo para crear un plan.'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.goalRequiredForPlan)));
       return;
     }
     final nameCtrl = TextEditingController();
@@ -107,13 +106,13 @@ class _ActionPlansScreenState extends State<ActionPlansScreen> {
             children: [
               AppInput(
                 controller: nameCtrl,
-                labelText: 'Nombre del plan',
+                labelText: context.l10n.planName,
                 prefixIcon: Icons.task_alt_rounded,
               ),
               const SizedBox(height: 8),
               AppInput(
                 controller: descCtrl,
-                labelText: 'Descripción',
+                labelText: context.l10n.description,
                 prefixIcon: Icons.notes_rounded,
               ),
               const SizedBox(height: 8),
@@ -128,31 +127,31 @@ class _ActionPlansScreenState extends State<ActionPlansScreen> {
                     )
                     .toList(),
                 onChanged: (v) => setModal(() => goalId = v ?? goalId),
-                decoration: const InputDecoration(labelText: 'Objetivo'),
+                decoration: InputDecoration(labelText: context.l10n.goals),
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 initialValue: estado,
-                items: const [
+                items: [
                   DropdownMenuItem(
                     value: 'pendiente',
-                    child: Text('Pendiente'),
+                    child: Text(context.l10n.pending),
                   ),
                   DropdownMenuItem(
                     value: 'en_proceso',
-                    child: Text('En progreso'),
+                    child: Text(context.l10n.inProgress),
                   ),
                   DropdownMenuItem(
                     value: 'realizado',
-                    child: Text('Completado'),
+                    child: Text(context.l10n.previewSuccess),
                   ),
                 ],
                 onChanged: (v) => setModal(() => estado = v ?? 'pendiente'),
-                decoration: const InputDecoration(labelText: 'Estado'),
+                decoration: InputDecoration(labelText: context.l10n.status),
               ),
               const SizedBox(height: 12),
               AppButton.primary(
-                label: 'Crear plan',
+                label: context.l10n.createPlan,
                 icon: Icons.check_rounded,
                 onPressed: () async {
                   if (nameCtrl.text.trim().isEmpty) return;
@@ -215,34 +214,40 @@ class _ActionPlansScreenState extends State<ActionPlansScreen> {
         ),
         child: SingleChildScrollView(
           child: DynamicForm(
-            submitLabel: 'Guardar plan',
+            submitLabel: context.l10n.savePlan,
             fields: [
               DynamicFieldConfig(
                 key: 'name',
-                label: 'Nombre',
+                label: context.l10n.name,
                 required: true,
                 initialValue: row['name'],
               ),
               DynamicFieldConfig(
                 key: 'descripcion',
-                label: 'Descripción',
+                label: context.l10n.description,
                 type: DynamicFieldType.multiline,
                 maxLines: 3,
                 initialValue: row['descripcion'],
               ),
               DynamicFieldConfig(
                 key: 'tipo',
-                label: 'Tipo',
+                label: context.l10n.type,
                 type: DynamicFieldType.select,
                 initialValue: row['tipo'] ?? 'accion',
-                options: const [
-                  DynamicFieldOption(value: 'accion', label: 'Acción'),
-                  DynamicFieldOption(value: 'preventiva', label: 'Preventiva'),
+                options: [
+                  DynamicFieldOption(
+                    value: 'accion',
+                    label: context.l10n.action,
+                  ),
+                  DynamicFieldOption(
+                    value: 'preventiva',
+                    label: context.l10n.preventiveFeminine,
+                  ),
                 ],
               ),
               DynamicFieldConfig(
                 key: 'objetivo_id',
-                label: 'Objetivo',
+                label: context.l10n.goals,
                 type: DynamicFieldType.select,
                 required: true,
                 initialValue: currentGoal,
@@ -257,30 +262,39 @@ class _ActionPlansScreenState extends State<ActionPlansScreen> {
               ),
               DynamicFieldConfig(
                 key: 'estado',
-                label: 'Estado',
+                label: context.l10n.status,
                 type: DynamicFieldType.select,
                 initialValue: row['estado'] ?? 'pendiente',
-                options: const [
-                  DynamicFieldOption(value: 'pendiente', label: 'Pendiente'),
-                  DynamicFieldOption(value: 'en_proceso', label: 'En proceso'),
-                  DynamicFieldOption(value: 'realizado', label: 'Realizado'),
+                options: [
+                  DynamicFieldOption(
+                    value: 'pendiente',
+                    label: context.l10n.pending,
+                  ),
+                  DynamicFieldOption(
+                    value: 'en_proceso',
+                    label: context.l10n.inProgress,
+                  ),
+                  DynamicFieldOption(
+                    value: 'realizado',
+                    label: context.l10n.previewSuccess,
+                  ),
                 ],
               ),
               DynamicFieldConfig(
                 key: 'fecha_inicio',
-                label: 'Fecha de inicio',
+                label: context.l10n.startDate,
                 type: DynamicFieldType.date,
                 initialValue: _dateValue(row['fecha_inicio']),
               ),
               DynamicFieldConfig(
                 key: 'fecha_fin',
-                label: 'Fecha fin',
+                label: context.l10n.endDate,
                 type: DynamicFieldType.date,
                 initialValue: _dateValue(row['fecha_fin']),
               ),
               DynamicFieldConfig(
                 key: 'observaciones',
-                label: 'Observaciones',
+                label: context.l10n.observations,
                 type: DynamicFieldType.multiline,
                 maxLines: 3,
                 initialValue: row['observaciones'],
@@ -320,7 +334,7 @@ class _ActionPlansScreenState extends State<ActionPlansScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     return AppScaffold(
-      title: 'Planes de acción',
+      title: context.l10n.actionPlans,
       actions: [
         if (auth.canEditModule('action_plans'))
           IconButton(onPressed: _newPlan, icon: Icon(Icons.add_rounded)),
@@ -330,14 +344,14 @@ class _ActionPlansScreenState extends State<ActionPlansScreen> {
           ? const AppLoadingView()
           : _error != null
           ? AppEmptyState(
-              title: 'Error',
+              title: context.l10n.error,
               subtitle: _error!,
               icon: Icons.error_outline_rounded,
             )
           : _rows.isEmpty
-          ? const AppEmptyState(
-              title: 'Sin planes',
-              subtitle: 'Crea tu primer plan de acción desde el botón +.',
+          ? AppEmptyState(
+              title: context.l10n.noPlans,
+              subtitle: context.l10n.noPlansHint,
               icon: Icons.task_alt_rounded,
             )
           : ListView.builder(
@@ -386,14 +400,16 @@ class _ActionPlansScreenState extends State<ActionPlansScreen> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Objetivo: $objetivo',
+                          context.l10n.goalLabel(objetivo),
                           style: TextStyle(
                             color: AppTheme.textSecondaryFor(context),
                             fontSize: 12,
                           ),
                         ),
                         Text(
-                          'Fecha límite: ${(row['fecha_fin'] ?? '-').toString()}',
+                          context.l10n.dueDate(
+                            (row['fecha_fin'] ?? '-').toString(),
+                          ),
                           style: TextStyle(
                             color: AppTheme.textSecondaryFor(context),
                             fontSize: 12,

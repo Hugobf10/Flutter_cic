@@ -8,6 +8,7 @@ import '../../services/app_permission_service.dart';
 import '../../services/odoo_service.dart';
 import '../../services/odoo_values.dart';
 import '../../services/portal_api_service.dart';
+import '../../l10n/strings.dart';
 import '../ui/app_components.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -95,8 +96,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (!granted) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Necesitamos permiso de Fotos para cambiar la imagen.'),
+        SnackBar(
+          content: Text(
+            context.uiText(
+              'Necesitamos permiso de Fotos para cambiar la imagen.',
+              'Photos permission is required to change the image.',
+            ),
+          ),
         ),
       );
       return;
@@ -146,14 +152,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Perfil actualizado correctamente.')),
+        SnackBar(
+          content: Text(
+            context.uiText(
+              'Perfil actualizado correctamente.',
+              'Profile updated successfully.',
+            ),
+          ),
+        ),
       );
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('No se pudo guardar: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${context.uiText('No se pudo guardar', 'Could not save')}: $e',
+          ),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -165,71 +182,86 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       widget.partnerData['cv_attachment_name'],
     );
     return AppScaffold(
-      title: 'Editar perfil',
+      title: context.uiText('Editar perfil', 'Edit profile'),
       child: ListView(
         children: [
           AppSectionHeader(
-            title: 'Datos personales',
+            title: context.uiText('Datos personales', 'Personal details'),
             action: AppButton.outline(
-              label: 'Foto',
+              label: context.uiText('Foto', 'Photo'),
               icon: Icons.photo_camera_outlined,
               onPressed: _saving ? null : _pickAvatar,
             ),
           ),
           AppInput(
             controller: _nameCtrl,
-            labelText: 'Nombre completo',
+            labelText: context.uiText('Nombre completo', 'Full name'),
             prefixIcon: Icons.person_outline_rounded,
           ),
           const SizedBox(height: 10),
           AppInput(
             controller: _emailCtrl,
-            labelText: 'Correo electrónico',
+            labelText: context.uiText('Correo electrónico', 'Email'),
             prefixIcon: Icons.mail_outline_rounded,
           ),
           const SizedBox(height: 10),
           AppInput(
             controller: _phoneCtrl,
-            labelText: 'Teléfono',
+            labelText: context.uiText('Teléfono', 'Phone'),
             prefixIcon: Icons.phone_outlined,
           ),
           const SizedBox(height: 10),
           AppInput(
             controller: _mobileCtrl,
-            labelText: 'Móvil',
+            labelText: context.uiText('Móvil', 'Mobile'),
             prefixIcon: Icons.smartphone_rounded,
           ),
           const SizedBox(height: 10),
           AppInput(
             controller: _positionCtrl,
-            labelText: 'Puesto',
+            labelText: context.uiText('Puesto', 'Position'),
             prefixIcon: Icons.badge_outlined,
           ),
           const SizedBox(height: 10),
           AppInput(
             controller: _notesCtrl,
-            labelText: 'Notas',
+            labelText: context.uiText('Notas', 'Notes'),
             prefixIcon: Icons.notes_rounded,
           ),
           const SizedBox(height: 10),
           DropdownButtonFormField<String>(
             initialValue: _communicationChannel,
-            decoration: const InputDecoration(
-              labelText: 'Canal de comunicaciones',
+            decoration: InputDecoration(
+              labelText: context.uiText(
+                'Canal de comunicaciones',
+                'Communication channel',
+              ),
               prefixIcon: Icon(Icons.notifications_outlined),
             ),
-            items: const [
+            items: [
               DropdownMenuItem(
                 value: 'odoo',
-                child: Text('Solo Odoo e intranet'),
+                child: Text(
+                  context.uiText(
+                    'Solo Odoo e intranet',
+                    'Odoo and intranet only',
+                  ),
+                ),
               ),
               DropdownMenuItem(
                 value: 'email',
-                child: Text('Solo correo electrónico'),
+                child: Text(
+                  context.uiText('Solo correo electrónico', 'Email only'),
+                ),
               ),
               DropdownMenuItem(
                 value: 'ambos',
-                child: Text('Odoo/intranet y correo electrónico'),
+                child: Text(
+                  context.uiText(
+                    'Odoo/intranet y correo electrónico',
+                    'Odoo/intranet and email',
+                  ),
+                ),
               ),
             ],
             onChanged: _saving
@@ -238,7 +270,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       setState(() => _communicationChannel = value ?? 'odoo'),
           ),
           const SizedBox(height: 16),
-          const AppSectionHeader(title: 'Currículum'),
+          AppSectionHeader(title: context.uiText('Currículum', 'CV')),
           AppCard(
             child: Row(
               children: [
@@ -247,20 +279,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 Expanded(
                   child: Text(
                     _cvName ??
-                        (currentCv.isEmpty ? 'Sin CV cargado' : currentCv),
+                        (currentCv.isEmpty
+                            ? context.uiText('Sin CV cargado', 'No CV uploaded')
+                            : currentCv),
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
                 TextButton(
                   onPressed: _saving ? null : _pickCv,
-                  child: Text('Seleccionar'),
+                  child: Text(context.uiText('Seleccionar', 'Select')),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 20),
           AppButton.primary(
-            label: 'Guardar cambios',
+            label: context.uiText('Guardar cambios', 'Save changes'),
             icon: Icons.check_rounded,
             loading: _saving,
             onPressed: _saving ? null : _save,

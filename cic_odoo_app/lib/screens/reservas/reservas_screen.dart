@@ -107,6 +107,10 @@ class _ReservasScreenState extends State<ReservasScreen>
   }
 
   Future<void> _loadInitial() async {
+    final limitedAccessMessage = context.uiText(
+      'Este perfil no puede cargar el asistente completo de reservas por API. La app mostrará el modo de consulta con la información disponible.',
+      'This profile cannot load the full reservation wizard through the API. The app will show consultation mode with the available information.',
+    );
     setState(() {
       _isLoading = true;
       _error = null;
@@ -149,8 +153,7 @@ class _ReservasScreenState extends State<ReservasScreen>
     } catch (e) {
       if (OdooService.isAccessError(e)) {
         _limitedAccessMode = true;
-        _error =
-            'Este perfil no puede cargar el asistente completo de reservas por API. La app mostrará el modo de consulta con la información disponible.';
+        _error = limitedAccessMessage;
       } else {
         _error = OdooService.prettyError(e);
       }
@@ -327,6 +330,10 @@ class _ReservasScreenState extends State<ReservasScreen>
   Future<void> _loadMisReservas() async {
     final auth = context.read<AuthProvider>();
     final partnerId = auth.partnerId;
+    final permissionsMessage = context.uiText(
+      'Tus reservas no están disponibles para este perfil por permisos API.',
+      'Your reservations are not available for this profile due to API permissions.',
+    );
 
     try {
       final result = _odoo.isPortalSession
@@ -360,7 +367,7 @@ class _ReservasScreenState extends State<ReservasScreen>
     } catch (e) {
       _reservas = [];
       _reservasError = OdooService.isAccessError(e)
-          ? 'Tus reservas no están disponibles para este perfil por permisos API.'
+          ? permissionsMessage
           : OdooService.prettyError(e);
     }
   }
@@ -369,6 +376,10 @@ class _ReservasScreenState extends State<ReservasScreen>
     final selected = day ?? _agendaDay;
     final startDay = DateTime(selected.year, selected.month, selected.day);
     final endDay = startDay.add(const Duration(days: 1));
+    final permissionsMessage = context.uiText(
+      'Mostrando solo tus reservas del día por permisos.',
+      'Showing only your reservations for the day due to permissions.',
+    );
     try {
       final domain = <dynamic>[
         ['fecha_inicio', '<', _formatOdooDateTime(endDay)],
@@ -428,7 +439,7 @@ class _ReservasScreenState extends State<ReservasScreen>
           .map((e) => Map<String, dynamic>.from(e))
           .toList();
       _agendaError = OdooService.isAccessError(e)
-          ? 'Mostrando solo tus reservas del día por permisos.'
+          ? permissionsMessage
           : OdooService.prettyError(e);
     }
   }
@@ -481,9 +492,19 @@ class _ReservasScreenState extends State<ReservasScreen>
 
   Future<void> _crearReserva() async {
     final t = context.l10n;
+    final couldNotCreatePrefix = context.uiText(
+      'No se pudo crear',
+      'Could not create',
+    );
     if (_variantId == null || _start == null || _end == null) return;
     if (!_end!.isAfter(_start!)) {
-      _showSnack('La fecha fin debe ser mayor que inicio.', isError: true);
+      _showSnack(
+        context.uiText(
+          'La fecha fin debe ser mayor que inicio.',
+          'The end date must be after the start date.',
+        ),
+        isError: true,
+      );
       return;
     }
 
@@ -534,7 +555,7 @@ class _ReservasScreenState extends State<ReservasScreen>
       if (mounted) setState(() {});
     } catch (e) {
       _showSnack(
-        'No se pudo crear: ${OdooService.prettyError(e)}',
+        '$couldNotCreatePrefix: ${OdooService.prettyError(e)}',
         isError: true,
       );
     }
@@ -544,6 +565,10 @@ class _ReservasScreenState extends State<ReservasScreen>
 
   Future<void> _confirmarReserva(int id) async {
     final t = context.l10n;
+    final couldNotConfirmPrefix = context.uiText(
+      'No se pudo confirmar',
+      'Could not confirm',
+    );
     try {
       if (_odoo.isPortalSession) {
         await _portalApi.action('reservation_confirm', recordId: id);
@@ -565,7 +590,7 @@ class _ReservasScreenState extends State<ReservasScreen>
       _showSnack(t.reservationConfirmed);
     } catch (e) {
       _showSnack(
-        'No se pudo confirmar: ${OdooService.prettyError(e)}',
+        '$couldNotConfirmPrefix: ${OdooService.prettyError(e)}',
         isError: true,
       );
     }
@@ -573,6 +598,10 @@ class _ReservasScreenState extends State<ReservasScreen>
 
   Future<void> _cancelarReserva(int id) async {
     final t = context.l10n;
+    final couldNotCancelPrefix = context.uiText(
+      'No se pudo cancelar',
+      'Could not cancel',
+    );
     try {
       if (_odoo.isPortalSession) {
         await _portalApi.action('reservation_cancel', recordId: id);
@@ -587,7 +616,7 @@ class _ReservasScreenState extends State<ReservasScreen>
       _showSnack(t.reservationCancelled);
     } catch (e) {
       _showSnack(
-        'No se pudo cancelar: ${OdooService.prettyError(e)}',
+        '$couldNotCancelPrefix: ${OdooService.prettyError(e)}',
         isError: true,
       );
     }
@@ -612,7 +641,10 @@ class _ReservasScreenState extends State<ReservasScreen>
         start == null ||
         end == null) {
       _showSnack(
-        'No se pudo preparar esta reserva para editar.',
+        context.uiText(
+          'No se pudo preparar esta reserva para editar.',
+          'Could not prepare this reservation for editing.',
+        ),
         isError: true,
       );
       return;
@@ -650,7 +682,13 @@ class _ReservasScreenState extends State<ReservasScreen>
 
     final target = ReservationEntryTarget.parse(raw);
     if (target == null) {
-      _showSnack('El QR no corresponde a una reserva válida.', isError: true);
+      _showSnack(
+        context.uiText(
+          'El QR no corresponde a una reserva válida.',
+          'The QR code does not match a valid reservation.',
+        ),
+        isError: true,
+      );
       return;
     }
 
@@ -685,8 +723,11 @@ class _ReservasScreenState extends State<ReservasScreen>
     setState(() {});
     _showSnack(
       _activeTarget?.resourceLabel?.trim().isNotEmpty == true
-          ? 'Disponibilidad cargada para ${_activeTarget!.resourceLabel}.'
-          : 'Disponibilidad cargada para el recurso escaneado.',
+          ? '${context.uiText('Disponibilidad cargada para', 'Availability loaded for')} ${_activeTarget!.resourceLabel}.'
+          : context.uiText(
+              'Disponibilidad cargada para el recurso escaneado.',
+              'Availability loaded for the scanned resource.',
+            ),
     );
   }
 
@@ -976,7 +1017,10 @@ class _ReservasScreenState extends State<ReservasScreen>
                             borderRadius: AppTheme.radiusSm,
                             subtle: true,
                             child: Text(
-                              'Si este usuario debe poder reservar desde la app, hay que habilitar permisos API para su perfil en el flujo de reservas.',
+                              context.uiText(
+                                'Si este usuario debe poder reservar desde la app, hay que habilitar permisos API para su perfil en el flujo de reservas.',
+                                'If this user needs to book from the app, API permissions must be enabled for their profile in the reservation flow.',
+                              ),
                               style: TextStyle(
                                 color: AppTheme.textMutedFor(context),
                                 fontSize: 12,
@@ -1029,13 +1073,13 @@ class _ReservasScreenState extends State<ReservasScreen>
                 ),
                 TextButton(
                   onPressed: _clearReservationTarget,
-                  child: Text('Limpiar'),
+                  child: Text(context.uiText('Limpiar', 'Clear')),
                 ),
               ],
             ),
             const SizedBox(height: 6),
             Text(
-              'Mostrando disponibilidad y agenda para $dayLabel.',
+              '${context.uiText('Mostrando disponibilidad y agenda para', 'Showing availability and schedule for')} $dayLabel.',
               style: TextStyle(
                 color: AppTheme.textSecondaryFor(context),
                 fontSize: 12,
@@ -1058,26 +1102,32 @@ class _ReservasScreenState extends State<ReservasScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              AppIconSurface(
+              const AppIconSurface(
                 icon: Icons.qr_code_2_rounded,
                 color: AppTheme.primary,
                 size: 42,
                 iconSize: 20,
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Text(
-                'QR de recurso',
-                style: TextStyle(fontWeight: FontWeight.w700),
+                context.uiText('QR de recurso', 'Resource QR'),
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
             variantId == null
-                ? 'Selecciona un microservicio o recurso para generar su QR.'
-                : 'Este QR abrirá la app directamente en el recurso seleccionado y mostrará siempre la disponibilidad del día actual.',
+                ? context.uiText(
+                    'Selecciona un microservicio o recurso para generar su QR.',
+                    'Select a microservice or resource to generate its QR code.',
+                  )
+                : context.uiText(
+                    'Este QR abrirá la app directamente en el recurso seleccionado y mostrará siempre la disponibilidad del día actual.',
+                    'This QR code opens the app directly on the selected resource and always shows availability for the current day.',
+                  ),
             style: TextStyle(
               color: AppTheme.textSecondaryFor(context),
               fontSize: 12,
@@ -1108,7 +1158,7 @@ class _ReservasScreenState extends State<ReservasScreen>
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      variantName ?? 'Recurso',
+                      variantName ?? context.uiText('Recurso', 'Resource'),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: AppTheme.textPrimary,
@@ -1117,7 +1167,7 @@ class _ReservasScreenState extends State<ReservasScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Servicio ${templateId ?? '-'} · Recurso $variantId',
+                      '${context.uiText('Servicio', 'Service')} ${templateId ?? '-'} · ${context.uiText('Recurso', 'Resource')} $variantId',
                       style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
                     ),
                   ],
@@ -1142,7 +1192,9 @@ class _ReservasScreenState extends State<ReservasScreen>
                         ? const AppLoadingIndicator(size: 16)
                         : Icon(Icons.download_rounded),
                     label: Text(
-                      _isExportingQr ? 'Exportando...' : 'Exportar PNG',
+                      _isExportingQr
+                          ? context.uiText('Exportando...', 'Exporting...')
+                          : context.uiText('Exportar PNG', 'Export PNG'),
                     ),
                   ),
                 ),
@@ -1151,7 +1203,7 @@ class _ReservasScreenState extends State<ReservasScreen>
                   child: OutlinedButton.icon(
                     onPressed: _isExportingQr ? null : _shareCurrentQrPng,
                     icon: Icon(Icons.share_rounded),
-                    label: Text('Compartir'),
+                    label: Text(context.uiText('Compartir', 'Share')),
                   ),
                 ),
               ],
@@ -1161,7 +1213,10 @@ class _ReservasScreenState extends State<ReservasScreen>
               (variant['display_name'] ?? '').toString().trim().isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
-              'Tip: genera el QR después de seleccionar el microservicio exacto en el paso 2.',
+              context.uiText(
+                'Tip: genera el QR después de seleccionar el microservicio exacto en el paso 2.',
+                'Tip: generate the QR code after selecting the exact microservice in step 2.',
+              ),
               style: TextStyle(
                 fontSize: 12,
                 color: AppTheme.textMutedFor(context),
@@ -1188,24 +1243,27 @@ class _ReservasScreenState extends State<ReservasScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              AppIconSurface(
+              const AppIconSurface(
                 icon: Icons.health_and_safety_outlined,
                 color: AppTheme.primary,
                 size: 42,
                 iconSize: 20,
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Text(
-                'Diagnóstico API',
-                style: TextStyle(fontWeight: FontWeight.w700),
+                context.uiText('Diagnóstico API', 'API diagnostics'),
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            'Comprueba desde la propia app qué partes del flujo de reservas permite este perfil por API.',
+            context.uiText(
+              'Comprueba desde la propia app qué partes del flujo de reservas permite este perfil por API.',
+              'Check from the app which parts of the reservation flow this profile allows through the API.',
+            ),
             style: TextStyle(
               color: AppTheme.textSecondaryFor(context),
               fontSize: 12,
@@ -1220,9 +1278,9 @@ class _ReservasScreenState extends State<ReservasScreen>
               borderRadius: AppTheme.radiusSm,
               subtle: true,
               child: Text(
-                'Día actual: ${_formatAgendaDay(_currentReservationDay())}\n'
-                'Servicio: ${serviceLabel ?? '-'}\n'
-                'Recurso: ${variantLabel ?? '-'}',
+                '${context.uiText('Día actual', 'Current day')}: ${_formatAgendaDay(_currentReservationDay())}\n'
+                '${context.uiText('Servicio', 'Service')}: ${serviceLabel ?? '-'}\n'
+                '${context.uiText('Recurso', 'Resource')}: ${variantLabel ?? '-'}',
                 style: TextStyle(
                   color: AppTheme.textMutedFor(context),
                   fontSize: 12,
@@ -1243,8 +1301,11 @@ class _ReservasScreenState extends State<ReservasScreen>
                       : Icon(Icons.playlist_add_check_circle_rounded),
                   label: Text(
                     _isRunningApiChecks
-                        ? 'Comprobando...'
-                        : 'Comprobar permisos API',
+                        ? context.uiText('Comprobando...', 'Checking...')
+                        : context.uiText(
+                            'Comprobar permisos API',
+                            'Check API permissions',
+                          ),
                   ),
                 ),
               ),
@@ -1323,6 +1384,84 @@ class _ReservasScreenState extends State<ReservasScreen>
     final today = _currentReservationDay();
     final startDay = today;
     final endDay = startDay.add(const Duration(days: 1));
+    final reservableServicesLabel = context.uiText(
+      'Servicios reservables',
+      'Reservable services',
+    );
+    final noServicesMessage = context.uiText(
+      'Sin servicios visibles para este usuario.',
+      'No services are visible for this user.',
+    );
+    final servicesOkMessage = context.uiText(
+      'Lectura OK del catálogo de servicios.',
+      'Service catalog read successfully.',
+    );
+    final serviceResourcesLabel = context.uiText(
+      'Recursos del servicio',
+      'Service resources',
+    );
+    final noResourcesMessage = context.uiText(
+      'Sin recursos visibles para el servicio seleccionado.',
+      'No resources are visible for the selected service.',
+    );
+    final resourcesOkMessage = context.uiText(
+      'Lectura OK de recursos/microservicios.',
+      'Resources/microservices read successfully.',
+    );
+    final sessionTypesLabel = context.uiText(
+      'Tipos de sesión',
+      'Session types',
+    );
+    final noSessionTypesMessage = context.uiText(
+      'No hay tipos de sesión visibles o no aplican a este servicio.',
+      'No session types are visible or applicable to this service.',
+    );
+    final sessionTypesOkMessage = context.uiText(
+      'Lectura OK de tipos de sesión.',
+      'Session types read successfully.',
+    );
+    final myReservationsLabel = context.l10n.myReservations;
+    final noOwnReservationsMessage = context.uiText(
+      'Consulta OK, pero este usuario no tiene reservas propias visibles.',
+      'Query succeeded, but this user has no visible reservations.',
+    );
+    final ownReservationsOkMessage = context.uiText(
+      'Lectura OK de reservas propias.',
+      'Own reservations read successfully.',
+    );
+    final dailyAgendaLabel = context.l10n.dailyAgenda;
+    final noDailyAgendaMessage = context.uiText(
+      'Consulta OK para la agenda del día, sin reservas visibles hoy.',
+      'Daily schedule query succeeded with no visible reservations today.',
+    );
+    final dailyAgendaOkMessage = context.uiText(
+      'Lectura OK de agenda diaria.',
+      'Daily schedule read successfully.',
+    );
+    final createPermissionLabel = context.uiText(
+      'Permiso de creación',
+      'Create permission',
+    );
+    final createAllowedMessage = context.uiText(
+      'El modelo permite crear reservas por API.',
+      'The model allows reservations to be created through the API.',
+    );
+    final noCreatePermissionMessage = context.uiText(
+      'Sin permiso de creación en reserva.reserva.',
+      'No create permission on reserva.reserva.',
+    );
+    final editPermissionLabel = context.uiText(
+      'Permiso de edición',
+      'Edit permission',
+    );
+    final editAllowedMessage = context.uiText(
+      'El modelo permite editar reservas por API.',
+      'The model allows reservations to be edited through the API.',
+    );
+    final noEditPermissionMessage = context.uiText(
+      'Sin permiso de edición en reserva.reserva.',
+      'No edit permission on reserva.reserva.',
+    );
 
     setState(() {
       _isRunningApiChecks = true;
@@ -1330,7 +1469,7 @@ class _ReservasScreenState extends State<ReservasScreen>
     });
 
     final checks = <_ReservationApiCheckResult>[
-      await _runApiCheck('Servicios reservables', () async {
+      await _runApiCheck(reservableServicesLabel, () async {
         final rows = await _odoo.searchRead(
           'product.template',
           domain: [
@@ -1340,11 +1479,9 @@ class _ReservasScreenState extends State<ReservasScreen>
           fields: ['name'],
           limit: 1,
         );
-        return rows.isEmpty
-            ? 'Sin servicios visibles para este usuario.'
-            : 'Lectura OK del catálogo de servicios.';
+        return rows.isEmpty ? noServicesMessage : servicesOkMessage;
       }),
-      await _runApiCheck('Recursos del servicio', () async {
+      await _runApiCheck(serviceResourcesLabel, () async {
         final domain = <dynamic>[
           ['active', '=', true],
         ];
@@ -1357,11 +1494,9 @@ class _ReservasScreenState extends State<ReservasScreen>
           fields: ['display_name'],
           limit: 1,
         );
-        return rows.isEmpty
-            ? 'Sin recursos visibles para el servicio seleccionado.'
-            : 'Lectura OK de recursos/microservicios.';
+        return rows.isEmpty ? noResourcesMessage : resourcesOkMessage;
       }),
-      await _runApiCheck('Tipos de sesión', () async {
+      await _runApiCheck(sessionTypesLabel, () async {
         final domain = <dynamic>[
           ['active', '=', true],
         ];
@@ -1374,11 +1509,9 @@ class _ReservasScreenState extends State<ReservasScreen>
           fields: ['name'],
           limit: 1,
         );
-        return rows.isEmpty
-            ? 'No hay tipos de sesión visibles o no aplican a este servicio.'
-            : 'Lectura OK de tipos de sesión.';
+        return rows.isEmpty ? noSessionTypesMessage : sessionTypesOkMessage;
       }),
-      await _runApiCheck('Mis reservas', () async {
+      await _runApiCheck(myReservationsLabel, () async {
         final rows = await _odoo.searchRead(
           'reserva.reserva',
           domain: [
@@ -1388,10 +1521,10 @@ class _ReservasScreenState extends State<ReservasScreen>
           limit: 1,
         );
         return rows.isEmpty
-            ? 'Consulta OK, pero este usuario no tiene reservas propias visibles.'
-            : 'Lectura OK de reservas propias.';
+            ? noOwnReservationsMessage
+            : ownReservationsOkMessage;
       }),
-      await _runApiCheck('Agenda diaria', () async {
+      await _runApiCheck(dailyAgendaLabel, () async {
         final domain = <dynamic>[
           ['fecha_inicio', '<', _formatOdooDateTime(endDay)],
           ['fecha_fin', '>=', _formatOdooDateTime(startDay)],
@@ -1410,11 +1543,9 @@ class _ReservasScreenState extends State<ReservasScreen>
           fields: ['name'],
           limit: 1,
         );
-        return rows.isEmpty
-            ? 'Consulta OK para la agenda del día, sin reservas visibles hoy.'
-            : 'Lectura OK de agenda diaria.';
+        return rows.isEmpty ? noDailyAgendaMessage : dailyAgendaOkMessage;
       }),
-      await _runApiCheck('Permiso de creación', () async {
+      await _runApiCheck(createPermissionLabel, () async {
         final allowed = await _odoo.callMethod(
           'reserva.reserva',
           'check_access_rights',
@@ -1422,11 +1553,11 @@ class _ReservasScreenState extends State<ReservasScreen>
           kwargs: const {'raise_exception': false},
         );
         if (allowed == true) {
-          return 'El modelo permite crear reservas por API.';
+          return createAllowedMessage;
         }
-        throw Exception('Sin permiso de creación en reserva.reserva.');
+        throw Exception(noCreatePermissionMessage);
       }),
-      await _runApiCheck('Permiso de edición', () async {
+      await _runApiCheck(editPermissionLabel, () async {
         final allowed = await _odoo.callMethod(
           'reserva.reserva',
           'check_access_rights',
@@ -1434,9 +1565,9 @@ class _ReservasScreenState extends State<ReservasScreen>
           kwargs: const {'raise_exception': false},
         );
         if (allowed == true) {
-          return 'El modelo permite editar reservas por API.';
+          return editAllowedMessage;
         }
-        throw Exception('Sin permiso de edición en reserva.reserva.');
+        throw Exception(noEditPermissionMessage);
       }),
     ];
 
@@ -1451,6 +1582,10 @@ class _ReservasScreenState extends State<ReservasScreen>
     String label,
     Future<String> Function() action,
   ) async {
+    final limitedAccessPrefix = context.uiText(
+      'Acceso limitado',
+      'Limited access',
+    );
     try {
       final message = await action();
       return _ReservationApiCheckResult(
@@ -1461,14 +1596,16 @@ class _ReservasScreenState extends State<ReservasScreen>
     } catch (e) {
       final limited =
           OdooService.isAccessError(e) ||
-          e.toString().toLowerCase().contains('sin permiso');
+          e.toString().toLowerCase().contains('sin permiso') ||
+          e.toString().toLowerCase().contains('no create permission') ||
+          e.toString().toLowerCase().contains('no edit permission');
       return _ReservationApiCheckResult(
         label: label,
         status: limited
             ? _ReservationApiCheckStatus.limited
             : _ReservationApiCheckStatus.error,
         message: limited
-            ? 'Acceso limitado: ${OdooService.prettyError(e)}'
+            ? '$limitedAccessPrefix: ${OdooService.prettyError(e)}'
             : OdooService.prettyError(e),
       );
     }
@@ -1488,7 +1625,7 @@ class _ReservasScreenState extends State<ReservasScreen>
                 child: Column(
                   children: [
                     Text(
-                      'Día consultado',
+                      context.uiText('Día consultado', 'Selected day'),
                       style: TextStyle(
                         color: AppTheme.textSecondaryFor(context),
                         fontSize: 12,
@@ -1515,21 +1652,25 @@ class _ReservasScreenState extends State<ReservasScreen>
             const SizedBox(height: 10),
             DropdownButtonFormField<int?>(
               initialValue: _agendaVariantFilterId,
-              decoration: const InputDecoration(
-                labelText: 'Agenda visible',
-                prefixIcon: Icon(Icons.meeting_room_outlined),
+              decoration: InputDecoration(
+                labelText: context.uiText('Agenda visible', 'Visible schedule'),
+                prefixIcon: const Icon(Icons.meeting_room_outlined),
               ),
               items: [
-                const DropdownMenuItem<int?>(
+                DropdownMenuItem<int?>(
                   value: null,
-                  child: Text('Todos los recursos'),
+                  child: Text(
+                    context.uiText('Todos los recursos', 'All resources'),
+                  ),
                 ),
                 ..._variants.map((variant) {
                   final id = (variant['id'] as num?)?.toInt();
                   return DropdownMenuItem<int?>(
                     value: id,
                     child: Text(
-                      (variant['display_name'] ?? variant['name'] ?? 'Recurso')
+                      (variant['display_name'] ??
+                              variant['name'] ??
+                              context.uiText('Recurso', 'Resource'))
                           .toString(),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1550,8 +1691,14 @@ class _ReservasScreenState extends State<ReservasScreen>
           Text(
             (context.watch<AuthProvider>().isInternalUser ||
                     context.watch<AuthProvider>().isAdmin)
-                ? 'Los QR se generan al seleccionar un microservicio o recurso en la pestaña Nueva.'
-                : 'La agenda muestra la ocupación de los recursos sin revelar datos de otros usuarios.',
+                ? context.uiText(
+                    'Los QR se generan al seleccionar un microservicio o recurso en la pestaña Nueva.',
+                    'QR codes are generated after selecting a microservice or resource on the New tab.',
+                  )
+                : context.uiText(
+                    'La agenda muestra la ocupación de los recursos sin revelar datos de otros usuarios.',
+                    'The schedule shows resource occupancy without revealing other users’ data.',
+                  ),
             style: TextStyle(
               color: AppTheme.textMutedFor(context),
               fontSize: 12,
@@ -1585,13 +1732,13 @@ class _ReservasScreenState extends State<ReservasScreen>
         final end = _tryParseOdooDateTime(r['fecha_fin']?.toString() ?? '');
         final servicio = OdooValues.many2oneLabel(
           r['servicio_id'],
-          fallback: 'Servicio',
+          fallback: context.uiText('Servicio', 'Service'),
         );
         final contacto = auth.isPortalUser
-            ? 'Reserva ocupada'
+            ? context.uiText('Reserva ocupada', 'Occupied reservation')
             : OdooValues.many2oneLabel(
                 r['contacto_id'],
-                fallback: 'Sin contacto',
+                fallback: context.uiText('Sin contacto', 'No contact'),
               );
         final estado = OdooValues.string(r['estado']);
         final color = _estadoColor(estado);
@@ -1668,7 +1815,7 @@ class _ReservasScreenState extends State<ReservasScreen>
                           null) ...[
                         const SizedBox(height: 4),
                         Text(
-                          'Tipo: ${OdooValues.many2oneLabel(r['session_type_id'], fallback: 'Sesión')}',
+                          '${context.l10n.type}: ${OdooValues.many2oneLabel(r['session_type_id'], fallback: context.uiText('Sesión', 'Session'))}',
                           style: TextStyle(
                             color: AppTheme.textMutedFor(context),
                             fontSize: 12,
@@ -1803,7 +1950,9 @@ class _ReservasScreenState extends State<ReservasScreen>
   String _buildReservationQrPayload() {
     final variantId = _variantId;
     final templateId = _serviceTemplateId;
-    final label = Uri.encodeComponent(_selectedVariantName() ?? 'Recurso');
+    final label = Uri.encodeComponent(
+      _selectedVariantName() ?? context.uiText('Recurso', 'Resource'),
+    );
     final buffer = StringBuffer('com.cic.flutter://reservas?tab=agenda');
     if (variantId != null) {
       buffer.write('&variantId=$variantId');
@@ -1816,9 +1965,24 @@ class _ReservasScreenState extends State<ReservasScreen>
   }
 
   Future<void> _exportCurrentQrPng() async {
+    final renderErrorMessage = context.uiText(
+      'No se pudo renderizar el PNG del QR.',
+      'Could not render the QR PNG.',
+    );
+    final exportedPrefix = context.uiText(
+      'QR exportado en PNG',
+      'QR exported as PNG',
+    );
+    final couldNotExportPrefix = context.uiText(
+      'No se pudo exportar el QR',
+      'Could not export the QR',
+    );
     if (_variantId == null) {
       _showSnack(
-        'Selecciona antes un microservicio para generar el QR.',
+        context.uiText(
+          'Selecciona antes un microservicio para generar el QR.',
+          'Select a microservice before generating the QR code.',
+        ),
         isError: true,
       );
       return;
@@ -1828,7 +1992,7 @@ class _ReservasScreenState extends State<ReservasScreen>
     try {
       final bytes = await _generateQrPngBytes(_buildReservationQrPayload());
       if (bytes == null || bytes.isEmpty) {
-        throw Exception('No se pudo renderizar el PNG del QR.');
+        throw Exception(renderErrorMessage);
       }
 
       final name =
@@ -1839,10 +2003,10 @@ class _ReservasScreenState extends State<ReservasScreen>
         folderName: 'reservas_qr',
       );
       await OpenFilex.open(file.path);
-      _showSnack('QR exportado en PNG: ${file.path}');
+      _showSnack('$exportedPrefix: ${file.path}');
     } catch (e) {
       _showSnack(
-        'No se pudo exportar el QR: ${OdooService.prettyError(e)}',
+        '$couldNotExportPrefix: ${OdooService.prettyError(e)}',
         isError: true,
       );
     }
@@ -1853,9 +2017,29 @@ class _ReservasScreenState extends State<ReservasScreen>
   }
 
   Future<void> _shareCurrentQrPng() async {
+    final renderErrorMessage = context.uiText(
+      'No se pudo renderizar el PNG del QR.',
+      'Could not render the QR PNG.',
+    );
+    final temporaryFileErrorMessage = context.uiText(
+      'No se pudo guardar el fichero temporal del QR.',
+      'Could not save the temporary QR file.',
+    );
+    final reservationQrPrefix = context.uiText(
+      'QR de reserva',
+      'Reservation QR',
+    );
+    final resourceFallback = context.uiText('recurso', 'resource');
+    final couldNotSharePrefix = context.uiText(
+      'No se pudo compartir el QR',
+      'Could not share the QR',
+    );
     if (_variantId == null) {
       _showSnack(
-        'Selecciona antes un microservicio para generar el QR.',
+        context.uiText(
+          'Selecciona antes un microservicio para generar el QR.',
+          'Select a microservice before generating the QR code.',
+        ),
         isError: true,
       );
       return;
@@ -1875,7 +2059,7 @@ class _ReservasScreenState extends State<ReservasScreen>
             );
       final bytes = await _generateQrPngBytes(_buildReservationQrPayload());
       if (bytes == null || bytes.isEmpty) {
-        throw Exception('No se pudo renderizar el PNG del QR.');
+        throw Exception(renderErrorMessage);
       }
       final safeName = AttachmentService.sanitizeFileName(
         _selectedVariantName() ?? 'recurso',
@@ -1887,11 +2071,12 @@ class _ReservasScreenState extends State<ReservasScreen>
         folderName: 'reservas_qr',
       );
       if (!await file.exists()) {
-        throw Exception('No se pudo guardar el fichero temporal del QR.');
+        throw Exception(temporaryFileErrorMessage);
       }
       await Share.shareXFiles(
         [XFile(file.path, mimeType: 'image/png', name: fileName)],
-        subject: 'QR de reserva ${_selectedVariantName() ?? 'recurso'}',
+        subject:
+            '$reservationQrPrefix ${_selectedVariantName() ?? resourceFallback}',
         fileNameOverrides: [fileName],
         sharePositionOrigin: shareOrigin,
       );
@@ -1908,7 +2093,7 @@ class _ReservasScreenState extends State<ReservasScreen>
         scope: 'reservas.qr',
       );
       _showSnack(
-        'No se pudo compartir el QR: ${OdooService.prettyError(e)}',
+        '$couldNotSharePrefix: ${OdooService.prettyError(e)}',
         isError: true,
       );
     } finally {
@@ -2100,7 +2285,10 @@ class _ReservasScreenState extends State<ReservasScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Paso 1: elige el servicio',
+                context.uiText(
+                  'Paso 1: elige el servicio',
+                  'Step 1: choose the service',
+                ),
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: AppTheme.textPrimaryFor(context),
@@ -2109,7 +2297,10 @@ class _ReservasScreenState extends State<ReservasScreen>
               const SizedBox(height: 8),
               _buildWizardHint(
                 Icons.category_outlined,
-                'Elige el tipo de servicio. En el siguiente paso seleccionarás el recurso concreto que quieres reservar.',
+                context.uiText(
+                  'Elige el tipo de servicio. En el siguiente paso seleccionarás el recurso concreto que quieres reservar.',
+                  'Choose the service type. In the next step you will select the specific resource you want to reserve.',
+                ),
               ),
               const SizedBox(height: 12),
               Wrap(
@@ -2141,7 +2332,10 @@ class _ReservasScreenState extends State<ReservasScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Paso 2: elige recurso',
+                context.uiText(
+                  'Paso 2: elige recurso',
+                  'Step 2: choose a resource',
+                ),
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: AppTheme.textPrimaryFor(context),
@@ -2150,7 +2344,10 @@ class _ReservasScreenState extends State<ReservasScreen>
               const SizedBox(height: 8),
               _buildWizardHint(
                 Icons.meeting_room_outlined,
-                'Selecciona el recurso exacto. Si aparece un tipo de sesión, debes elegir el que corresponda antes de continuar.',
+                context.uiText(
+                  'Selecciona el recurso exacto. Si aparece un tipo de sesión, debes elegir el que corresponda antes de continuar.',
+                  'Select the exact resource. If a session type appears, choose the right one before continuing.',
+                ),
               ),
               const SizedBox(height: 12),
               Wrap(
@@ -2205,7 +2402,10 @@ class _ReservasScreenState extends State<ReservasScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Paso 3: elige horario',
+                context.uiText(
+                  'Paso 3: elige horario',
+                  'Step 3: choose a time',
+                ),
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: AppTheme.textPrimaryFor(context),
@@ -2214,7 +2414,10 @@ class _ReservasScreenState extends State<ReservasScreen>
               const SizedBox(height: 8),
               _buildWizardHint(
                 Icons.schedule_outlined,
-                'Solo puedes elegir franjas libres. Las reservas se hacen en bloques de 30 minutos y no se permiten horarios pasados ni solapados.',
+                context.uiText(
+                  'Solo puedes elegir franjas libres. Las reservas se hacen en bloques de 30 minutos y no se permiten horarios pasados ni solapados.',
+                  'You can only choose free slots. Reservations use 30-minute blocks and past or overlapping times are not allowed.',
+                ),
               ),
               const SizedBox(height: 12),
               SizedBox(
@@ -2319,7 +2522,10 @@ class _ReservasScreenState extends State<ReservasScreen>
             children: [
               _buildWizardHint(
                 Icons.fact_check_outlined,
-                'Revisa los datos antes de guardar. La reserva quedará en borrador: podrás editarla o confirmarla desde «Mis reservas».',
+                context.uiText(
+                  'Revisa los datos antes de guardar. La reserva quedará en borrador: podrás editarla o confirmarla desde «Mis reservas».',
+                  'Review the details before saving. The reservation will stay as a draft so you can edit or confirm it from “My reservations”.',
+                ),
               ),
               const SizedBox(height: 12),
               AppInput(
@@ -2335,7 +2541,7 @@ class _ReservasScreenState extends State<ReservasScreen>
                 borderRadius: AppTheme.radiusSm,
                 subtle: true,
                 child: Text(
-                  'Resumen: ${selectedService?['name'] ?? '-'} · ${selectedVariant?['display_name'] ?? '-'}\n'
+                  '${context.uiText('Resumen', 'Summary')}: ${selectedService?['name'] ?? '-'} · ${selectedVariant?['display_name'] ?? '-'}\n'
                   '${_fmt(_start!)} -> ${_fmt(_end!)} · ${_money(((hourlyPrice is num ? hourlyPrice.toDouble() : 0) * (_durationMinutes / 60)))}',
                   style: TextStyle(
                     color: AppTheme.textSecondaryFor(context),
@@ -2438,7 +2644,7 @@ class _ReservasScreenState extends State<ReservasScreen>
             ),
             const SizedBox(height: 4),
             Text(
-              'Duración: ${duracion.toStringAsFixed(1)}h  ·  Total: ${_money(total)}',
+              '${context.l10n.duration}: ${duracion.toStringAsFixed(1)}h  ·  ${context.uiText('Total', 'Total')}: ${_money(total)}',
               style: TextStyle(
                 color: AppTheme.textMutedFor(context),
                 fontSize: 12,
@@ -2448,7 +2654,7 @@ class _ReservasScreenState extends State<ReservasScreen>
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  'Tipo: $session',
+                  '${context.l10n.type}: $session',
                   style: TextStyle(
                     color: AppTheme.textMutedFor(context),
                     fontSize: 12,

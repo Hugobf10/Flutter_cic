@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../services/odoo_service.dart';
 import '../../services/odoo_values.dart';
 import '../../services/portal_api_service.dart';
@@ -51,21 +52,37 @@ class _PortalSectionScreenState extends State<PortalSectionScreen> {
     return AppScaffold(
       title: widget.title,
       actions: [
-        IconButton(onPressed: _load, icon: Icon(Icons.refresh_rounded)),
+        IconButton(
+          tooltip: context.uiText('Actualizar', 'Refresh'),
+          onPressed: _load,
+          icon: Icon(Icons.refresh_rounded),
+        ),
       ],
       child: _loading
-          ? const AppLoadingView(label: 'Cargando intranet...')
+          ? AppLoadingView(
+              label: context.uiText(
+                'Cargando intranet...',
+                'Loading intranet...',
+              ),
+            )
           : _error != null
           ? AppEmptyState(
-              title: 'No se pudo cargar ${widget.title.toLowerCase()}',
+              title:
+                  '${context.uiText('No se pudo cargar', 'Could not load')} ${widget.title.toLowerCase()}',
               subtitle: _error!,
               icon: Icons.error_outline_rounded,
-              action: AppButton.primary(label: 'Reintentar', onPressed: _load),
+              action: AppButton.primary(
+                label: context.uiText('Reintentar', 'Retry'),
+                onPressed: _load,
+              ),
             )
           : _items.isEmpty
           ? AppEmptyState(
-              title: 'Sin registros',
-              subtitle: 'No hay información disponible para tu cuenta.',
+              title: context.uiText('Sin registros', 'No records'),
+              subtitle: context.uiText(
+                'No hay información disponible para tu cuenta.',
+                'No information is available for your account.',
+              ),
               icon: Icons.inbox_outlined,
             )
           : RefreshIndicator(
@@ -83,7 +100,7 @@ class _PortalSectionScreenState extends State<PortalSectionScreen> {
   Widget _buildItem(Map<String, dynamic> item, int index) {
     final title = OdooValues.string(
       item['name'] ?? item['title'],
-      fallback: 'Registro ${item['id'] ?? ''}',
+      fallback: '${context.uiText('Registro', 'Record')} ${item['id'] ?? ''}',
     );
     final excluded = {'id', 'name', 'title', 'abstract'};
     final details = item.entries

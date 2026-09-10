@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/strings.dart';
+
 class ModulePlaceholderScreen extends StatelessWidget {
   const ModulePlaceholderScreen({super.key, required this.title});
 
@@ -20,7 +22,10 @@ class ModulePlaceholderScreen extends StatelessWidget {
               Text(title, style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 8),
               Text(
-                'Módulo en implementación.\nYa está registrado en la app y se activará con su flujo Odoo en la próxima entrega.',
+                context.uiText(
+                  'Módulo en implementación.\nYa está registrado en la app y se activará con su flujo Odoo en la próxima entrega.',
+                  'Module in progress.\nIt is already registered in the app and will be activated with its Odoo flow in the next delivery.',
+                ),
                 textAlign: TextAlign.center,
               ),
             ],

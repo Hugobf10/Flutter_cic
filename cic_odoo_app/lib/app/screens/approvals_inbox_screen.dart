@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../services/odoo_service.dart';
 import '../../theme/app_theme.dart';
 
@@ -33,6 +34,15 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
   }
 
   Future<void> _load() async {
+    final incidentFallback = context.uiText('Incidencia', 'Incident');
+    final communicationFallback = context.uiText(
+      'Comunicación',
+      'Communication',
+    );
+    final supplierFallback = context.uiText('Proveedor', 'Supplier');
+    final incidentsErrorPrefix = context.l10n.incidents;
+    final communicationsErrorPrefix = context.l10n.communications;
+    final suppliersErrorPrefix = context.uiText('Proveedores', 'Suppliers');
     setState(() => _loading = true);
     final items = <_ApprovalItem>[];
     final errors = <String>[];
@@ -55,7 +65,7 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
         final record = Map<String, dynamic>.from(row as Map);
         items.add(
           _ApprovalItem(
-            title: _display(record['name'], fallback: 'Incidencia'),
+            title: _display(record['name'], fallback: incidentFallback),
             section: 'Incidencias',
             state: _display(record['estado'], fallback: 'pendiente'),
             date: _display(record['fecha']),
@@ -63,7 +73,7 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
         );
       }
     } catch (error) {
-      errors.add('Incidencias: ${OdooService.prettyError(error)}');
+      errors.add('$incidentsErrorPrefix: ${OdooService.prettyError(error)}');
     }
 
     try {
@@ -84,7 +94,7 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
         final record = Map<String, dynamic>.from(row as Map);
         items.add(
           _ApprovalItem(
-            title: _display(record['name'], fallback: 'Comunicación'),
+            title: _display(record['name'], fallback: communicationFallback),
             section: 'Comunicaciones',
             state: _display(record['estado'], fallback: 'pendiente'),
             date: _display(record['fecha']),
@@ -92,7 +102,9 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
         );
       }
     } catch (error) {
-      errors.add('Comunicaciones: ${OdooService.prettyError(error)}');
+      errors.add(
+        '$communicationsErrorPrefix: ${OdooService.prettyError(error)}',
+      );
     }
 
     try {
@@ -111,7 +123,10 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
         final record = Map<String, dynamic>.from(row as Map);
         items.add(
           _ApprovalItem(
-            title: _many2oneLabel(record['partner_id'], fallback: 'Proveedor'),
+            title: _many2oneLabel(
+              record['partner_id'],
+              fallback: supplierFallback,
+            ),
             section: 'Proveedores',
             state: _display(record['estado'], fallback: 'pendiente'),
             date: _firstDisplay([
@@ -122,7 +137,7 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
         );
       }
     } catch (error) {
-      errors.add('Proveedores: ${OdooService.prettyError(error)}');
+      errors.add('$suppliersErrorPrefix: ${OdooService.prettyError(error)}');
     }
 
     if (mounted) {
@@ -158,22 +173,33 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
         .length;
 
     return AppScaffold(
-      title: 'Aprobaciones',
+      title: context.uiText('Aprobaciones', 'Approvals'),
       actions: [
         IconButton(
-          tooltip: 'Actualizar',
+          tooltip: context.uiText('Actualizar', 'Refresh'),
           onPressed: _loading ? null : _load,
           icon: Icon(Icons.refresh_rounded),
         ),
       ],
       child: _loading
-          ? const AppLoadingView(label: 'Cargando aprobaciones')
+          ? AppLoadingView(
+              label: context.uiText(
+                'Cargando aprobaciones',
+                'Loading approvals',
+              ),
+            )
           : _items.isEmpty && _errors.isNotEmpty
           ? AppEmptyState(
-              title: 'No se pudo cargar la bandeja',
+              title: context.uiText(
+                'No se pudo cargar la bandeja',
+                'Could not load inbox',
+              ),
               subtitle: _errors.join('\n'),
               icon: Icons.lock_outline_rounded,
-              action: AppButton.primary(label: 'Reintentar', onPressed: _load),
+              action: AppButton.primary(
+                label: context.uiText('Reintentar', 'Retry'),
+                onPressed: _load,
+              ),
             )
           : Column(
               children: [
@@ -181,7 +207,7 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
                   children: [
                     Expanded(
                       child: _ApprovalMetric(
-                        label: 'Incidencias',
+                        label: context.l10n.incidents,
                         value: incidents,
                         icon: Icons.warning_amber_rounded,
                         color: AppTheme.danger,
@@ -190,7 +216,7 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: _ApprovalMetric(
-                        label: 'Comunicaciones',
+                        label: context.l10n.communications,
                         value: communications,
                         icon: Icons.forum_rounded,
                         color: AppTheme.warning,
@@ -199,7 +225,7 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: _ApprovalMetric(
-                        label: 'Proveedores',
+                        label: context.uiText('Proveedores', 'Suppliers'),
                         value: suppliers,
                         icon: Icons.storefront_rounded,
                         color: AppTheme.success,
@@ -210,7 +236,10 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
                 const SizedBox(height: 16),
                 AppSearchBar(
                   controller: _searchController,
-                  hintText: 'Buscar en la bandeja',
+                  hintText: context.uiText(
+                    'Buscar en la bandeja',
+                    'Search inbox',
+                  ),
                   onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: 12),
@@ -225,7 +254,7 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
                         'Proveedores',
                       ]) ...[
                         AppChoicePill(
-                          label: section,
+                          label: _filterLabel(context, section),
                           icon: _sectionIcon(section),
                           selected: _filter == section,
                           onTap: () => setState(() => _filter = section),
@@ -254,7 +283,10 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Acceso parcial',
+                                context.uiText(
+                                  'Acceso parcial',
+                                  'Partial access',
+                                ),
                                 style: TextStyle(
                                   color: AppTheme.textPrimaryFor(context),
                                   fontWeight: FontWeight.w800,
@@ -262,7 +294,10 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
                               ),
                               const SizedBox(height: 3),
                               Text(
-                                'Hay áreas que Odoo no permite consultar con este usuario.',
+                                context.uiText(
+                                  'Hay áreas que Odoo no permite consultar con este usuario.',
+                                  'There are areas that Odoo does not allow this user to query.',
+                                ),
                                 style: TextStyle(
                                   color: AppTheme.textSecondaryFor(context),
                                   fontSize: 12,
@@ -287,10 +322,18 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
     if (items.isEmpty) {
       final filtering = _filter != 'Todas' || _searchController.text.isNotEmpty;
       return AppEmptyState(
-        title: filtering ? 'Sin coincidencias' : 'Bandeja al día',
+        title: filtering
+            ? context.uiText('Sin coincidencias', 'No matches')
+            : context.uiText('Bandeja al día', 'Inbox up to date'),
         subtitle: filtering
-            ? 'Cambia el filtro o prueba con otro término de búsqueda.'
-            : 'No hay elementos de seguimiento visibles para tu usuario.',
+            ? context.uiText(
+                'Cambia el filtro o prueba con otro término de búsqueda.',
+                'Change the filter or try another search term.',
+              )
+            : context.uiText(
+                'No hay elementos de seguimiento visibles para tu usuario.',
+                'There are no tracking items visible for your user.',
+              ),
         icon: filtering ? Icons.search_off_rounded : Icons.task_alt_rounded,
       );
     }
@@ -305,9 +348,14 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
         itemBuilder: (context, index) {
           if (index == 0) {
             return AppSectionHeader(
-              title: '${items.length} elementos',
-              subtitle:
-                  'Actividad administrativa visible en las áreas conectadas.',
+              title: context.uiText(
+                '${items.length} elementos',
+                '${items.length} items',
+              ),
+              subtitle: context.uiText(
+                'Actividad administrativa visible en las áreas conectadas.',
+                'Administrative activity visible in connected areas.',
+              ),
             );
           }
           return _ApprovalCard(item: items[index - 1]);
@@ -322,6 +370,15 @@ class _ApprovalsInboxScreenState extends State<ApprovalsInboxScreen> {
     'Proveedores' => Icons.storefront_rounded,
     _ => Icons.apps_rounded,
   };
+
+  String _filterLabel(BuildContext context, String section) =>
+      switch (section) {
+        'Todas' => context.uiText('Todas', 'All'),
+        'Incidencias' => context.l10n.incidents,
+        'Comunicaciones' => context.l10n.communications,
+        'Proveedores' => context.uiText('Proveedores', 'Suppliers'),
+        _ => section,
+      };
 }
 
 class _ApprovalMetric extends StatelessWidget {
@@ -378,7 +435,9 @@ class _ApprovalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _stateColor(item.state);
-    final date = item.date == '-' ? 'Sin fecha registrada' : item.date;
+    final date = item.date == '-'
+        ? context.uiText('Sin fecha registrada', 'No date recorded')
+        : item.date;
     return AppCard(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,12 +464,15 @@ class _ApprovalCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    AppStatusChip(label: _stateLabel(item.state), color: color),
+                    AppStatusChip(
+                      label: _stateLabel(context, item.state),
+                      color: color,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 7),
                 Text(
-                  item.section,
+                  _sectionLabel(context, item.section),
                   style: TextStyle(
                     color: _sectionColor(item.section),
                     fontSize: 12,
@@ -474,11 +536,31 @@ class _ApprovalCard extends StatelessWidget {
     _ => Icons.fact_check_rounded,
   };
 
-  String _stateLabel(String state) {
+  String _stateLabel(BuildContext context, String state) {
     final normalized = state.replaceAll('_', ' ').trim();
-    if (normalized.isEmpty) return 'Pendiente';
-    return '${normalized[0].toUpperCase()}${normalized.substring(1)}';
+    if (normalized.isEmpty) return context.uiText('Pendiente', 'Pending');
+    return switch (normalized) {
+      'pendiente' => context.uiText('Pendiente', 'Pending'),
+      'abierta' => context.uiText('Abierta', 'Open'),
+      'en proceso' => context.uiText('En proceso', 'In progress'),
+      'recibida' => context.uiText('Recibida', 'Received'),
+      'en analisis' ||
+      'en análisis' => context.uiText('En análisis', 'In analysis'),
+      'tratada' => context.uiText('Tratada', 'Handled'),
+      'respondida' => context.uiText('Respondida', 'Answered'),
+      'homologado' => context.uiText('Homologado', 'Approved'),
+      'desestimado' => context.uiText('Desestimado', 'Rejected'),
+      _ => '${normalized[0].toUpperCase()}${normalized.substring(1)}',
+    };
   }
+
+  String _sectionLabel(BuildContext context, String section) =>
+      switch (section) {
+        'Incidencias' => context.l10n.incidents,
+        'Comunicaciones' => context.l10n.communications,
+        'Proveedores' => context.uiText('Proveedores', 'Suppliers'),
+        _ => section,
+      };
 }
 
 class _ApprovalItem {

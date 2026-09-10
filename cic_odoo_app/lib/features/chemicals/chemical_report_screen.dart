@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../app/ui/app_components.dart';
+import '../../l10n/strings.dart';
 import '../../services/odoo_service.dart';
 import '../../services/odoo_values.dart';
 import '../../services/portal_api_service.dart';
@@ -75,13 +76,19 @@ class _ChemicalReportScreenState extends State<ChemicalReportScreen> {
       }
     }
     return AppScaffold(
-      title: 'Informe de químicos',
-      actions: [IconButton(onPressed: _load, icon: Icon(Icons.refresh))],
+      title: context.uiText('Informe de químicos', 'Chemical report'),
+      actions: [
+        IconButton(
+          tooltip: context.uiText('Actualizar', 'Refresh'),
+          onPressed: _load,
+          icon: Icon(Icons.refresh),
+        ),
+      ],
       child: _loading
-          ? const AppLoadingView()
+          ? AppLoadingView(label: context.uiText('Cargando', 'Loading'))
           : _error != null
           ? AppEmptyState(
-              title: 'Error',
+              title: context.l10n.error,
               subtitle: _error!,
               icon: Icons.error_outline_rounded,
             )
@@ -91,7 +98,7 @@ class _ChemicalReportScreenState extends State<ChemicalReportScreen> {
                   children: [
                     Expanded(
                       child: _metric(
-                        'Total',
+                        context.uiText('Total', 'Total'),
                         _rows.length,
                         Icons.science_outlined,
                       ),
@@ -99,7 +106,7 @@ class _ChemicalReportScreenState extends State<ChemicalReportScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: _metric(
-                        'Peligrosos',
+                        context.uiText('Peligrosos', 'Hazardous'),
                         dangerous,
                         Icons.warning_amber_rounded,
                       ),
@@ -107,7 +114,7 @@ class _ChemicalReportScreenState extends State<ChemicalReportScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: _metric(
-                        'A reponer',
+                        context.uiText('A reponer', 'To restock'),
                         lowStock,
                         Icons.inventory_2_outlined,
                       ),
@@ -115,16 +122,21 @@ class _ChemicalReportScreenState extends State<ChemicalReportScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                _breakdown('Por tipo', types),
+                _breakdown(context.uiText('Por tipo', 'By type'), types),
                 const SizedBox(height: 12),
-                _breakdown('Peligrosidad', hazards),
+                _breakdown(
+                  context.uiText('Peligrosidad', 'Hazard level'),
+                  hazards,
+                ),
                 if (_rows.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 20),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20),
                     child: AppEmptyState(
-                      title: 'Sin datos',
-                      subtitle:
-                          'No hay químicos disponibles para este informe.',
+                      title: context.uiText('Sin datos', 'No data'),
+                      subtitle: context.uiText(
+                        'No hay químicos disponibles para este informe.',
+                        'No chemicals are available for this report.',
+                      ),
                       icon: Icons.analytics_outlined,
                     ),
                   ),
@@ -166,7 +178,7 @@ class _ChemicalReportScreenState extends State<ChemicalReportScreen> {
           const SizedBox(height: 10),
           if (values.isEmpty)
             Text(
-              'Sin datos',
+              context.uiText('Sin datos', 'No data'),
               style: TextStyle(color: AppTheme.textMutedFor(context)),
             )
           else
@@ -177,7 +189,7 @@ class _ChemicalReportScreenState extends State<ChemicalReportScreen> {
                   children: [
                     SizedBox(
                       width: 100,
-                      child: Text(entry.key.replaceAll('_', ' ')),
+                      child: Text(_displayCategory(entry.key)),
                     ),
                     Expanded(
                       child: LinearProgressIndicator(
@@ -198,4 +210,11 @@ class _ChemicalReportScreenState extends State<ChemicalReportScreen> {
       ),
     );
   }
+
+  String _displayCategory(String value) => switch (value) {
+    'otro' => context.uiText('Otro', 'Other'),
+    'peligroso' => context.uiText('Peligroso', 'Hazardous'),
+    'no_peligroso' => context.uiText('No peligroso', 'Non-hazardous'),
+    _ => value.replaceAll('_', ' '),
+  };
 }

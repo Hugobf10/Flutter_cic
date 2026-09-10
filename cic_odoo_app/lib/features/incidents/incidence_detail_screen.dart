@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/ui/app_components.dart';
 import '../../features/forms/dynamic_form.dart';
+import '../../l10n/strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/attachment_service.dart';
 import '../../services/odoo_service.dart';
@@ -34,6 +35,7 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
   }
 
   Future<void> _load() async {
+    final t = context.l10n;
     setState(() {
       _loading = true;
       _error = null;
@@ -45,7 +47,7 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
           recordId: widget.id,
           limit: 1,
         );
-        if (rows.isEmpty) throw StateError('La incidencia no está disponible.');
+        if (rows.isEmpty) throw StateError(t.incidentUnavailable);
         _record = rows.first;
       } else {
         final rows = await _portalApi.section(
@@ -53,7 +55,7 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
           recordId: widget.id,
           limit: 1,
         );
-        if (rows.isEmpty) throw StateError('La incidencia no está disponible.');
+        if (rows.isEmpty) throw StateError(t.incidentUnavailable);
         _record = rows.first;
       }
     } catch (e) {
@@ -77,85 +79,112 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
             16 + MediaQuery.of(ctx).viewInsets.bottom,
           ),
           child: DynamicForm(
-            submitLabel: 'Guardar cambios',
+            submitLabel: context.l10n.saveChanges,
             fields: [
               DynamicFieldConfig(
                 key: 'name',
-                label: 'Título',
+                label: context.l10n.title,
                 required: true,
                 initialValue: _record!['name'],
               ),
               DynamicFieldConfig(
                 key: 'tipo',
-                label: 'Tipo',
+                label: context.l10n.type,
                 type: DynamicFieldType.select,
                 initialValue: _record!['tipo'],
                 required: true,
-                options: const [
-                  DynamicFieldOption(value: 'nc', label: 'No conformidad'),
+                options: [
+                  DynamicFieldOption(
+                    value: 'nc',
+                    label: context.l10n.nonConformity,
+                  ),
                   DynamicFieldOption(
                     value: 'om',
-                    label: 'Oportunidad de mejora',
+                    label: context.l10n.improvementOpportunity,
                   ),
                 ],
               ),
               DynamicFieldConfig(
                 key: 'categoria',
-                label: 'Categoría',
+                label: context.l10n.category,
                 type: DynamicFieldType.select,
                 initialValue: _record!['categoria'],
                 required: true,
-                options: const [
-                  DynamicFieldOption(value: 'calidad', label: 'Calidad'),
-                  DynamicFieldOption(value: 'prl', label: 'PRL'),
+                options: [
+                  DynamicFieldOption(
+                    value: 'calidad',
+                    label: context.l10n.quality,
+                  ),
+                  DynamicFieldOption(
+                    value: 'prl',
+                    label: context.l10n.healthSafety,
+                  ),
                 ],
               ),
               DynamicFieldConfig(
                 key: 'subtipo',
-                label: 'Subtipo',
+                label: context.l10n.subtype,
                 type: DynamicFieldType.select,
                 initialValue: _record!['subtipo'],
                 required: true,
-                options: const [
-                  DynamicFieldOption(value: 'interna', label: 'Interna'),
-                  DynamicFieldOption(value: 'proveedor', label: 'Proveedor'),
-                  DynamicFieldOption(value: 'auditoria', label: 'Auditoría'),
+                options: [
+                  DynamicFieldOption(
+                    value: 'interna',
+                    label: context.l10n.internal,
+                  ),
+                  DynamicFieldOption(
+                    value: 'proveedor',
+                    label: context.l10n.supplier,
+                  ),
+                  DynamicFieldOption(
+                    value: 'auditoria',
+                    label: context.l10n.audit,
+                  ),
                   DynamicFieldOption(
                     value: 'reclamacion',
-                    label: 'Reclamación',
+                    label: context.l10n.claim,
                   ),
-                  DynamicFieldOption(value: 'otra', label: 'Otra'),
+                  DynamicFieldOption(value: 'otra', label: context.l10n.other),
                 ],
               ),
               DynamicFieldConfig(
                 key: 'estado',
-                label: 'Estado',
+                label: context.l10n.status,
                 type: DynamicFieldType.select,
                 initialValue: _record!['estado'],
                 required: true,
-                options: const [
-                  DynamicFieldOption(value: 'abierta', label: 'Abierta'),
-                  DynamicFieldOption(value: 'en_proceso', label: 'En proceso'),
-                  DynamicFieldOption(value: 'cerrada', label: 'Cerrada'),
+                options: [
+                  DynamicFieldOption(
+                    value: 'abierta',
+                    label: context.l10n.openFeminine,
+                  ),
+                  DynamicFieldOption(
+                    value: 'en_proceso',
+                    label: context.l10n.inProgress,
+                  ),
+                  DynamicFieldOption(
+                    value: 'cerrada',
+                    label: context.l10n.closedFeminine,
+                  ),
                 ],
               ),
               DynamicFieldConfig(
                 key: 'descripcion',
-                label: 'Descripción',
+                label: context.l10n.description,
                 type: DynamicFieldType.multiline,
                 initialValue: _record!['descripcion'],
                 maxLines: 4,
               ),
               DynamicFieldConfig(
                 key: 'analisis',
-                label: 'Análisis',
+                label: context.l10n.analysis,
                 type: DynamicFieldType.multiline,
                 initialValue: _record!['analisis'],
                 maxLines: 4,
               ),
               DynamicFieldConfig(
                 key: 'tratamiento',
-                label: 'Tratamiento',
+                label: context.l10n.treatment,
                 type: DynamicFieldType.multiline,
                 initialValue: _record!['tratamiento'],
                 maxLines: 4,
@@ -203,12 +232,16 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
           16 + MediaQuery.of(ctx).viewInsets.bottom,
         ),
         child: DynamicForm(
-          submitLabel: 'Crear acción correctiva',
-          fields: const [
-            DynamicFieldConfig(key: 'name', label: 'Título', required: true),
+          submitLabel: context.l10n.createCorrectiveAction,
+          fields: [
+            DynamicFieldConfig(
+              key: 'name',
+              label: context.l10n.title,
+              required: true,
+            ),
             DynamicFieldConfig(
               key: 'descripcion',
-              label: 'Descripción',
+              label: context.l10n.description,
               type: DynamicFieldType.multiline,
               maxLines: 4,
             ),
@@ -308,43 +341,61 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
           16 + MediaQuery.of(ctx).viewInsets.bottom,
         ),
         child: DynamicForm(
-          submitLabel: 'Guardar acción',
+          submitLabel: context.l10n.saveAction,
           fields: [
             DynamicFieldConfig(
               key: 'name',
-              label: 'Título',
+              label: context.l10n.title,
               required: true,
               initialValue: action['name'],
             ),
             DynamicFieldConfig(
               key: 'descripcion',
-              label: 'Descripción',
+              label: context.l10n.description,
               type: DynamicFieldType.multiline,
               maxLines: 4,
               initialValue: action['descripcion'],
             ),
             DynamicFieldConfig(
               key: 'estado',
-              label: 'Estado',
+              label: context.l10n.status,
               type: DynamicFieldType.select,
               required: true,
               initialValue: action['estado'] ?? 'pendiente',
-              options: const [
-                DynamicFieldOption(value: 'pendiente', label: 'Pendiente'),
-                DynamicFieldOption(value: 'en_proceso', label: 'En proceso'),
-                DynamicFieldOption(value: 'finalizada', label: 'Finalizada'),
+              options: [
+                DynamicFieldOption(
+                  value: 'pendiente',
+                  label: context.l10n.pending,
+                ),
+                DynamicFieldOption(
+                  value: 'en_proceso',
+                  label: context.l10n.inProgress,
+                ),
+                DynamicFieldOption(
+                  value: 'finalizada',
+                  label: context.l10n.completedFeminine,
+                ),
               ],
             ),
             DynamicFieldConfig(
               key: 'eficacia',
-              label: 'Eficacia',
+              label: context.l10n.effectiveness,
               type: DynamicFieldType.select,
               required: true,
               initialValue: action['eficacia'] ?? 'pendiente',
-              options: const [
-                DynamicFieldOption(value: 'pendiente', label: 'Pendiente'),
-                DynamicFieldOption(value: 'eficaz', label: 'Eficaz'),
-                DynamicFieldOption(value: 'no_eficaz', label: 'No eficaz'),
+              options: [
+                DynamicFieldOption(
+                  value: 'pendiente',
+                  label: context.l10n.pending,
+                ),
+                DynamicFieldOption(
+                  value: 'eficaz',
+                  label: context.l10n.effective,
+                ),
+                DynamicFieldOption(
+                  value: 'no_eficaz',
+                  label: context.l10n.notEffective,
+                ),
               ],
             ),
           ],
@@ -374,7 +425,7 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
     }
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(title: Text('Incidencia')),
+        appBar: AppBar(title: Text(context.l10n.incidents)),
         body: Center(child: Text(_error!)),
       );
     }
@@ -388,11 +439,11 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Detalle incidencia'),
+        title: Text(context.l10n.incidentDetail),
         actions: [
           if (auth.canEditModule('incidents'))
             IconButton(
-              tooltip: 'Añadir acción correctiva',
+              tooltip: context.l10n.createCorrectiveAction,
               onPressed: _createCorrectiveAction,
               icon: Icon(Icons.add_task_rounded),
             ),
@@ -411,9 +462,9 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
           Wrap(
             spacing: 8,
             children: [
-              _chip('Tipo: ${r['tipo'] ?? '-'}'),
-              _chip('Estado: $estado'),
-              _chip('Categoría: ${r['categoria'] ?? '-'}'),
+              _chip(context.l10n.incidentType('${r['tipo'] ?? '-'}')),
+              _chip(context.l10n.incidentStatus(estado)),
+              _chip(context.l10n.incidentCategory('${r['categoria'] ?? '-'}')),
             ],
           ),
           if (auth.canEditModule('incidents') && estado != 'cerrada') ...[
@@ -423,24 +474,36 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
               child: OutlinedButton.icon(
                 onPressed: _closeIncident,
                 icon: Icon(Icons.task_alt_rounded),
-                label: Text('Cerrar incidencia'),
+                label: Text(context.l10n.closeIncident),
               ),
             ),
           ],
           const SizedBox(height: 12),
-          Text('Descripción', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            context.l10n.description,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 4),
           Text(r['descripcion']?.toString() ?? '-'),
           const SizedBox(height: 12),
-          Text('Análisis', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            context.l10n.analysis,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 4),
           Text(r['analisis']?.toString() ?? '-'),
           const SizedBox(height: 12),
-          Text('Tratamiento', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            context.l10n.treatment,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 4),
           Text(r['tratamiento']?.toString() ?? '-'),
           const SizedBox(height: 12),
-          Text('Adjuntos', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            context.l10n.attachments,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 4),
           ..._attachmentTiles(r['documento_ids']),
           if (auth.canEditModule('incidents'))
@@ -449,11 +512,11 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
               child: OutlinedButton.icon(
                 onPressed: _uploadAttachment,
                 icon: Icon(Icons.attach_file_rounded),
-                label: Text('Subir archivo'),
+                label: Text(context.l10n.uploadFile),
               ),
             ),
           const SizedBox(height: 12),
-          Text('Avance: ${avance.toStringAsFixed(0)}%'),
+          Text(context.l10n.progress(avance.toStringAsFixed(0))),
           const SizedBox(height: 6),
           ClipRRect(
             borderRadius: AppTheme.radiusXl,
@@ -469,7 +532,7 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
           if (correctiveActions.isNotEmpty) ...[
             const SizedBox(height: 18),
             Text(
-              'Acciones correctivas',
+              context.l10n.correctiveActions,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -496,13 +559,13 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
     if (raw is! List || raw.isEmpty) {
       return [
         Text(
-          'Sin adjuntos',
+          context.l10n.noAttachments,
           style: TextStyle(color: AppTheme.textMutedFor(context)),
         ),
       ];
     }
     return raw.whereType<List>().map((item) {
-      final label = item.length > 1 ? item[1].toString() : 'Archivo';
+      final label = item.length > 1 ? item[1].toString() : context.l10n.file;
       return ListTile(
         contentPadding: EdgeInsets.zero,
         leading: Icon(Icons.insert_drive_file_outlined),
@@ -515,7 +578,7 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
     if (raw is! List || raw.isEmpty) {
       return [
         Text(
-          'Sin acciones correctivas',
+          context.l10n.noCorrectiveActions,
           style: TextStyle(color: AppTheme.textMutedFor(context)),
         ),
       ];
@@ -527,11 +590,13 @@ class _IncidenceDetailScreenState extends State<IncidenceDetailScreen> {
         leading: Icon(Icons.task_alt_rounded),
         title: Text(OdooValues.string(action['name'])),
         subtitle: Text(
-          'Estado: ${OdooValues.string(action['estado'], fallback: 'pendiente')}',
+          context.l10n.incidentStatus(
+            OdooValues.string(action['estado'], fallback: context.l10n.pending),
+          ),
         ),
         trailing: canEdit
             ? IconButton(
-                tooltip: 'Editar acción',
+                tooltip: context.l10n.editAction,
                 icon: Icon(Icons.edit_outlined),
                 onPressed: () => _editCorrectiveAction(action),
               )

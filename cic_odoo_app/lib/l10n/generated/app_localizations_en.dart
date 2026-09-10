@@ -1272,4 +1272,261 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get retired => 'Retired';
+
+  @override
+  String get incidentUnavailable => 'The incident is not available.';
+
+  @override
+  String get analysis => 'Analysis';
+
+  @override
+  String get treatment => 'Treatment';
+
+  @override
+  String get correctiveAction => 'Corrective action';
+
+  @override
+  String get createCorrectiveAction => 'Create corrective action';
+
+  @override
+  String get saveAction => 'Save action';
+
+  @override
+  String get effectiveness => 'Effectiveness';
+
+  @override
+  String get completedFeminine => 'Completed';
+
+  @override
+  String get effective => 'Effective';
+
+  @override
+  String get notEffective => 'Not effective';
+
+  @override
+  String get incidentDetail => 'Incident details';
+
+  @override
+  String get closeIncident => 'Close incident';
+
+  @override
+  String get attachments => 'Attachments';
+
+  @override
+  String get uploadFile => 'Upload file';
+
+  @override
+  String progress(String value) {
+    return 'Progress: $value%';
+  }
+
+  @override
+  String get correctiveActions => 'Corrective actions';
+
+  @override
+  String get noAttachments => 'No attachments';
+
+  @override
+  String get file => 'File';
+
+  @override
+  String get noCorrectiveActions => 'No corrective actions';
+
+  @override
+  String get editAction => 'Edit action';
+
+  @override
+  String incidentType(String value) {
+    return 'Type: $value';
+  }
+
+  @override
+  String incidentStatus(String value) {
+    return 'Status: $value';
+  }
+
+  @override
+  String incidentCategory(String value) {
+    return 'Category: $value';
+  }
+
+  @override
+  String get registerChemical => 'Register chemical';
+
+  @override
+  String get chemicalNameRequired => 'The chemical name is required.';
+
+  @override
+  String get noChemicals => 'No chemicals.';
+
+  @override
+  String chemicalTypeDangerous(String type, String dangerous) {
+    return 'Type: $type · Hazardous: $dangerous';
+  }
+
+  @override
+  String expiry(String date) {
+    return 'Expiry: $date';
+  }
+
+  @override
+  String chemicalUnit(String name) {
+    return 'Unit: $name';
+  }
+
+  @override
+  String get details => 'Details';
+
+  @override
+  String get safetySheet => 'Safety sheet';
+
+  @override
+  String get editChemical => 'Edit chemical';
+
+  @override
+  String get saveChemical => 'Save chemical';
+
+  @override
+  String get name => 'Name';
+
+  @override
+  String get reference => 'Reference';
+
+  @override
+  String get storage => 'Storage';
+
+  @override
+  String get expiryDate => 'Expiry date';
+
+  @override
+  String get units => 'Units';
+
+  @override
+  String get runningLow => 'Running low';
+
+  @override
+  String get dangerous => 'Hazardous';
+
+  @override
+  String get hazardCategory => 'Hazard category';
+
+  @override
+  String get hazard => 'Hazard';
+
+  @override
+  String get yes => 'Yes';
+
+  @override
+  String get no => 'No';
+
+  @override
+  String get reagent => 'Reagent';
+
+  @override
+  String get product => 'Product';
+
+  @override
+  String get explosive => 'Explosive';
+
+  @override
+  String get flammable => 'Flammable';
+
+  @override
+  String get toxic => 'Toxic';
+
+  @override
+  String get corrosive => 'Corrosive';
+
+  @override
+  String get environmental => 'Environmental';
+
+  @override
+  String get safetySheetsUnavailable => 'There are no safety sheets attached.';
+
+  @override
+  String couldNotOpenSafetySheet(String error) {
+    return 'Could not open the safety sheet: $error';
+  }
+
+  @override
+  String get codeLabel => 'Code';
+
+  @override
+  String get hStatements => 'H statements';
+
+  @override
+  String get pStatements => 'P statements';
+
+  @override
+  String get goalName => 'Goal name';
+
+  @override
+  String get createGoal => 'Create goal';
+
+  @override
+  String get saveGoal => 'Save goal';
+
+  @override
+  String get indicator => 'Indicator';
+
+  @override
+  String get targetValue => 'Target value';
+
+  @override
+  String get actualValue => 'Actual value';
+
+  @override
+  String get startDate => 'Start date';
+
+  @override
+  String get endDate => 'End date';
+
+  @override
+  String get overallProgress => 'Overall progress';
+
+  @override
+  String goalsProgress(int completed, int total) {
+    return '$completed of $total goals';
+  }
+
+  @override
+  String get noGoals => 'No goals';
+
+  @override
+  String get noGoalsHint => 'Create your first goal with the + button.';
+
+  @override
+  String get goalRequiredForPlan =>
+      'You need at least one goal to create a plan.';
+
+  @override
+  String get planName => 'Plan name';
+
+  @override
+  String get createPlan => 'Create plan';
+
+  @override
+  String get savePlan => 'Save plan';
+
+  @override
+  String get action => 'Action';
+
+  @override
+  String get preventiveFeminine => 'Preventive';
+
+  @override
+  String get noPlans => 'No plans';
+
+  @override
+  String get noPlansHint => 'Create your first action plan with the + button.';
+
+  @override
+  String goalLabel(String name) {
+    return 'Goal: $name';
+  }
+
+  @override
+  String dueDate(String date) {
+    return 'Due date: $date';
+  }
 }

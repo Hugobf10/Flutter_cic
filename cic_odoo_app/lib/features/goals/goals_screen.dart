@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/ui/app_components.dart';
 import '../../features/forms/dynamic_form.dart';
+import '../../l10n/strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/odoo_service.dart';
 import '../../services/odoo_values.dart';
@@ -98,48 +99,51 @@ class _GoalsScreenState extends State<GoalsScreen> {
             children: [
               AppInput(
                 controller: nameCtrl,
-                labelText: 'Nombre del objetivo',
+                labelText: context.l10n.goalName,
                 prefixIcon: Icons.flag_outlined,
               ),
               const SizedBox(height: 8),
               AppInput(
                 controller: descCtrl,
-                labelText: 'Descripción',
+                labelText: context.l10n.description,
                 prefixIcon: Icons.notes_rounded,
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 initialValue: tipo,
-                items: const [
-                  DropdownMenuItem(value: 'calidad', child: Text('Calidad')),
+                items: [
+                  DropdownMenuItem(
+                    value: 'calidad',
+                    child: Text(context.l10n.quality),
+                  ),
                   DropdownMenuItem(value: 'prl', child: Text('PRL')),
                 ],
                 onChanged: (v) => setModal(() => tipo = v ?? 'calidad'),
-                decoration: const InputDecoration(labelText: 'Tipo'),
+                decoration: InputDecoration(labelText: context.l10n.type),
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 initialValue: estado,
-                items: const [
+                items: [
                   DropdownMenuItem(
                     value: 'pendiente',
-                    child: Text('Pendiente'),
+                    child: Text(context.l10n.pending),
                   ),
                   DropdownMenuItem(
                     value: 'en_proceso',
-                    child: Text('En proceso'),
+                    child: Text(context.l10n.inProgress),
                   ),
                   DropdownMenuItem(
                     value: 'realizado',
-                    child: Text('Realizado'),
+                    child: Text(context.l10n.completedFeminine),
                   ),
                 ],
                 onChanged: (v) => setModal(() => estado = v ?? 'pendiente'),
-                decoration: const InputDecoration(labelText: 'Estado'),
+                decoration: InputDecoration(labelText: context.l10n.status),
               ),
               const SizedBox(height: 12),
               AppButton.primary(
-                label: 'Crear objetivo',
+                label: context.l10n.createGoal,
                 icon: Icons.check_rounded,
                 onPressed: () async {
                   if (nameCtrl.text.trim().isEmpty) return;
@@ -206,72 +210,84 @@ class _GoalsScreenState extends State<GoalsScreen> {
         ),
         child: SingleChildScrollView(
           child: DynamicForm(
-            submitLabel: 'Guardar objetivo',
+            submitLabel: context.l10n.saveGoal,
             fields: [
               DynamicFieldConfig(
                 key: 'name',
-                label: 'Nombre',
+                label: context.l10n.name,
                 required: true,
                 initialValue: goal['name'],
               ),
               DynamicFieldConfig(
                 key: 'descripcion',
-                label: 'Descripción',
+                label: context.l10n.description,
                 type: DynamicFieldType.multiline,
                 maxLines: 3,
                 initialValue: goal['descripcion'],
               ),
               DynamicFieldConfig(
                 key: 'indicador',
-                label: 'Indicador',
+                label: context.l10n.indicator,
                 initialValue: goal['indicador'],
               ),
               DynamicFieldConfig(
                 key: 'valor_objetivo',
-                label: 'Valor objetivo',
+                label: context.l10n.targetValue,
                 initialValue: goal['valor_objetivo'],
               ),
               DynamicFieldConfig(
                 key: 'valor_real',
-                label: 'Valor real',
+                label: context.l10n.actualValue,
                 initialValue: goal['valor_real'],
               ),
               DynamicFieldConfig(
                 key: 'tipo',
-                label: 'Tipo',
+                label: context.l10n.type,
                 type: DynamicFieldType.select,
                 initialValue: goal['tipo'] ?? 'calidad',
-                options: const [
-                  DynamicFieldOption(value: 'calidad', label: 'Calidad'),
+                options: [
+                  DynamicFieldOption(
+                    value: 'calidad',
+                    label: context.l10n.quality,
+                  ),
                   DynamicFieldOption(value: 'prl', label: 'PRL'),
                 ],
               ),
               DynamicFieldConfig(
                 key: 'estado',
-                label: 'Estado',
+                label: context.l10n.status,
                 type: DynamicFieldType.select,
                 initialValue: goal['estado'] ?? 'pendiente',
-                options: const [
-                  DynamicFieldOption(value: 'pendiente', label: 'Pendiente'),
-                  DynamicFieldOption(value: 'en_proceso', label: 'En proceso'),
-                  DynamicFieldOption(value: 'realizado', label: 'Realizado'),
+                options: [
+                  DynamicFieldOption(
+                    value: 'pendiente',
+                    label: context.l10n.pending,
+                  ),
+                  DynamicFieldOption(
+                    value: 'en_proceso',
+                    label: context.l10n.inProgress,
+                  ),
+                  DynamicFieldOption(
+                    value: 'realizado',
+                    label: context.l10n.completedFeminine,
+                  ),
                 ],
               ),
               DynamicFieldConfig(
                 key: 'fecha_inicio',
-                label: 'Fecha de inicio',
+                label: context.l10n.startDate,
                 type: DynamicFieldType.date,
                 initialValue: _dateValue(goal['fecha_inicio']),
               ),
               DynamicFieldConfig(
                 key: 'fecha_fin',
-                label: 'Fecha fin',
+                label: context.l10n.endDate,
                 type: DynamicFieldType.date,
                 initialValue: _dateValue(goal['fecha_fin']),
               ),
               DynamicFieldConfig(
                 key: 'observaciones',
-                label: 'Observaciones',
+                label: context.l10n.observations,
                 type: DynamicFieldType.multiline,
                 maxLines: 3,
                 initialValue: goal['observaciones'],
@@ -323,7 +339,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
         .length;
     final progress = _rows.isEmpty ? 0.0 : completed / _rows.length;
     return AppScaffold(
-      title: 'Objetivos',
+      title: context.l10n.goals,
       actions: [
         if (auth.canEditModule('goals'))
           IconButton(onPressed: _createGoal, icon: Icon(Icons.add_rounded)),
@@ -333,7 +349,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
           ? const AppLoadingView()
           : _error != null
           ? AppEmptyState(
-              title: 'Error',
+              title: context.l10n.error,
               subtitle: _error!,
               icon: Icons.error_outline_rounded,
             )
@@ -371,13 +387,16 @@ class _GoalsScreenState extends State<GoalsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Progreso global',
+                              context.l10n.overallProgress,
                               style: TextStyle(
                                 color: AppTheme.textSecondaryFor(context),
                               ),
                             ),
                             Text(
-                              '$completed de ${_rows.length} objetivos',
+                              context.l10n.goalsProgress(
+                                completed,
+                                _rows.length,
+                              ),
                               style: TextStyle(
                                 color: AppTheme.textPrimaryFor(context),
                                 fontWeight: FontWeight.w700,
@@ -391,9 +410,9 @@ class _GoalsScreenState extends State<GoalsScreen> {
                 ),
                 const SizedBox(height: 12),
                 if (_rows.isEmpty)
-                  const AppEmptyState(
-                    title: 'Sin objetivos',
-                    subtitle: 'Crea tu primer objetivo desde el botón +.',
+                  AppEmptyState(
+                    title: context.l10n.noGoals,
+                    subtitle: context.l10n.noGoalsHint,
                     icon: Icons.flag_outlined,
                   ),
                 ..._rows.map((goal) {
@@ -434,7 +453,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
                               ),
                               if (auth.canEditModule('goals'))
                                 IconButton(
-                                  tooltip: 'Editar',
+                                  tooltip: context.l10n.edit,
                                   onPressed: () => _editGoal(goal),
                                   icon: Icon(Icons.edit_outlined, size: 19),
                                 ),
