@@ -166,10 +166,7 @@ class OdooService {
       throw ArgumentError('El servidor debe ser una dirección HTTPS válida.');
     }
     if (_initialized) _client.close();
-    _client = OdooClient(
-      url,
-      sessionId: session,
-    );
+    _client = OdooClient(url, sessionId: session);
     _session = session;
     _userInfo = null;
     _initialized = true;
@@ -242,9 +239,9 @@ class OdooService {
   Future<void> logout() async {
     if (_initialized && isAuthenticated) {
       try {
-        await _client.callRPC('/web/session/destroy', 'call', {}).timeout(
-          const Duration(seconds: 5),
-        );
+        await _client
+            .callRPC('/web/session/destroy', 'call', {})
+            .timeout(const Duration(seconds: 5));
       } catch (_) {
         // Offline logout still clears every local copy of the session.
       }
@@ -313,7 +310,12 @@ class OdooService {
     await prefs.remove(_kSessionUserInfoJsonPrefs);
     final url = prefs.getString('odoo_url');
     if ((url ?? '').trim().isEmpty) return false;
-    if (!ServerPolicy.isSecureOrigin(url!)) return false;
+    if (!AppConfig.isOdooTargetAllowed(
+      url!,
+      prefs.getString('odoo_database') ?? '',
+    )) {
+      return false;
+    }
     if (!AppConfig.allowAdvancedLoginConfig &&
         AppConfig.hasValidBaseUrl &&
         (Uri.parse(url).origin != Uri.parse(AppConfig.odooBaseUrl).origin ||
@@ -644,10 +646,7 @@ class OdooService {
     init();
   }
 
-  Future<T> _withRetry<T>(
-    Future<T> Function() fn, {
-    bool readOnly = false,
-  }) {
+  Future<T> _withRetry<T>(Future<T> Function() fn, {bool readOnly = false}) {
     return RpcExecutor(
       timeout: Duration(seconds: AppConfig.httpTimeoutSeconds.clamp(1, 120)),
       retries: AppConfig.rpcRetries,

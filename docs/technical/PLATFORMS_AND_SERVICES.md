@@ -30,5 +30,8 @@ FCM se inicializa solo con `PUSH_NOTIFICATIONS_ENABLED=true` y
 `FIREBASE_PROJECT_ID`. `FIREBASE_VAPID_KEY` es opcional en la comprobación de
 arranque y se usa al obtener el token cuando está definido. La app registra el
 token mediante la acción portal `push_register`, solicita permiso y escucha
-renovación, primer plano y apertura. No hay configuración Firebase de
-producción en el repositorio.
+renovación, primer plano, apertura e inicio desde una notificación. Antes de
+cerrar sesión intenta desactivar el token en Odoo mediante `push_unregister`
+y borra el token FCM local. No hay configuración Firebase de producción en el
+repositorio. El procedimiento de configuración, aceptación y reversión está en
+[Firebase y notificaciones push](../operations/FIREBASE_PUSH_NOTIFICATIONS.md).

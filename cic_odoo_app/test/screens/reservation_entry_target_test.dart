@@ -19,4 +19,29 @@ void main() {
     expect(ReservationEntryTarget.parse(''), isNull);
     expect(ReservationEntryTarget.parse('https://example.org/other'), isNull);
   });
+
+  test(
+    'rejects lookalike web links and paths outside the reservation entrypoint',
+    () {
+      expect(
+        ReservationEntryTarget.parse(
+          'https://example.org/reservas?variantId=42',
+        ),
+        isNull,
+      );
+      expect(
+        ReservationEntryTarget.parse(
+          'https://reservas/reservas/admin?variantId=42',
+        ),
+        isNull,
+      );
+    },
+  );
+
+  test('accepts the allowlisted reservation web entrypoint', () {
+    final target = ReservationEntryTarget.parse(
+      'https://reservas/reservas?variantId=42',
+    );
+    expect(target?.variantId, 42);
+  });
 }

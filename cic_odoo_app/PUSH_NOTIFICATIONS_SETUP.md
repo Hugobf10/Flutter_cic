@@ -1,5 +1,9 @@
 # Activación futura de notificaciones push
 
+> La guía operativa vigente está en
+> [`../docs/operations/FIREBASE_PUSH_NOTIFICATIONS.md`](../docs/operations/FIREBASE_PUSH_NOTIFICATIONS.md).
+> Este archivo conserva el resumen técnico junto a la aplicación.
+
 La base ya está incluida, pero permanece desactivada hasta que exista un
 proyecto de Firebase. No hay secretos en este repositorio.
 
@@ -29,7 +33,9 @@ proyecto de Firebase. No hay secretos en este repositorio.
 
 Odoo usa ese secreto para obtener credenciales OAuth temporales y mandar cada
 mensaje a Firebase. Los tokens de los móviles se registran automáticamente en
-Odoo al iniciar sesión con una compilación push habilitada.
+Odoo al iniciar sesión con una compilación push habilitada. Al cerrar sesión,
+la aplicación solicita la baja del token en Odoo y elimina el token local para
+evitar que un dispositivo compartido conserve avisos del usuario anterior.
 
 ## Crear la compilación móvil habilitada
 

@@ -1,17 +1,8 @@
-# cic_odoo_app
+# Flutter CIC
 
-A new Flutter project.
+Aplicación Flutter de la intranet CIC conectada a Odoo mediante JSON-RPC y
+controladores de portal. La documentación de instalación, operación, desarrollo
+y uso se encuentra en el [índice de documentación](../docs/README.md).
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Antes de publicar, revisar [Build y publicación](../docs/operations/BUILD_AND_RELEASE.md)
+y, si se van a activar avisos, [Firebase y notificaciones push](../docs/operations/FIREBASE_PUSH_NOTIFICATIONS.md).

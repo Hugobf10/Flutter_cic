@@ -71,18 +71,18 @@ class ReservationEntryTarget {
     final host = uri.host.toLowerCase();
     final path = uri.path.toLowerCase();
 
-    final isReservationsLink =
-        host == 'reservas' ||
-        host == 'reserva' ||
-        path.contains('/reservas') ||
-        path == '/reserva' ||
-        uri.queryParameters['module']?.toLowerCase() == 'reservas';
-
-    if (!isReservationsLink &&
-        scheme != 'com.cic.flutter' &&
-        scheme != 'reservas' &&
-        scheme != 'reserva' &&
-        scheme != 'cic-reserva') {
+    final customScheme = const {
+      'com.cic.flutter',
+      'reservas',
+      'reserva',
+      'cic-reserva',
+    }.contains(scheme);
+    final allowedCustomHost = host == 'reservas' || host == 'reserva';
+    final webLink =
+        (scheme == 'https' || scheme == 'http') &&
+        allowedCustomHost &&
+        (path == '/reservas' || path == '/reserva');
+    if (!(customScheme && (host.isEmpty || allowedCustomHost) || webLink)) {
       return null;
     }
 

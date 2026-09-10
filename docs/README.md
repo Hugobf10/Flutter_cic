@@ -7,7 +7,8 @@ Esta documentación se ha reconstruido a partir del código de `main` y de los d
 1. [Guía rápida](getting-started/QUICK_START.md) e [instalación](getting-started/INSTALLATION.md).
 2. [Introducción](user-guide/INTRODUCTION.md), [navegación](user-guide/NAVIGATION.md) y módulos.
 3. [Arquitectura](technical/ARCHITECTURE.md), seguridad e integración con Odoo.
-4. Desarrollo, pruebas y operaciones antes de modificar o publicar.
+4. Desarrollo, pruebas y operaciones antes de modificar o publicar, incluido
+   el procedimiento de [Firebase y notificaciones push](operations/FIREBASE_PUSH_NOTIFICATIONS.md).
 
 ## Estructura
 

@@ -20,7 +20,11 @@ La identidad real de la clave, Play Console, package id publicado y proceso de d
 
 ## Configuración por entorno
 
-El build de producción debe pasar `ODOO_BASE_URL` y `ODOO_DATABASE` propios. No debe depender del staging por defecto. Sentry y FCM son opt-in y requieren los defines correspondientes.
+El build de producción debe pasar `ODOO_BASE_URL` y `ODOO_DATABASE` propios. No
+debe depender del staging por defecto: una release que conserve alguno de los
+valores de staging queda bloqueada salvo que declare explícitamente
+`ALLOW_STAGING_IN_RELEASE=true`. Sentry y FCM son opt-in y requieren los
+defines correspondientes. Ver [Firebase y notificaciones push](FIREBASE_PUSH_NOTIFICATIONS.md).
 
 ## Puerta de salida funcional
 

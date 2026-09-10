@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show kReleaseMode;
+
 import 'app_env.dart';
 import 'server_policy.dart';
 
@@ -97,6 +99,18 @@ class AppConfig {
       firebaseProjectId.isNotEmpty;
 
   static bool get hasValidBaseUrl {
-    return ServerPolicy.isSecureOrigin(odooBaseUrl);
+    return isOdooTargetAllowed(odooBaseUrl, odooDatabaseName);
+  }
+
+  /// Prevents an accidental store build from silently using the repository's
+  /// staging defaults. Support and beta builds can opt in explicitly.
+  static bool isOdooTargetAllowed(String baseUrl, String database) {
+    if (!ServerPolicy.isSecureOrigin(baseUrl) || database.trim().isEmpty) {
+      return false;
+    }
+    return !kReleaseMode ||
+        AppEnv.allowStagingInRelease ||
+        (baseUrl.trim() != AppEnv.stagingBaseUrl &&
+            database.trim() != AppEnv.stagingDatabase);
   }
 }
