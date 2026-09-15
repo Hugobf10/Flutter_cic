@@ -198,7 +198,10 @@ class _ModulesHubScreenState extends State<ModulesHubScreen> {
 
   List<AppModule> _intranetModules(List<AppModule> modules, AuthProvider auth) {
     if (auth.isAdmin) return modules.where((m) => m.implemented).toList();
-    const hidden = {'organization', 'permissions'};
+    // La administración de permisos sigue siendo una función interna. No se
+    // muestra a usuarios portal (canViewModule ya los bloquea), pero los
+    // usuarios internos con acceso deben poder consultar roles y permisos.
+    const hidden = {'organization'};
     return modules
         .where(
           (m) =>
